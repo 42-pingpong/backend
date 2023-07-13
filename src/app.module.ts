@@ -3,6 +3,7 @@ import { AuthModule } from './auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ChatModule } from './chat/chat.module';
 import { GameModule } from './game/game.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -15,6 +16,10 @@ import { GameModule } from './game/game.module';
       database: process.env.POSTGRES_DB,
       entities: [],
       synchronize: true,
+    }),
+    ConfigModule.forRoot({
+      //development일때는 .env파일을 무시하고 환경변수를 사용한다.
+      ignoreEnvFile: process.env.NODE_ENV === 'development',
     }),
     AuthModule,
     ChatModule,
