@@ -1,7 +1,5 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
-import { ChatGateway } from './chat/chat.gateway';
-import { GameGateway } from './game/game.gateway';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ChatModule } from './chat/chat.module';
 import { GameModule } from './game/game.module';
@@ -22,7 +20,5 @@ import { GameModule } from './game/game.module';
     ChatModule,
     GameModule,
   ],
-  controllers: [],
-  providers: [ChatGateway, GameGateway],
 })
 export class AppModule {}
