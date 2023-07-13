@@ -8,6 +8,7 @@ async function bootstrap() {
     origin: `http://localhost:${process.env.REACT_PORT}`,
   });
   app.use(cookieParser(process.env.COOKIE_SECRET));
+  app.setGlobalPrefix('api');
   await app.listen(process.env.NEST_PORT);
 }
 bootstrap();
