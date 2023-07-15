@@ -1,10 +1,9 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
-import { ChatGateway } from './chat/chat.gateway';
-import { GameGateway } from './game/game.gateway';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ChatModule } from './chat/chat.module';
 import { GameModule } from './game/game.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -18,11 +17,13 @@ import { GameModule } from './game/game.module';
       entities: [],
       synchronize: true,
     }),
+    ConfigModule.forRoot({
+      //development일때는 .env파일을 무시하고 환경변수를 사용한다.
+      ignoreEnvFile: process.env.NODE_ENV === 'development',
+    }),
     AuthModule,
     ChatModule,
     GameModule,
   ],
-  controllers: [],
-  providers: [ChatGateway, GameGateway],
 })
 export class AppModule {}
