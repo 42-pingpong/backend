@@ -47,6 +47,40 @@ export class FourtyTwoStrategy extends PassportStrategy(Strategy, '42') {
     } catch (e) {
       console.log(e);
     }
+
+    //     try {
+    //       const response = await fetch(
+    //         `https://api.intra.42.fr/v2/users/106987/scale_teams/as_corrector`,
+    //         {
+    //           method: 'GET',
+    //           headers: {
+    //             Authorization: 'Bearer ' + accessToken,
+    //             'Content-Type': 'application/json',
+    //           },
+    //         },
+    //       );
+    //       const json = await response.json();
+    //       console.log(json);
+    //     } catch (e) {
+    //       console.log(e);
+    //     }
+
+    //     try {
+    //       const response = await fetch(
+    //         `https://api.intra.42.fr/v2/users/106987/scale_teams/as_corrected`,
+    //         {
+    //           method: 'GET',
+    //           headers: {
+    //             Authorization: 'Bearer ' + accessToken,
+    //             'Content-Type': 'application/json',
+    //           },
+    //         },
+    //       );
+    //       const json = await response.json();
+    //       console.log(json);
+    //     } catch (e) {
+    //       console.log(e);
+    //     }
     return {
       ...profile,
     };
