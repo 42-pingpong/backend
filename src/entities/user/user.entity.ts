@@ -6,7 +6,13 @@ import {
   PrimaryColumn,
   JoinTable,
 } from 'typeorm';
+import { DirectMessage } from '../chat/directMessage.entity';
 import { GroupChat } from '../chat/groupChat.entity';
+import { MessageInfo } from '../chat/messageInfo.entity';
+import { GameInvitation } from '../game/gameInvitation.entity';
+import { GameScore } from '../game/gameScore.entity';
+import { BlockUserList } from './blockUserList.entity';
+import { FriendRequest } from './friendRequest.entity';
 
 @Entity()
 export class User {
@@ -57,4 +63,43 @@ export class User {
   @ManyToMany(() => User, (user) => user.friendsWith)
   @JoinTable()
   friendOf: User[];
+
+  @OneToMany(() => MessageInfo, (messageInfo) => messageInfo.sender)
+  messages: MessageInfo[];
+
+  @OneToMany(
+    () => DirectMessage,
+    (directMessage) => directMessage.receivedUserId,
+  )
+  directMessages: DirectMessage;
+
+  @OneToMany(
+    () => FriendRequest,
+    (friendRequest) => friendRequest.requestedUser,
+  )
+  friendRequesting: FriendRequest;
+
+  @OneToMany(
+    () => FriendRequest,
+    (friendRequest) => friendRequest.requestedUser,
+  )
+  friendRequested: FriendRequest;
+
+  @OneToMany(() => BlockUserList, (blockUserList) => blockUserList.blockUserId)
+  blockList: BlockUserList[];
+
+  @OneToMany(
+    () => BlockUserList,
+    (blockUserList) => blockUserList.blockedUserId,
+  )
+  blockedList: BlockUserList[];
+
+  @OneToMany(() => GameScore, (gameScore) => gameScore.userId)
+  gameScores: GameScore[];
+
+  @OneToMany(() => GameInvitation, (gameInvitation) => gameInvitation.inviteeId)
+  invitedGame: GameInvitation[];
+
+  @OneToMany(() => GameInvitation, (gameInvitation) => gameInvitation.inviterId)
+  invitingGame: GameInvitation[];
 }

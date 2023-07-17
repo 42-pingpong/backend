@@ -6,8 +6,10 @@ import {
   ManyToOne,
   ManyToMany,
   JoinTable,
+  OneToMany,
 } from 'typeorm';
 import { User } from '../user/user.entity';
+import { GroupChatMessage } from './groupChatMessage.entity';
 
 @Entity()
 export class GroupChat {
@@ -38,14 +40,26 @@ export class GroupChat {
   owner: User;
 
   @ManyToMany(() => User, (user) => user.bannedGroupChats)
-  @JoinTable()
+  @JoinTable({
+    name: 'BannedGroupChat_user_joinTable',
+  })
   bannedUser: User[];
 
   @ManyToMany(() => User, (user) => user.adminingGroupChats)
-  @JoinTable()
+  @JoinTable({
+    name: 'GroupChatAdmin_user_joinTable',
+  })
   admin: User[];
 
   @ManyToMany(() => User, (user) => user.joinedGroupChats)
-  @JoinTable()
+  @JoinTable({
+    name: 'GroupChat_user_joinTable',
+  })
   joinedUser: User[];
+
+  @OneToMany(
+    () => GroupChatMessage,
+    (groupChatMessage) => groupChatMessage.receivedGroupChatId,
+  )
+  groupChatMessages: GroupChatMessage[];
 }
