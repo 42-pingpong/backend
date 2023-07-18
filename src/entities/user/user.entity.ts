@@ -34,9 +34,9 @@ export class User {
 
   @Column({
     type: 'varchar',
-    length: 14,
+    length: 50,
   })
-  phone: string;
+  nickName: string;
 
   @Column({
     type: 'varchar',
