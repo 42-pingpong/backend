@@ -27,21 +27,24 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
+    console.log('profile:', req.user);
     if (!req.user) {
       res.statusCode = 401;
-      res.send('Unauthorized');
-    }
+      res.send('Authorization failed');
+    } else {
+      res.statusCode = 200;
+      // database에서 req.user.id를 이용해서 유저정보를 가져와.
+      // const dbUser = await this.authService.findUser(req.user.id);
 
-    //@Todo
-    //req.user에는 42에서 받아온 정보가 들어있다.
-    //이 정보를 이용하여
-    //1. database에서 해당 유저가 있는지 확인
-    //2. 없으면 db에 저장하고 아래 단계 진행.
-    //
-    //있으면
-    //1. token 발급(jwt strategy)
-    //2. token을 cookie에 저장
-    //3. redirection
-    res.redirect(req.headers.host);
+      // if (dbUser) {
+      //dbUser의 정보를 가지고 jwt token을 만들어서 발급
+      // }
+      // else {
+      //   //db에 req.user (최초 로그인한 유저) 정보를 저장하고
+      //   jwt 토큰을 발급한다.
+      // }
+
+      res.send('ttt');
+    }
   }
 }

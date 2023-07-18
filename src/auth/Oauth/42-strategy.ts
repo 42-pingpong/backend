@@ -16,10 +16,14 @@ interface Profile {
 export class FourtyTwoStrategy extends PassportStrategy(Strategy, '42') {
   constructor() {
     super({
+      //여기서 authorization code 받아옴.
       authorizationURL: 'https://api.intra.42.fr/v2/oauth/authorize',
+      //받아온 code와 accesstoekn, refresh token으로 변환.
       tokenURL: 'https://api.intra.42.fr/v2/oauth/token',
+
       clientID: process.env.CLIENT42,
       clientSecret: process.env.APIKEY42,
+      //validate 함수 끝나고 redirect할 url
       callbackURL: process.env.REDIRECT42,
       scope: ['public'],
     });
@@ -31,6 +35,7 @@ export class FourtyTwoStrategy extends PassportStrategy(Strategy, '42') {
     let profile: Profile = null;
 
     try {
+      //resource server에 자원요청
       const response = await fetch('https://api.intra.42.fr/v2/me', {
         method: 'GET',
         headers: {
