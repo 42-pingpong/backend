@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { Get, Req, Res } from '@nestjs/common';
@@ -26,9 +26,12 @@ export class AuthController {
   async redirect42(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
-    @Query() query: any,
   ) {
-    console.log(req.user);
+    if (!req.user) {
+      res.statusCode = 401;
+      res.send('Unauthorized');
+    }
+
     //@Todo
     //req.user에는 42에서 받아온 정보가 들어있다.
     //이 정보를 이용하여
