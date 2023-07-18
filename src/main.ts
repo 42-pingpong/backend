@@ -13,6 +13,7 @@ async function bootstrap() {
   });
   //Cookie
   app.use(cookieParser(process.env.COOKIE_SECRET));
+
   //Global Prefix
   app.setGlobalPrefix('api');
 
@@ -23,9 +24,9 @@ async function bootstrap() {
     .setVersion('1.0')
     .addTag('42PingPong')
     .build();
-
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
+
   await app.listen(process.env.NEST_PORT);
 }
 bootstrap();
