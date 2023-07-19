@@ -1,4 +1,7 @@
-import { ConflictException } from '@nestjs/common';
+import {
+  ConflictException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { User } from 'src/entities/user/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -33,7 +36,7 @@ describe('UserService', () => {
     jest.clearAllMocks();
   });
 
-  it('should be defsned', () => {
+  it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
@@ -45,7 +48,7 @@ describe('UserService', () => {
      * create - success
      * */
 
-    it('create-success', async () => {
+    it('create - success', async () => {
       jest.spyOn(service, 'findOne').mockImplementationOnce(() => {
         return null;
       });
@@ -56,11 +59,21 @@ describe('UserService', () => {
       newUser.id = 2;
 
       jest
-        .spyOn(repository, 'save')
+        .spyOn(repository.manager, 'transaction')
         .mockImplementationOnce(() => Promise.resolve(newUser));
 
       expect((await service.create(createUserDto)).id).toEqual(
         createUserDto.id,
+      );
+    });
+
+    it('create - internal exception', async () => {
+      jest
+        .spyOn(repository.manager, 'transaction')
+        .mockRejectedValueOnce(InternalServerErrorException);
+
+      expect(await service.create(createUserDto)).toThrowError(
+        InternalServerErrorException,
       );
     });
 
@@ -71,7 +84,7 @@ describe('UserService', () => {
       existingUser.id = 1;
 
       jest
-        .spyOn(service, 'findOne')
+        .spyOn(repository.manager, 'findOne')
         .mockImplementationOnce(() => Promise.resolve(existingUser));
 
       createUserDto.id = 1;
@@ -120,13 +133,18 @@ describe('UserService', () => {
         return Promise.resolve(updateResult);
       });
 
-      expect((await service.update(1, updateUser)).affected).toEqual(1);
+      expect(await service.update(1, updateUser)).toBeNull();
     });
 
     it('update - duplicated nickName', async () => {
+      updateUser.nickName = 'duplicated';
       jest
-        .spyOn(repository, 'update')
-        .mockRejectedValueOnce(new ConflictException());
+        .spyOn(repository, 'findOne')
+        .mockImplementationOnce(() => Promise.resolve(existingUser));
+
+      expect(await service.update(1, updateUser)).rejects.toThrow(
+        ConflictException,
+      );
     });
 
     it('update - not found', async () => {
