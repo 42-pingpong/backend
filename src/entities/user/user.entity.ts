@@ -5,7 +5,9 @@ import {
   ManyToMany,
   PrimaryColumn,
   JoinTable,
+  Unique,
 } from 'typeorm';
+import { RefreshToken } from '../auth/refreshToken.entity';
 import { DirectMessage } from '../chat/directMessage.entity';
 import { GroupChat } from '../chat/groupChat.entity';
 import { MessageInfo } from '../chat/messageInfo.entity';
@@ -15,6 +17,7 @@ import { BlockUserList } from './blockUserList.entity';
 import { FriendRequest } from './friendRequest.entity';
 
 @Entity()
+@Unique(['nickName'])
 export class User {
   @PrimaryColumn({
     comment: '유저의 아이디(인트라 아이디)',
@@ -28,7 +31,7 @@ export class User {
 
   @Column({
     type: 'varchar',
-    length: 100,
+    length: 200,
   })
   profile: string;
 
@@ -102,4 +105,7 @@ export class User {
 
   @OneToMany(() => GameInvitation, (gameInvitation) => gameInvitation.inviterId)
   invitingGame: GameInvitation[];
+
+  @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.userId)
+  refreshTokens: RefreshToken[];
 }

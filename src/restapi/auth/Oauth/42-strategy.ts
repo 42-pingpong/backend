@@ -1,16 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-oauth2';
 import fetch from 'node-fetch';
-import * as fs from 'fs';
-
-interface Profile {
-  id: number;
-  email: string;
-  login: string;
-  image: any;
-  level: number;
-}
+import { CreateUserDto } from 'src/restapi/user/dto/create-user.dto';
 
 @Injectable()
 export class FourtyTwoStrategy extends PassportStrategy(Strategy, '42') {
@@ -30,11 +22,8 @@ export class FourtyTwoStrategy extends PassportStrategy(Strategy, '42') {
   }
 
   async validate(accessToken: string, refreshToken: string) {
-    console.log('acc', accessToken);
-    console.log('ref', refreshToken);
-    let profile: Profile = null;
-
     try {
+      console.log('validate');
       //resource server에 자원요청
       const response = await fetch('https://api.intra.42.fr/v2/me', {
         method: 'GET',
@@ -44,21 +33,18 @@ export class FourtyTwoStrategy extends PassportStrategy(Strategy, '42') {
         },
       });
       const json = await response.json();
-      fs.writeFileSync('test.json', JSON.stringify(json));
-      profile = {
+      const createUserDto: CreateUserDto = {
         id: json.id,
-        email: json.email,
-        login: json.login,
-        image: json.image,
         level: json.cursus_users[1].level,
+        nickName: json.login,
+        selfIntroduction: 'Hi!',
+        profile: json.image.link,
       };
-      console.log(profile);
+      return {
+        ...createUserDto,
+      };
     } catch (e) {
-      console.log(e);
+      throw new InternalServerErrorException();
     }
-    // redirection에서 req.user에 profile이 있음.
-    return {
-      ...profile,
-    };
   }
 }
