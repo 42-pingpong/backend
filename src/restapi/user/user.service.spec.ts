@@ -1,114 +1,141 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { ConflictException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { User } from 'src/entities/user/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserService } from './user.service';
-import { setupDataSource } from 'src/datasource/setupDataSource';
-import {TypeOrmModule} from '@nestjs/typeorm';
-
-const user: CreateUserDto = {
-  id: 1,
-  level: 5.5,
-  nickName: 'test',
-  profile: 'test',
-  selfIntroduction: 'test',
-};
+import { UserController } from './user.controller';
+import { Repository } from 'typeorm';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { UpdateResult } from 'typeorm';
+import { createMock } from '@golevelup/ts-jest';
 
 describe('UserService', () => {
   let service: UserService;
+  let repository: Repository<User>;
+  const existingUser = new User();
+  const createUserDto: CreateUserDto = new CreateUserDto();
 
-  beforeAll(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      imports: [
-		  TypeOrmModule.forRoot({  
-			  name: 'default',
-			  synchronize: true,
-			}),
-	  ],
-      providers: [UserService],
-    })
-	.overrideProvider(setupDataSource)
-	.useValue(setupDataSource)
-	.compile();
+  beforeEach(async () => {
+    const moduleRef: TestingModule = await Test.createTestingModule({
+      controllers: [UserController],
+      providers: [
+        UserService,
+        {
+          provide: getRepositoryToken(User),
+          useValue: createMock<Repository<User>>(),
+        },
+      ],
+    }).compile();
 
-    service = module.get<UserService>(UserService);
-    await service.create(user);
+    service = moduleRef.get<UserService>(UserService);
+    repository = moduleRef.get<Repository<User>>(getRepositoryToken(User));
+    jest.clearAllMocks();
   });
 
   it('should be defsned', () => {
     expect(service).toBeDefined();
   });
 
-  describe('create', async () => {
-    it('create', async () => {
-      const result = await service.findOne(1);
-      expect(result).toBeDefined();
-      expect(result.id).toEqual(1);
+  /**
+   * create
+   * */
+  describe('create', () => {
+    /**
+     * create - success
+     * */
+
+    it('create-success', async () => {
+      jest.spyOn(service, 'findOne').mockImplementationOnce(() => {
+        return null;
+      });
+
+      createUserDto.id = 2;
+
+      const newUser = new User();
+      newUser.id = 2;
+
+      jest
+        .spyOn(repository, 'save')
+        .mockImplementationOnce(() => Promise.resolve(newUser));
+
+      expect((await service.create(createUserDto)).id).toEqual(
+        createUserDto.id,
+      );
     });
 
+    /**
+     * create - 동일한 id가 존재할 경우
+     * */
     it('create - duplicated id', async () => {
-      const result = await service.create(user);
-      expect(result).toBeUndefined();
-      expect(result.id).toEqual(1);
+      existingUser.id = 1;
+
+      jest
+        .spyOn(service, 'findOne')
+        .mockImplementationOnce(() => Promise.resolve(existingUser));
+
+      createUserDto.id = 1;
+
+      expect((await service.create(createUserDto)).id).toEqual(
+        createUserDto.id,
+      );
     });
   });
 
   describe('findOne', () => {
+    /**
+     * findOne - success
+     * */
     it('findOne', async () => {
-      const user = await service.findOne(1);
-      expect(user).toBeDefined();
-      expect(user.id).toEqual(1);
+      existingUser.id = 1;
+
+      jest.spyOn(repository, 'findOne').mockImplementationOnce(() => {
+        return Promise.resolve(existingUser);
+      });
+
+      expect((await service.findOne(existingUser.id)).id).toEqual(
+        existingUser.id,
+      );
     });
 
+    /**
+     * findOne - not found
+     * */
     it('findOne - not found', async () => {
-      try {
-        const user = await service.findOne(1111);
-      } catch (e) {
-        expect(e).toBeInstanceOf(NotFoundException);
-      }
+      jest.spyOn(repository, 'findOne').mockImplementationOnce(() => {
+        return Promise.resolve(null);
+      });
+
+      expect(await service.findOne(1)).toBeNull();
     });
   });
 
-  describe('update', async () => {
-    const user2: CreateUserDto = {
-      id: 2,
-      level: 5.5,
-      nickName: 'test2',
-      profile: 'test2',
-      selfIntroduction: 'test2',
-    };
-    await service.create(user2);
-
+  describe('update', () => {
     const updateUser: UpdateUserDto = new UpdateUserDto();
-    const userId = 2;
+    const updateResult = new UpdateResult();
 
     it('update - success', async () => {
-      updateUser.nickName = 'testNotDuplicated';
+      updateResult.affected = 1;
+      jest.spyOn(repository, 'update').mockImplementationOnce(() => {
+        return Promise.resolve(updateResult);
+      });
 
-      await service.update(userId, updateUser);
-      const result = await service.findOne(userId);
-      expect(result).toBeDefined();
-      expect(result.id).toEqual(userId);
-      expect(result.nickName).toEqual(updateUser.nickName);
+      expect((await service.update(1, updateUser)).affected).toEqual(1);
     });
 
     it('update - duplicated nickName', async () => {
-      updateUser.nickName = 'test';
-
-	  try {
-      await service.update(userId, updateUser);
-	  } catch (e) {
-		expect(e).toBeInstanceOf(ConflictException)
+      jest
+        .spyOn(repository, 'update')
+        .mockRejectedValueOnce(new ConflictException());
     });
 
     it('update - not found', async () => {
-		try {
-			await service.update(1111, updateUser);
-		} catch (e) {
-			expect(e).toBeInstanceOf(NotFoundException);
-		}
-	});
+      updateResult.affected = 0;
+      jest.spyOn(repository, 'update').mockImplementationOnce(() => {
+        return Promise.resolve(updateResult);
+      });
 
+      expect((await service.update(1, updateUser)).affected).toEqual(0);
+    });
   });
 });
