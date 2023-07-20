@@ -1,7 +1,3 @@
-import {
-  ConflictException,
-  InternalServerErrorException,
-} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { User } from 'src/entities/user/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
