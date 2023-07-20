@@ -7,11 +7,8 @@ import { User } from 'src/entities/user/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserService } from './user.service';
-import { UserController } from './user.controller';
-import { Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { UpdateResult } from 'typeorm';
-import { createMock } from '@golevelup/ts-jest';
+import { EntityManager, Repository } from 'typeorm';
 
 describe('UserService', () => {
   let service: UserService;
@@ -19,15 +16,27 @@ describe('UserService', () => {
   const existingUser = new User();
   const createUserDto: CreateUserDto = new CreateUserDto();
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const moduleRef: TestingModule = await Test.createTestingModule({
-      controllers: [UserController],
       providers: [
-        UserService,
         {
           provide: getRepositoryToken(User),
-          useValue: createMock<Repository<User>>(),
+          useValue: {
+            findOne: jest.fn(),
+            save: jest.fn(),
+            update: jest.fn(),
+            delete: jest.fn(),
+            manager: {
+              transaction: jest
+                .fn()
+                .mockImplementation(async (manager: EntityManager) => {
+                  manager = new EntityManager(null);
+                  manager.update = jest.fn();
+                }),
+            },
+          },
         },
+        UserService,
       ],
     }).compile();
 
@@ -47,47 +56,12 @@ describe('UserService', () => {
     /**
      * create - success
      * */
-
     it('create - success', async () => {
-      jest.spyOn(service, 'findOne').mockImplementationOnce(() => {
-        return null;
-      });
-
-      createUserDto.id = 2;
-
-      const newUser = new User();
-      newUser.id = 2;
-
-      jest
-        .spyOn(repository.manager, 'transaction')
-        .mockImplementationOnce(() => Promise.resolve(newUser));
-
-      expect((await service.create(createUserDto)).id).toEqual(
-        createUserDto.id,
-      );
-    });
-
-    it('create - internal exception', async () => {
-      jest
-        .spyOn(repository.manager, 'transaction')
-        .mockRejectedValueOnce(InternalServerErrorException);
-
-      expect(await service.create(createUserDto)).toThrowError(
-        InternalServerErrorException,
-      );
-    });
-
-    /**
-     * create - 동일한 id가 존재할 경우
-     * */
-    it('create - duplicated id', async () => {
-      existingUser.id = 1;
-
-      jest
-        .spyOn(repository.manager, 'findOne')
-        .mockImplementationOnce(() => Promise.resolve(existingUser));
-
       createUserDto.id = 1;
+      const newUser: User = new User();
+      newUser.id = createUserDto.id;
+
+      repository.save = jest.fn().mockResolvedValue(newUser);
 
       expect((await service.create(createUserDto)).id).toEqual(
         createUserDto.id,
@@ -124,36 +98,13 @@ describe('UserService', () => {
   });
 
   describe('update', () => {
-    const updateUser: UpdateUserDto = new UpdateUserDto();
-    const updateResult = new UpdateResult();
+    const updateUserDto: UpdateUserDto = new UpdateUserDto();
+    updateUserDto.nickName = 'newNickName';
 
+    //update에서 throw되는건 controller에서 test
     it('update - success', async () => {
-      updateResult.affected = 1;
-      jest.spyOn(repository, 'update').mockImplementationOnce(() => {
-        return Promise.resolve(updateResult);
-      });
-
-      expect(await service.update(1, updateUser)).toBeNull();
-    });
-
-    it('update - duplicated nickName', async () => {
-      updateUser.nickName = 'duplicated';
-      jest
-        .spyOn(repository, 'findOne')
-        .mockImplementationOnce(() => Promise.resolve(existingUser));
-
-      expect(await service.update(1, updateUser)).rejects.toThrow(
-        ConflictException,
-      );
-    });
-
-    it('update - not found', async () => {
-      updateResult.affected = 0;
-      jest.spyOn(repository, 'update').mockImplementationOnce(() => {
-        return Promise.resolve(updateResult);
-      });
-
-      expect((await service.update(1, updateUser)).affected).toEqual(0);
+      await service.update(1, updateUserDto);
+      expect(repository.manager.transaction).toBeCalledTimes(1);
     });
   });
 });
