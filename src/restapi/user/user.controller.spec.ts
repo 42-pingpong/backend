@@ -8,6 +8,9 @@ import { User } from 'src/entities/user/user.entity';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 
+/**
+ * service의 기대값을 mock으로 대체, controller를 테스트.
+ * */
 describe('UserController', () => {
   let controller: UserController;
   let service: UserService;
@@ -45,23 +48,33 @@ describe('UserController', () => {
   });
 
   describe('update', () => {
-    it('not found user', async () => {
-      jest.spyOn(service, 'update').mockRejectedValueOnce(NotFoundException);
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
 
-      expect(await controller.update('1', new UpdateUserDto())).toThrow(
+    it('not found user', async () => {
+      service.update = jest.fn().mockImplementationOnce(async () => {
+        throw new NotFoundException();
+      });
+
+      expect(() => controller.update('1', new UpdateUserDto())).rejects.toThrow(
         NotFoundException,
       );
+
+      expect(service.update).toBeCalledTimes(1);
     });
 
     it('conflict nickname', async () => {
-      jest.spyOn(service, 'update').mockRejectedValueOnce(ConflictException);
+      service.update = jest.fn().mockImplementationOnce(async () => {
+        throw new ConflictException();
+      });
 
-      expect(await controller.update('1', new UpdateUserDto())).toThrow(
-        ConflictException,
-      );
+      expect(() =>
+        controller.update('1', new UpdateUserDto()),
+      ).rejects.toThrowError(new ConflictException());
     });
 
-    it('scuccess', async () => {
+    it('success', async () => {
       jest
         .spyOn(service, 'update')
         .mockImplementationOnce(async () => Promise.resolve(void 0));
