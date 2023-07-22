@@ -30,9 +30,9 @@ import database from 'src/config/database';
         username: configService.get<string>('database.username'),
         password: configService.get<string>('database.password'),
         database: configService.get<string>('database.database'),
-        entities: [join(__dirname, '/../src/entities/*.entity.ts')],
-        synchronize: configService.get<boolean>('database.synchronize'), //for development
-        dropSchema: configService.get<boolean>('database.dropSchema'), //for development
+        entities: [join(__dirname, '/../entities/**/*.entity.ts')],
+        synchronize: true, //for development
+        dropSchema: true, //for development
       }),
     }),
   ],
