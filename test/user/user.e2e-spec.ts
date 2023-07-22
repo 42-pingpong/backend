@@ -7,6 +7,7 @@ import { UserController } from 'src/restapi/user/user.controller';
 import { UserService } from 'src/restapi/user/user.service';
 import { DataSource, Repository } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 describe('User -/user (e2e)', () => {
   let app: INestApplication;
@@ -23,22 +24,26 @@ describe('User -/user (e2e)', () => {
     datasource = moduleFixture.get<DataSource>(DataSource);
     // controller = moduleFixture.get<UserController>(UserController);
     // service = moduleFixture.get<UserService>(UserService);
-    // repository = datasource.getRepository(User);
+    repository = datasource.getRepository(User);
     app = moduleFixture.createNestApplication();
     app.setGlobalPrefix('api');
 
-    jest.setTimeout(30000);
     await moduleFixture.init();
-  }, 30000);
+  });
 
-  it('GET /api/user/{:id}', () => {
-    return request(app.getHttpServer())
-      .get('/api/user/1')
-      .expect(200)
-      .timeout(10000);
+  it('GET /api/user/{:id}', async () => {
+    await repository.save({
+      id: 1,
+      nickName: 'test1',
+      profile: 'test1',
+      selfIntroduction: 'test1',
+      level: 5.55,
+    });
+    return request(app.getHttpServer()).get('/api/user/1').expect(200);
   });
 
   afterAll(async () => {
+    await datasource.dropDatabase();
     await datasource.destroy();
   });
 });
