@@ -1,5 +1,15 @@
 import { registerAs } from '@nestjs/config';
-import { join } from 'path';
+import { User } from 'src/entities/user/user.entity';
+import { GroupChat } from 'src/entities/chat/groupChat.entity';
+import { GroupChatMessage } from 'src/entities/chat/groupChatMessage.entity';
+import { DirectMessage } from 'src/entities/chat/directMessage.entity';
+import { MessageInfo } from 'src/entities/chat/messageInfo.entity';
+import { GameInfo } from 'src/entities/game/gameInfo.entity';
+import { GameInvitation } from 'src/entities/game/gameInvitation.entity';
+import { GameScore } from 'src/entities/game/gameScore.entity';
+import { BlockUserList } from 'src/entities/user/blockUserList.entity';
+import { FriendRequest } from 'src/entities/user/friendRequest.entity';
+import { RefreshToken } from 'src/entities/auth/refreshToken.entity';
 
 export default registerAs('database', () => ({
   host: process.env.POSTGRES_DBHOST,
@@ -7,7 +17,19 @@ export default registerAs('database', () => ({
   username: process.env.POSTGRES_USER,
   password: process.env.POSTGRES_PASSWORD,
   database: process.env.POSTGRES_DB,
-  entities: [join(__dirname, '/../**/*.entity.ts')],
+  entities: [
+    User,
+    GroupChat,
+    GroupChatMessage,
+    DirectMessage,
+    MessageInfo,
+    GameInfo,
+    GameInvitation,
+    GameScore,
+    BlockUserList,
+    FriendRequest,
+    RefreshToken,
+  ],
   synchronize:
     process.env.NODE_ENV === 'development' ||
     process.env.NODE_ENV === 'e2e' ||
