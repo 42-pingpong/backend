@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { IUser } from './interface/IUser.types';
+import { ValidationPipe } from '@nestjs/common';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -25,6 +26,14 @@ async function bootstrap() {
 
   //Global Prefix
   app.setGlobalPrefix('api');
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
   //Swagger
   const config = new DocumentBuilder()
