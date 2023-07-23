@@ -39,6 +39,7 @@ export class FourtyTwoStrategy extends PassportStrategy(Strategy, '42') {
         nickName: json.login,
         selfIntroduction: 'Hi!',
         profile: json.image.link,
+        email: json.email,
       };
       return {
         ...createUserDto,
