@@ -4,6 +4,7 @@ import * as cookieParser from 'cookie-parser';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { IUser } from './interface/IUser.types';
 import { ValidationPipe } from '@nestjs/common';
+import { logger } from './logger/logger.middleware';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -16,10 +17,15 @@ declare global {
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.use(logger);
+
   //CORS
   app.enableCors({
-    origin: '*',
+    origin: true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+    allowedHeaders:
+      'Authorization, X-Requested-With, X-HTTP-Method-Override, Content-Type, Accept',
   });
 
   //Global Prefix
