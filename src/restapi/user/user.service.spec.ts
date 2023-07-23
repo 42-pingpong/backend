@@ -4,8 +4,8 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserService } from './user.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { Repository } from 'typeorm';
+import { NotFoundException } from '@nestjs/common';
 
 describe('UserService', () => {
   let service: UserService;
@@ -89,15 +89,11 @@ describe('UserService', () => {
      * findOne - not found
      * */
     it('not found', async () => {
-      jest.spyOn(repository, 'findOne').mockImplementationOnce(async () => {
-        return Promise.resolve(null);
-      });
+      jest.spyOn(repository, 'findOne').mockResolvedValueOnce(null);
 
-      const user = await service.findOne(1);
-
+      await expect(service.findOne(1)).rejects.toThrowError(NotFoundException);
       expect(repository.findOne).toBeCalledTimes(1);
       expect(repository.findOne).toBeCalledWith({ where: { id: 1 } });
-      expect(user).toBeNull();
     });
   });
 
