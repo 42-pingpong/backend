@@ -9,7 +9,7 @@ import { GameInvitation } from 'src/entities/game/gameInvitation.entity';
 import { GameScore } from 'src/entities/game/gameScore.entity';
 import { BlockUserList } from 'src/entities/user/blockUserList.entity';
 import { FriendRequest } from 'src/entities/user/friendRequest.entity';
-import { RefreshToken } from 'src/entities/auth/refreshToken.entity';
+import { Token } from 'src/entities/auth/token.entity';
 
 export default registerAs('database', () => ({
   host: process.env.POSTGRES_DBHOST,
@@ -28,7 +28,7 @@ export default registerAs('database', () => ({
     GameScore,
     BlockUserList,
     FriendRequest,
-    RefreshToken,
+    Token,
   ],
   synchronize:
     process.env.NODE_ENV === 'development' ||
@@ -41,5 +41,11 @@ export default registerAs('database', () => ({
     process.env.NODE_ENV === 'e2e' ||
     process.env.NODE_ENV === 'test'
       ? true //true for dev
+      : false,
+  logging:
+    process.env.NODE_ENV === 'development' ||
+    process.env.NODE_ENV === 'e2e' ||
+    process.env.NODE_ENV === 'test'
+      ? 'all'
       : false,
 }));

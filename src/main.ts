@@ -21,8 +21,6 @@ async function bootstrap() {
     origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
   });
-  //Cookie
-  app.use(cookieParser(process.env.COOKIE_SECRET));
 
   //Global Prefix
   app.setGlobalPrefix('api');

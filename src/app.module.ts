@@ -6,11 +6,13 @@ import { RestapiModule } from './restapi/restapi.module';
 import { appDatabase } from './datasource/appdatabase';
 import { ConfigModule } from '@nestjs/config';
 import database from './config/database';
+import auth from './config/auth';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [database],
+      load: [database, auth],
     }),
     appDatabase,
     ChatModule,

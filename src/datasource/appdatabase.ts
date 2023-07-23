@@ -28,6 +28,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         // synchronize: true,
         synchronize: configService.get<boolean>('database.synchronize'), //for development
         dropSchema: configService.get<boolean>('database.dropSchema'), //for development
+        logging: configService.get('database.logging'),
       }),
     }),
   ],
