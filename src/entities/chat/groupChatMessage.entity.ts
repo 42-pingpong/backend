@@ -20,5 +20,6 @@ export class GroupChatMessage {
   messageInfo: MessageInfo;
 
   @ManyToOne(() => GroupChat, (groupChat) => groupChat.groupChatMessages)
+  @JoinColumn()
   receivedGroupChatId: GroupChat;
 }

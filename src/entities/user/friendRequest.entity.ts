@@ -3,6 +3,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -14,9 +15,11 @@ export class FriendRequest {
   friendRequestId: number;
 
   @ManyToOne(() => User, (user) => user.friendRequested)
+  @JoinColumn()
   requestedUser: User;
 
   @ManyToOne(() => User, (user) => user.friendRequesting)
+  @JoinColumn()
   requestingUser: User;
 
   @CreateDateColumn()
