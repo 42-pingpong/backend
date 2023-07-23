@@ -1,8 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { User } from '../user/user.entity';
 
 @Entity()
-export class RefreshToken {
+export class Token {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -20,9 +26,7 @@ export class RefreshToken {
   })
   accessToken: string;
 
-  @Column({
-    type: 'int',
-  })
-  @ManyToOne(() => User, (user) => user.refreshTokens)
-  userId: User;
+  @ManyToOne(() => User, (user) => user.tokens)
+  @JoinColumn()
+  owner: User;
 }

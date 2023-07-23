@@ -7,7 +7,7 @@ import {
   JoinTable,
   Unique,
 } from 'typeorm';
-import { RefreshToken } from '../auth/refreshToken.entity';
+import { Token } from '../auth/token.entity';
 import { DirectMessage } from '../chat/directMessage.entity';
 import { GroupChat } from '../chat/groupChat.entity';
 import { MessageInfo } from '../chat/messageInfo.entity';
@@ -115,6 +115,6 @@ export class User {
   @OneToMany(() => GameInvitation, (gameInvitation) => gameInvitation.inviterId)
   invitingGame: GameInvitation[];
 
-  @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.userId)
-  refreshTokens: RefreshToken[];
+  @OneToMany(() => Token, (Token) => Token.owner)
+  tokens: Token[];
 }
