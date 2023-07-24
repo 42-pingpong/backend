@@ -5,6 +5,12 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 
+/**
+ * @brief chat gateway
+ *
+ * @description
+ * @link [](https://app.diagrams.net/#G1GES8rBEs5p8bRXtweH7BBFLKYITlAu1W)
+ * */
 // The @WebSocketGateway() decorator defines the WebSocket server.
 @WebSocketGateway({
   namespace: 'chat',
@@ -39,12 +45,28 @@ export class ChatGateway
    * @brief lifecycle hook
    * @param any client(클라이언트)
    * @param any][] args(인자).
+   * @description
+   * - 클라이언트가 연결되었을 때 실행되는 함수
+   * - 클라이언트가 연결되었을 때, 클라이언트의 정보를 받아올 수 있다.
+   * - chat은 기본적으로 전역상태로 enable되어있으므로, 모든 클라이언트가 연결되었을 때 실행된다.
+   * @TODO
+   * 1. client가 접속한상태일때, 로그인 상태를 redis에 저장한다.
+   * 2. client 좁속시, redis에 저장된 채팅방 정보를 가져온다.
    */
-  @SubscribeMessage('chat-login')
+  @SubscribeMessage('chat-login-any')
   handleConnection(client: any, ...args: any[]) {
     console.log('handleConnection', args);
   }
 
+  /**
+   * @brief lifecycle hook
+   * @param any client(클라이언트)
+   * @param any][] args(인자).
+   * @description
+   * - 클라이언트가 연결이 끊겼을 때 실행되는 함수
+   * - 클라이언트가 연결이 끊겼을 때, 클라이언트의 정보를 받아올 수 있다.
+   * - 클라이언트, 즉 browser가 종료되었을 때, 혹은 client의 의도적인 logout시 실행된다.
+   * */
   @SubscribeMessage('chat-logout')
   handleDisconnect(client: any, ...args: any[]) {
     console.log('handleDisconnect', args);
