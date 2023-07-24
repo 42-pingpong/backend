@@ -3,9 +3,10 @@ import { AuthService } from './auth.service';
 import { Get, Req, Res } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiOperation } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -14,14 +15,20 @@ export class AuthController {
   ) {}
 
   //need auth guard
-  @ApiOperation({ summary: '42 login' })
+  @ApiOperation({
+    summary: '42 login',
+    description: '42 login버튼에 달아주세요',
+  })
   @UseGuards(AuthGuard('42'))
   @Get('42/login')
   async login42() {
     return null;
   }
 
-  @ApiOperation({ summary: '42 redirect', description: `redirect to front` })
+  @ApiOperation({
+    summary: '42 redirect',
+    description: '42 login 후 redirect url에서 처리. 직접사용금지',
+  })
   @UseGuards(AuthGuard('42'))
   @Get('42/redirect')
   async redirect42(@Req() req: Request, @Res() res: Response) {
@@ -43,7 +50,11 @@ export class AuthController {
     );
   }
 
-  @ApiOperation({ summary: 'refresh token end point' })
+  @ApiOperation({
+    summary: 'refresh token end point',
+    description:
+      'refresh, access token이 cookie에 있는 상태로 요청시, cookie의 acc, ref token을 재발급합니다.',
+  })
   @UseGuards(AuthGuard('jwt-refresh')) //access token strategy는 AuthGuard('jwt')로 대체
   @Get('refresh')
   async refresh(@Req() req: Request, @Res() res: Response) {
