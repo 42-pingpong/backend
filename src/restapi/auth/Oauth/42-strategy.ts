@@ -36,6 +36,7 @@ export class FourtyTwoStrategy extends PassportStrategy(Strategy, '42') {
       const createUserDto: CreateUserDto = {
         id: json.id,
         level: json.cursus_users[1].level,
+        fullName: json.usual_full_name,
         nickName: json.login,
         selfIntroduction: 'Hi!',
         profile: json.image.link,
