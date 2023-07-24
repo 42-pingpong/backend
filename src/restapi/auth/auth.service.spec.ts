@@ -192,6 +192,7 @@ describe('AuthService', () => {
 
   /**
    * register test.
+   * 새로운 유저를 database에 생성.
    * */
   describe('register', () => {
     const newUser: IUser = {
@@ -238,7 +239,7 @@ describe('AuthService', () => {
       expect(authService.issueAccessToken).toBeDefined();
     });
 
-    it('issue token success', async () => {
+    it('issue tokens success', async () => {
       const refToken = 'asdf';
       const accToken = 'asdf';
       const token: ITokens = {
@@ -255,7 +256,13 @@ describe('AuthService', () => {
       expect(tokenRepository.save).toBeCalledTimes(1);
     });
 
-    describe('issue token fail', () => {
+	/**
+	 * token issue fail 테스트케이스
+	 * 1. refresh token issue fail
+	 * 2. acc tok issue fail
+	 * 3. token save fail
+	* */
+    describe('issue tokens fail', () => {
       const refToken = 'asdf';
       const accToken = 'asdf';
       const user: User = new User();
@@ -298,9 +305,24 @@ describe('AuthService', () => {
     });
   });
 
+  /**
+   * refresh token기반 access token 재발급 절차.
+   * refresh token에는 userId 존재함.
+   * success
+   * case 1. 성공
+   *
+   * fail
+   * case 1. refresh token내에 userId 존재함. token entity의 발급자와 로그인 유저의 id가 다른 경우.
+   * case 2. 사용자 cookie의 refresh token과 access token이 database에 저장된 refresh token, access token과 매칭되지 않는경우.
+   *
+  * */
   describe('refreshAccessToken', () => {
-    it('refreshAccessToken-success', async () => {});
+    it('success', async () => {});
 
-    it('refreshAccessToken-fail', async () => {});
+    describe('fail', async () => {
+		it('different issuer', async () => {})
+
+		it('matching fail', async () => {})
+	});
   });
 });
