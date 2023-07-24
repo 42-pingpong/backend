@@ -20,7 +20,7 @@ export interface accTokenPayload {
 
 export interface IUser {
   id?: number;
-  full_name?: string;
+  fullName?: string;
   level?: number;
   nickName?: string;
   selfIntroduction?: string;
