@@ -40,7 +40,7 @@ export default registerAs('database', () => ({
     process.env.NODE_ENV === 'development' ||
     process.env.NODE_ENV === 'e2e' ||
     process.env.NODE_ENV === 'test'
-      ? true //true for dev
+      ? false //true for dev
       : false,
   logging:
     process.env.NODE_ENV === 'development' ||
