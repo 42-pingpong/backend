@@ -5,12 +5,14 @@ import { Request, Response } from 'express';
 import { AuthGuard } from '@nestjs/passport';
 import { JwtService } from '@nestjs/jwt';
 import { ApiOperation } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   //need auth guard
@@ -21,12 +23,10 @@ export class AuthController {
     return null;
   }
 
+  @ApiOperation({ summary: '42 redirect', description: `redirect to front` })
   @UseGuards(AuthGuard('42'))
   @Get('42/redirect')
-  async redirect42(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  async redirect42(@Req() req: Request, @Res() res: Response) {
     const rtn = await this.authService.login(req.user);
     res.cookie('accessToken', rtn.accessToken, {
       httpOnly: true,
@@ -38,14 +38,17 @@ export class AuthController {
       //this expires is checked by browser
       expires: new Date(Date.now() + 1000 * 60),
     });
-    res.redirect('http://localhost:3000/login');
+    res.redirect(
+      `${this.configService.get('url').frontHost}:${
+        this.configService.get('url').frontPort
+      }/`,
+    );
   }
 
   @ApiOperation({ summary: 'refresh token end point' })
   @UseGuards(AuthGuard('jwt-refresh')) //access token strategy는 AuthGuard('jwt')로 대체
   @Get('refresh')
   async refresh(@Req() req: Request, @Res() res: Response) {
-    console.log(req.cookies);
     console.log(req.user);
   }
 }
