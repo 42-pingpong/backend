@@ -28,7 +28,7 @@ export class AuthService {
    *
    * @return ITokens
    */
-  async login(user: IUser) {
+  async login(user: IUser): Promise<ITokens> {
     const foundUser = await this.userRepository.findOne({
       where: { id: user.id },
     });

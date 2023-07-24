@@ -12,7 +12,8 @@ import { FriendRequest } from 'src/entities/user/friendRequest.entity';
 import { Token } from 'src/entities/auth/token.entity';
 
 export default registerAs('database', () => ({
-  host: process.env.POSTGRES_DBHOST,
+  host:
+    process.env.NODE_ENV === 'test' ? 'localhost' : process.env.POSTGRES_DBHOST,
   port: parseInt(process.env.POSTGRES_PORT),
   username: process.env.POSTGRES_USER,
   password: process.env.POSTGRES_PASSWORD,
@@ -31,15 +32,11 @@ export default registerAs('database', () => ({
     Token,
   ],
   synchronize:
-    process.env.NODE_ENV === 'development' ||
-    process.env.NODE_ENV === 'e2e' ||
-    process.env.NODE_ENV === 'test'
+    process.env.NODE_ENV === 'development'
       ? true //true for dev
       : false,
   dropSchema:
-    process.env.NODE_ENV === 'development' ||
-    process.env.NODE_ENV === 'e2e' ||
-    process.env.NODE_ENV === 'test'
+    process.env.NODE_ENV === 'development'
       ? true //true for dev
       : false,
   logging:

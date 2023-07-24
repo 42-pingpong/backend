@@ -6,41 +6,39 @@ import * as request from 'supertest';
 import { DataSource, Repository } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { UpdateUserDto } from 'src/restapi/user/dto/update-user.dto';
+import { user1 } from 'test/fixtures/users/user-1';
+import { user2 } from 'test/fixtures/users/user-2';
+import { ConfigService } from '@nestjs/config';
 
 describe('User -/user (e2e)', () => {
-  let app: INestApplication;
   let datasource: DataSource;
   let repository: Repository<User>;
+  let configService: ConfigService;
+  let agent: request.SuperAgentTest;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [testDatabase, UserModule],
+      imports: [testDatabase],
     }).compile();
 
     datasource = moduleFixture.get<DataSource>(DataSource);
+    configService = moduleFixture.get<ConfigService>(ConfigService);
     repository = datasource.getRepository(User);
-    app = moduleFixture.createNestApplication();
-    await moduleFixture.init();
-    await app.listen(parseInt(process.env.NEST_PORT_E2E));
+    agent = request.agent(configService.get<string>('url.testUrl'));
   });
 
-  const defaultUser = new User();
-  defaultUser.id = 1;
-  defaultUser.nickName = 'test';
-  defaultUser.level = 5.5;
-  defaultUser.profile = 'ttt';
-  defaultUser.email = 'defualtEmail';
-  defaultUser.selfIntroduction = '00';
+  const defaultUser = user1;
 
   describe('GET /user{id} test', () => {
     it('GET /user/{id} success', async () => {
-      await repository.save(defaultUser);
-      const res = await request(app.getHttpServer()).get('/user/1').expect(200);
+      const rtn = await repository.save(defaultUser);
+      console.log(rtn);
+      const res = await agent.get('/user/1').expect(200);
       expect(res.body).toEqual(defaultUser);
     });
 
     it('GET /user/{id} not found', async () => {
-      return request(app.getHttpServer()).get('/user/5').expect(404);
+      return agent.get('/user/5').expect(404);
     });
   });
 
@@ -51,7 +49,7 @@ describe('User -/user (e2e)', () => {
       updateUserDto.nickName = 'updateNickname';
       updateUserDto.email = 'updateEmail';
 
-      const res = await request(app.getHttpServer())
+      const res = await agent
         .patch(`/user/${defaultUser.id}`)
         .send(updateUserDto)
         .expect(200);
@@ -67,27 +65,18 @@ describe('User -/user (e2e)', () => {
     });
 
     it('PATCH /user/{id} not found', async () => {
-      await request(app.getHttpServer())
-        .patch(`/user/5`)
-        .send(updateUserDto)
-        .expect(404);
+      await agent.patch(`/user/5`).send(updateUserDto).expect(404);
     });
 
     it('PATCH /user/{id} nickname confict error', async () => {
-      const newUser = new User();
-      newUser.id = 2;
-      newUser.nickName = 'newUser';
-      newUser.level = 5.5;
-      newUser.profile = 'ttt';
-      newUser.email = 'newEmail';
-      newUser.selfIntroduction = '00';
+      const newUser = user2;
 
       await repository.save(newUser);
 
       updateUserDto.nickName = 'newUser';
       updateUserDto.email = 'updateEmail';
 
-      await request(app.getHttpServer())
+      await agent
         .patch(`/user/${defaultUser.id}`)
         .send(updateUserDto)
         .expect(409);
@@ -97,7 +86,7 @@ describe('User -/user (e2e)', () => {
       updateUserDto.nickName = 'not confNickname';
       updateUserDto.email = 'newEmail'; // conflit with newUser
 
-      await request(app.getHttpServer())
+      await agent
         .patch(`/user/${defaultUser.id}`)
         .send(updateUserDto)
         .expect(409);
@@ -106,6 +95,5 @@ describe('User -/user (e2e)', () => {
 
   afterAll(async () => {
     await datasource.destroy();
-    await app.close();
   });
 });

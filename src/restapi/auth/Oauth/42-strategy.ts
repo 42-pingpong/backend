@@ -25,6 +25,7 @@ export class FourtyTwoStrategy extends PassportStrategy(Strategy, '42') {
   async validate(accessToken: string, refreshToken: string) {
     try {
       console.log('validate');
+      console.log(accessToken, refreshToken);
       //resource server에 자원요청
       const response = await fetch('https://api.intra.42.fr/v2/me', {
         method: 'GET',

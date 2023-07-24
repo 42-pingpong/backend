@@ -8,6 +8,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import database from 'src/config/database';
+import auth from 'src/config/auth';
+import url from 'src/config/url';
+import oauth42 from 'src/config/oauth42';
 
 @Module({
   imports: [
@@ -17,7 +20,7 @@ import database from 'src/config/database';
           isGlobal: true,
           ignoreEnvVars: true,
           envFilePath: '.env.test',
-          load: [database],
+          load: [database, url, auth, oauth42],
         }),
       ],
       inject: [ConfigService],
@@ -31,8 +34,6 @@ import database from 'src/config/database';
         password: configService.get<string>('database.password'),
         database: configService.get<string>('database.database'),
         entities: configService.get<any[]>('database.entities'),
-        synchronize: true, //for development
-        dropSchema: true, //for development
       }),
     }),
   ],
