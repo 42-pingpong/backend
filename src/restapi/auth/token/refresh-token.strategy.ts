@@ -3,6 +3,7 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { Request } from 'express';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { createCookieExtractor } from './tokenExtractor';
 
 @Injectable()
 export class RefreshTokenStrategy extends PassportStrategy(
@@ -11,14 +12,17 @@ export class RefreshTokenStrategy extends PassportStrategy(
 ) {
   constructor(private readonly configService: ConfigService) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        createCookieExtractor('refreshToken'),
+      ]),
       secretOrKey: configService.get('jwt.refresh_secret'),
       passReqToCallback: true,
     });
   }
 
   validate(req: Request, payload: any) {
-    const refreshToken = req.get('Authorization').replace('Bearer', '').trim();
+    console.log(req.cookies);
+    const refreshToken = req.cookies['refreshToken'];
     return { ...payload, refreshToken };
   }
 }

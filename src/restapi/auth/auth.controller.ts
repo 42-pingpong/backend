@@ -29,6 +29,7 @@ export class AuthController {
   ) {
     const rtn = await this.authService.login(req.user);
     res.cookie('accessToken', rtn.accessToken, {
+      httpOnly: true,
       //this expires is checked by browser
       expires: new Date(Date.now() + 1000 * 30),
     });
@@ -43,10 +44,8 @@ export class AuthController {
   @ApiOperation({ summary: 'refresh token end point' })
   @UseGuards(AuthGuard('jwt-refresh')) //access token strategy는 AuthGuard('jwt')로 대체
   @Get('refresh')
-  async refresh(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    console.log(res);
+  async refresh(@Req() req: Request, @Res() res: Response) {
+    console.log(req.cookies);
+    console.log(req.user);
   }
 }
