@@ -1,15 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, ExtractJwt } from 'passport-jwt';
+import { ITokenPayload } from 'src/interface/IUser.types';
 import { createCookieExtractor } from './tokenExtractor';
-
-interface accTokenPayload {
-  sub: string;
-  iat: number;
-  exp: number;
-}
 
 @Injectable()
 export class AccessTokenStrategy extends PassportStrategy(Strategy, 'jwt') {
@@ -23,7 +17,11 @@ export class AccessTokenStrategy extends PassportStrategy(Strategy, 'jwt') {
     });
   }
 
-  async validate(payload: accTokenPayload) {
+  /**
+   * check only expiration in access token
+   * 자원접근 제한을 위한 strategy
+   * */
+  async validate(payload: ITokenPayload) {
     console.log('payload:', payload);
     console.log(Date.now() / 1000, payload.exp);
     return payload;

@@ -33,11 +33,11 @@ export class AuthService {
       where: { id: user.id },
     });
     if (foundUser) {
-      return { ...(await this.issueTokens(foundUser)) };
+      return { ...(await this.issueTokens(foundUser.id)) };
     } else {
       const newUser = await this.register(user);
       return {
-        ...(await this.issueTokens(newUser)),
+        ...(await this.issueTokens(newUser.id)),
       };
     }
   }
@@ -69,18 +69,20 @@ export class AuthService {
    *
    * @return ITokens: 발급된 토큰
    */
-  async issueTokens(user: User): Promise<ITokens> {
+  async issueTokens(userId: number): Promise<ITokens> {
     // 토큰 발급
     try {
       const tokens: ITokens = {
-        accessToken: await this.issueAccessToken(user),
-        refreshToken: await this.issueRefreshToken(user),
+        accessToken: await this.issueAccessToken(userId),
+        refreshToken: await this.issueRefreshToken(userId),
       };
       // 토큰 저장
       const token = new Token();
-      token.owner = user;
+      token.ownerId = userId;
       token.refreshToken = tokens.refreshToken;
       token.accessToken = tokens.accessToken;
+      //!! 토큰 저장시 기존 토큰 삭제
+      await this.tokenRepository.delete({ ownerId: userId });
       await this.tokenRepository.save(token);
       return tokens;
     } catch (e) {
@@ -95,10 +97,10 @@ export class AuthService {
    *
    * @return string
    */
-  async issueRefreshToken(user: User): Promise<string> {
+  async issueRefreshToken(userId: number): Promise<string> {
     const refreshToken = await this.jwtService.signAsync(
       {
-        sub: user.id,
+        sub: userId,
       },
       {
         // this expires check in refresh token guard
@@ -116,10 +118,10 @@ export class AuthService {
    *
    * @return string
    */
-  async issueAccessToken(user: User): Promise<string> {
+  async issueAccessToken(userId: number): Promise<string> {
     const accessToken = await this.jwtService.signAsync(
       {
-        sub: user.id,
+        sub: userId,
       },
       {
         // this expires check in access token guard

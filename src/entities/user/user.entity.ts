@@ -54,7 +54,7 @@ export class User {
     type: 'varchar',
     length: 50,
   })
-  full_name: string;
+  fullName: string;
 
   @Column({
     type: 'varchar',

@@ -1,3 +1,5 @@
+import { ITokens } from './ITokens.types';
+
 /**
  * @brief 유저 인터페이스
  * @description 유저의 정보를 담는 인터페이스
@@ -10,12 +12,24 @@
  * @param email: 유저의 이메일
  *
  */
-export interface jwtPayload extends IUser, accTokenPayload {}
+export interface jwtPayload extends IUser, ITokenPayload, ITokens {}
 
-export interface accTokenPayload {
-  sub: string;
-  iat: number;
-  exp: number;
+export interface ITokenPayload {
+  /**
+   * @brief 토큰의 발급자
+   * */
+  sub?: string;
+
+  /**
+   * @brief 토큰의 발급 시간
+   *
+   */
+  iat?: number;
+
+  /**
+   * @brief 토큰의 만료 시간
+   * */
+  exp?: number;
 }
 
 export interface IUser {

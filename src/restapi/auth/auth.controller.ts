@@ -1,9 +1,8 @@
-import { Controller, Post, Body, UseGuards, Param } from '@nestjs/common';
+import { Controller, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Get, Req, Res } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AuthGuard } from '@nestjs/passport';
-import { JwtService } from '@nestjs/jwt';
 import { ApiOperation } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 
@@ -11,7 +10,6 @@ import { ConfigService } from '@nestjs/config';
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
   ) {}
 
@@ -49,6 +47,20 @@ export class AuthController {
   @UseGuards(AuthGuard('jwt-refresh')) //access token strategy는 AuthGuard('jwt')로 대체
   @Get('refresh')
   async refresh(@Req() req: Request, @Res() res: Response) {
-    console.log(req.user);
+    res.cookie('accessToken', req.user.accessToken, {
+      httpOnly: true,
+      //this expires is checked by browser
+      expires: new Date(Date.now() + 1000 * 30),
+    });
+    res.cookie('refreshToken', req.user.refreshToken, {
+      httpOnly: true,
+      //this expires is checked by browser
+      expires: new Date(Date.now() + 1000 * 60),
+    });
+    res.redirect(
+      `${this.configService.get('url').frontHost}:${
+        this.configService.get('url').frontPort
+      }/`,
+    );
   }
 }

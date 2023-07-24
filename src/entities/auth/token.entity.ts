@@ -31,4 +31,10 @@ export class Token {
   @ManyToOne(() => User, (user) => user.tokens)
   @JoinColumn()
   owner: User;
+
+  @Column({
+    type: 'integer',
+    nullable: false,
+  })
+  ownerId: number;
 }

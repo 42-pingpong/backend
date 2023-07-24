@@ -3,6 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-oauth2';
 import fetch from 'node-fetch';
 import { CreateUserDto } from 'src/restapi/user/dto/create-user.dto';
+import { IUser } from 'src/interface/IUser.types';
 
 @Injectable()
 export class FourtyTwoStrategy extends PassportStrategy(Strategy, '42') {
@@ -33,7 +34,7 @@ export class FourtyTwoStrategy extends PassportStrategy(Strategy, '42') {
         },
       });
       const json = await response.json();
-      const createUserDto: CreateUserDto = {
+      const user: IUser = {
         id: json.id,
         level: json.cursus_users[1].level,
         fullName: json.usual_full_name,
@@ -43,7 +44,7 @@ export class FourtyTwoStrategy extends PassportStrategy(Strategy, '42') {
         email: json.email,
       };
       return {
-        ...createUserDto,
+        ...user,
       };
     } catch (e) {
       throw new InternalServerErrorException();
