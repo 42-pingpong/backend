@@ -4,10 +4,12 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { User } from '../user/user.entity';
 
 @Entity()
+@Index(['owner'])
 export class Token {
   @PrimaryGeneratedColumn()
   id: number;
