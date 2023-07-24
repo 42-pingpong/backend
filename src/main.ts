@@ -19,6 +19,11 @@ async function bootstrap() {
 
   app.use(logger);
 
+  /**
+   * http only cookie 사용위함.
+   * */
+  app.use(cookieParser());
+
   //CORS
   app.enableCors({
     origin: true,
