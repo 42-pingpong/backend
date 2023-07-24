@@ -7,12 +7,13 @@ import { appDatabase } from './datasource/appdatabase';
 import { ConfigModule } from '@nestjs/config';
 import database from './config/database';
 import auth from './config/auth';
+import url from './config/url';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [database, auth],
+      load: [database, auth, url],
     }),
     appDatabase,
     ChatModule,
