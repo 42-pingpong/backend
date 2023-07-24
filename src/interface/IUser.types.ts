@@ -10,11 +10,20 @@
  * @param email: 유저의 이메일
  *
  */
+export interface jwtPayload extends IUser, accTokenPayload {}
+
+export interface accTokenPayload {
+  sub: string;
+  iat: number;
+  exp: number;
+}
+
 export interface IUser {
-  id: number;
-  level: number;
-  nickName: string;
-  selfIntroduction: string;
-  profile: string;
-  email: string;
+  id?: number;
+  full_name?: string;
+  level?: number;
+  nickName?: string;
+  selfIntroduction?: string;
+  profile?: string;
+  email?: string;
 }

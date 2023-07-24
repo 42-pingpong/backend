@@ -21,6 +21,12 @@ export class CreateUserDto {
   email: string;
 
   @ApiProperty({
+    description: 'User Full Name',
+    example: 'MyungHwan Kang',
+  })
+  fullName: string;
+
+  @ApiProperty({
     description: 'User Profile Image',
     example: 'https://cdn.intra.42.fr/users/myukang.jpg',
   })

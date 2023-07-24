@@ -52,6 +52,12 @@ export class User {
 
   @Column({
     type: 'varchar',
+    length: 50,
+  })
+  full_name: string;
+
+  @Column({
+    type: 'varchar',
     length: 400,
   })
   selfIntroduction: string;
