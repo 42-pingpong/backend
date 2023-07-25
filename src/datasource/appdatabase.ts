@@ -7,6 +7,7 @@
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { DataSource } from 'typeorm';
 
 @Module({
   imports: [
@@ -30,6 +31,10 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
         dropSchema: configService.get<boolean>('database.dropSchema'), //for development
         logging: configService.get('database.logging'),
       }),
+      dataSourceFactory: async (options) => {
+        const dataSource = await new DataSource(options).initialize();
+        return dataSource;
+      },
     }),
   ],
 })

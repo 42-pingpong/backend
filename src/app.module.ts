@@ -8,12 +8,13 @@ import { ConfigModule } from '@nestjs/config';
 import database from './config/database';
 import auth from './config/auth';
 import url from './config/url';
+import oauth42 from './config/oauth42';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [database, auth, url],
+      load: [database, auth, url, oauth42],
     }),
     appDatabase,
     ChatModule,

@@ -11,6 +11,7 @@ import database from 'src/config/database';
 import auth from 'src/config/auth';
 import url from 'src/config/url';
 import oauth42 from 'src/config/oauth42';
+import { DataSource } from 'typeorm';
 
 @Module({
   imports: [
@@ -35,6 +36,10 @@ import oauth42 from 'src/config/oauth42';
         database: configService.get<string>('database.database'),
         entities: configService.get<any[]>('database.entities'),
       }),
+      dataSourceFactory: async (options) => {
+        const dataSource = await new DataSource(options).initialize();
+        return dataSource;
+      },
     }),
   ],
 })
