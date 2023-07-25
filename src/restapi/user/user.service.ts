@@ -1,26 +1,59 @@
-import { Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { EntityManager, Repository } from 'typeorm';
+import { User } from 'src/entities/user/user.entity';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class UserService {
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+  constructor(
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+  ) {}
+
+  async create(createUserDto: CreateUserDto): Promise<User> {
+    return await this.userRepository.save(createUserDto);
   }
 
-  findAll() {
-    return `This action returns all user`;
+  async findOne(id: number): Promise<User> {
+    //단순 조회
+    const user = await this.userRepository.findOne({
+      where: { id: id },
+    });
+    if (user) return user;
+    else throw new NotFoundException();
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
-  }
+  async update(id: number, updateUserDto: UpdateUserDto): Promise<void> {
+    //이거 테스트코드 어케짬...?
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
+    await this.userRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        //유저 조회
+        const user = await manager.findOne(User, {
+          where: { id: id },
+        });
+        if (!user) throw new NotFoundException();
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+        //닉네임 중복 체크
+        const dupNickNameUser = await manager.findOne(User, {
+          where: { nickName: updateUserDto.nickName },
+        });
+        if (dupNickNameUser) throw new ConflictException();
+
+        const dupEmailUser = await manager.findOne(User, {
+          where: { email: updateUserDto.email },
+        });
+        if (dupEmailUser) throw new ConflictException();
+
+        //닉네임 변경
+        await manager.update(User, id, updateUserDto);
+      },
+    );
   }
 }

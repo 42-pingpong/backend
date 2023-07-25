@@ -7,6 +7,7 @@ import {
   ManyToMany,
   JoinTable,
   OneToMany,
+  JoinColumn,
 } from 'typeorm';
 import { User } from '../user/user.entity';
 import { GroupChatMessage } from './groupChatMessage.entity';
@@ -37,6 +38,7 @@ export class GroupChat {
   maxParticipants: number;
 
   @ManyToOne(() => User, (user) => user.groupChats)
+  @JoinColumn()
   owner: User;
 
   @ManyToMany(() => User, (user) => user.bannedGroupChats)

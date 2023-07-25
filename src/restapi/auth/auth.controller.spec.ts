@@ -1,3 +1,4 @@
+import {InternalServerErrorException} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
@@ -17,4 +18,33 @@ describe('AuthController', () => {
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
+
+  describe('login42', () => {
+	it('login42-success', async () => {
+	});
+
+	it('login42-fail', async () => {
+
+		expect(
+			await controller.login42()
+		).toThrowError(InternalServerErrorException)
+	});
+  }
+
+  describe('redirect42', () => {
+	it('redirect42-success', async () => {
+
+	});
+
+	it('redirect42-fail', async () => {});
+
+  }
+
+  describe('refresh', () => {
+	it('refresh-success', async () => {});
+
+	it('refresh-fail', async () => {});
+  }
+
+
 });

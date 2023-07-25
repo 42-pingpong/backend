@@ -1,34 +1,55 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Body,
+  Patch,
+  Param,
+  Res,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import {
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import { Request } from 'express';
+import { CreateUserDto } from './dto/create-user.dto';
+import { AccessTokenGuard } from '../auth/Guards/accessToken.guard';
 
+@ApiTags('user')
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.userService.create(createUserDto);
+  @ApiOperation({
+    summary: 'get my info(profile)',
+    description: '내 정보 조회',
+  })
+  @ApiResponse({
+    status: 200,
+    type: CreateUserDto,
+  })
+  @UseGuards(AccessTokenGuard)
+  @Get('/me')
+  async getMe(@Req() req: Request) {
+    return await this.userService.findOne(req.user.id);
   }
 
-  @Get()
-  findAll() {
-    return this.userService.findAll();
-  }
-
+  @ApiParam({ name: 'id', type: String })
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.userService.findOne(+id);
+  async findOne(@Param('id') id: string) {
+    return await this.userService.findOne(+id);
   }
 
+  @ApiBody({ type: UpdateUserDto })
+  @ApiParam({ name: 'id', type: String })
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(+id, updateUserDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.userService.remove(+id);
+  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    await this.userService.update(+id, updateUserDto);
   }
 }

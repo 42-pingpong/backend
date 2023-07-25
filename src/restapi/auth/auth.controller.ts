@@ -1,50 +1,77 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CreateAuthDto } from './dto/create-auth.dto';
 import { Get, Req, Res } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { AuthGuard } from '@nestjs/passport';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
-
-  @Post()
-  create(@Body() createAuthDto: CreateAuthDto) {
-    return this.authService.create(createAuthDto);
-  }
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
   //need auth guard
-  @Get('42/login')
+  @ApiOperation({
+    summary: '42 login',
+    description: '42 login버튼에 달아주세요',
+  })
   @UseGuards(AuthGuard('42'))
+  @Get('42/login')
   async login42() {
     return null;
   }
 
-  @Get('42/redirect')
+  @ApiOperation({
+    summary: '42 redirect',
+    description: '42 login 후 redirect url에서 처리. 직접사용금지',
+  })
   @UseGuards(AuthGuard('42'))
-  async redirect42(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    console.log('profile:', req.user);
-    if (!req.user) {
-      res.statusCode = 401;
-      res.send('Authorization failed');
-    } else {
-      res.statusCode = 200;
-      // database에서 req.user.id를 이용해서 유저정보를 가져와.
-      // const dbUser = await this.authService.findUser(req.user.id);
+  @Get('42/redirect')
+  async redirect42(@Req() req: Request, @Res() res: Response) {
+    const rtn = await this.authService.login(req.user);
+    res.cookie('accessToken', rtn.accessToken, {
+      httpOnly: true,
+      //this expires is checked by browser
+      expires: new Date(Date.now() + 1000 * 30),
+    });
+    res.cookie('refreshToken', rtn.refreshToken, {
+      httpOnly: true,
+      //this expires is checked by browser
+      expires: new Date(Date.now() + 1000 * 60),
+    });
+    res.redirect(
+      `${this.configService.get('url').frontHost}:${
+        this.configService.get('url').frontPort
+      }/`,
+    );
+  }
 
-      // if (dbUser) {
-      //dbUser의 정보를 가지고 jwt token을 만들어서 발급
-      // }
-      // else {
-      //   //db에 req.user (최초 로그인한 유저) 정보를 저장하고
-      //   jwt 토큰을 발급한다.
-      // }
-
-      res.send('ttt');
-    }
+  @ApiOperation({
+    summary: 'refresh token end point',
+    description:
+      'refresh, access token이 cookie에 있는 상태로 요청시, cookie의 acc, ref token을 재발급합니다.',
+  })
+  @UseGuards(AuthGuard('jwt-refresh')) //access token strategy는 AuthGuard('jwt')로 대체
+  @Get('refresh')
+  async refresh(@Req() req: Request, @Res() res: Response) {
+    res.cookie('accessToken', req.user.accessToken, {
+      httpOnly: true,
+      //this expires is checked by browser
+      expires: new Date(Date.now() + 1000 * 30),
+    });
+    res.cookie('refreshToken', req.user.refreshToken, {
+      httpOnly: true,
+      //this expires is checked by browser
+      expires: new Date(Date.now() + 1000 * 60),
+    });
+    res.redirect(
+      `${this.configService.get('url').frontHost}:${
+        this.configService.get('url').frontPort
+      }/`,
+    );
   }
 }

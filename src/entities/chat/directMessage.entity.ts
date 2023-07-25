@@ -20,5 +20,6 @@ export class DirectMessage {
   messageInfoId: number;
 
   @ManyToOne(() => User, (user) => user.directMessages)
+  @JoinColumn()
   receivedUserId: number;
 }
