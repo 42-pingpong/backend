@@ -4,7 +4,6 @@ import {
   Body,
   Patch,
   Param,
-  Res,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -17,7 +16,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { CreateUserDto } from './dto/create-user.dto';
 import { AccessTokenGuard } from '../auth/Guards/accessToken.guard';
 
