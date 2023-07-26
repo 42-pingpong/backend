@@ -6,12 +6,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { User } from 'src/entities/user/user.entity';
 import { CreateUserDto } from 'src/restapi/user/dto/create-user.dto';
-import {
-  ITokenPayload,
-  IUser,
-  ITokens,
-  IJwtPayload,
-} from 'src/interface/IUser.types';
+import { IUser, ITokens, IJwtPayload } from 'src/interface/IUser.types';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Token } from 'src/entities/auth/token.entity';
@@ -162,5 +157,9 @@ export class AuthService {
       const tokens: ITokens = await this.issueTokens(databaseTok.ownerId);
       return tokens;
     }
+  }
+
+  async logout(userId: number): Promise<void> {
+    await this.tokenRepository.delete({ ownerId: userId });
   }
 }

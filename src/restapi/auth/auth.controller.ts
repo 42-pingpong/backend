@@ -10,6 +10,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { FTAuthGuard } from './Guards/ft.guard';
 import { RefreshTokenGuard } from './Guards/refreshToken.guard';
+import { AccessTokenGuard } from './Guards/accessToken.guard';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -90,5 +91,18 @@ export class AuthController {
       res.clearCookie('refreshToken');
       res.sendStatus(401);
     }
+  }
+
+  @ApiOperation({
+    summary: 'logout',
+    description: '로그아웃',
+  })
+  @UseGuards(AccessTokenGuard)
+  @Get('/logout')
+  async logout(@Req() req: Request, @Res() res: Response) {
+    await this.authService.logout(+req.user.sub);
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
+    res.sendStatus(200);
   }
 }

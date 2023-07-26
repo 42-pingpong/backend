@@ -8,12 +8,16 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { EntityManager, Repository } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Token } from 'src/entities/auth/token.entity';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+
+    @InjectRepository(Token)
+    private tokenRepository: Repository<Token>,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
