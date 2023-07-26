@@ -6,23 +6,14 @@
 
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import database from 'src/config/database';
-import auth from 'src/config/auth';
-import url from 'src/config/url';
-import oauth42 from 'src/config/oauth42';
+import { ConfigService } from '@nestjs/config';
+import { DataSource } from 'typeorm';
+import { TestConfigModule } from 'src/config/test.config';
 
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
-      imports: [
-        ConfigModule.forRoot({
-          isGlobal: true,
-          ignoreEnvVars: true,
-          envFilePath: '.env.test',
-          load: [database, url, auth, oauth42],
-        }),
-      ],
+      imports: [TestConfigModule],
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
         type: 'postgres',
@@ -35,6 +26,10 @@ import oauth42 from 'src/config/oauth42';
         database: configService.get<string>('database.database'),
         entities: configService.get<any[]>('database.entities'),
       }),
+      dataSourceFactory: async (options) => {
+        const dataSource = await new DataSource(options).initialize();
+        return dataSource;
+      },
     }),
   ],
 })
