@@ -1,34 +1,47 @@
-import { WebSocketGateway, SubscribeMessage, MessageBody } from '@nestjs/websockets';
+import {
+  WebSocketGateway,
+  SubscribeMessage,
+  OnGatewayInit,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
+} from '@nestjs/websockets';
 import { StatusService } from './status.service';
-import { CreateStatusDto } from './dto/create-status.dto';
-import { UpdateStatusDto } from './dto/update-status.dto';
+import { Socket } from 'net';
 
-@WebSocketGateway()
-export class StatusGateway {
+/**
+ * @brief status gateway
+ *
+ * @description 유저 상태정보를 관리하는 gateway
+ */
+@WebSocketGateway({
+  namespace: 'status',
+  cors: {
+    origin: '*',
+  },
+  pingTimeout: 2500,
+  pingInterval: 1000,
+  connectionTimeout: 1000,
+  transports: ['websocket'],
+})
+export class StatusGateway
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+{
   constructor(private readonly statusService: StatusService) {}
 
-  @SubscribeMessage('createStatus')
-  create(@MessageBody() createStatusDto: CreateStatusDto) {
-    return this.statusService.create(createStatusDto);
+  afterInit(server: any) {
+    console.log('status gateway init');
   }
 
-  @SubscribeMessage('findAllStatus')
-  findAll() {
-    return this.statusService.findAll();
+  @SubscribeMessage('login')
+  handleConnection(client: Socket) {
+    console.log('status gateway connection');
+    console.log('client :', client);
+    return 'hello';
   }
 
-  @SubscribeMessage('findOneStatus')
-  findOne(@MessageBody() id: number) {
-    return this.statusService.findOne(id);
-  }
-
-  @SubscribeMessage('updateStatus')
-  update(@MessageBody() updateStatusDto: UpdateStatusDto) {
-    return this.statusService.update(updateStatusDto.id, updateStatusDto);
-  }
-
-  @SubscribeMessage('removeStatus')
-  remove(@MessageBody() id: number) {
-    return this.statusService.remove(id);
+  @SubscribeMessage('logout')
+  handleDisconnect(client: Socket) {
+    console.log('status gateway disconnect');
+    return 'hello';
   }
 }

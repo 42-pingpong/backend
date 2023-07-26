@@ -37,6 +37,7 @@ export class UserController {
   @UseGuards(AccessTokenGuard)
   @Get('/me')
   async getMe(@Req() req: Request) {
+    console.log(req.session.id);
     return await this.userService.findOne(req.user.id);
   }
 

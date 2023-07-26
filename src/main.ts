@@ -5,6 +5,9 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { IJwtPayload } from './interface/IUser.types';
 import { ValidationPipe } from '@nestjs/common';
 import { logger } from './logger/logger.middleware';
+import * as session from 'express-session';
+import RedisStore from 'connect-redis';
+import { createClient } from 'redis';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -18,6 +21,29 @@ declare global {
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  const redisClient = createClient({
+    url: 'redis://redis:6379',
+  });
+  await redisClient.connect();
+
+  const redisStore = new RedisStore({
+    client: redisClient,
+    prefix: 'session:',
+  });
+
+  app.use(
+    session({
+      store: redisStore,
+      resave: false,
+      saveUninitialized: true,
+      secret: 'tttt',
+      cookie: {
+        httpOnly: true,
+        secure: false,
+      },
+    }),
+  );
 
   app.use(logger);
 
