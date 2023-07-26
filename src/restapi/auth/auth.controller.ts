@@ -67,29 +67,28 @@ export class AuthController {
   @Get('refresh')
   async refresh(@Req() req: Request, @Res() res: Response) {
     try {
-      await this.authService.refreshTokens(req.user);
+      const tokens = await this.authService.refreshTokens(req.user);
+      res.cookie('accessToken', tokens.accessToken, {
+        httpOnly: true,
+        //this expires is checked by browser
+        //access token은 60초간 유효
+        expires: new Date(Date.now() + 1000 * 60),
+      });
+      res.cookie('refreshToken', tokens.refreshToken, {
+        httpOnly: true,
+        //this expires is checked by browser
+        //refresh token은 7일간 유효
+        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+      });
+      res.redirect(
+        `${this.configService.get('url').frontHost}:${
+          this.configService.get('url').frontPort
+        }/`,
+      );
     } catch (e) {
       res.clearCookie('accessToken');
       res.clearCookie('refreshToken');
       res.sendStatus(401);
     }
-
-    res.cookie('accessToken', req.user.accessToken, {
-      httpOnly: true,
-      //this expires is checked by browser
-      //access token은 60초간 유효
-      expires: new Date(Date.now() + 1000 * 60),
-    });
-    res.cookie('refreshToken', req.user.refreshToken, {
-      httpOnly: true,
-      //this expires is checked by browser
-      //refresh token은 7일간 유효
-      expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
-    });
-    res.redirect(
-      `${this.configService.get('url').frontHost}:${
-        this.configService.get('url').frontPort
-      }/`,
-    );
   }
 }
