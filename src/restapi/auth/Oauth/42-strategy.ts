@@ -2,7 +2,6 @@ import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-oauth2';
 import fetch from 'node-fetch';
-import { CreateUserDto } from 'src/restapi/user/dto/create-user.dto';
 import { IUser } from 'src/interface/IUser.types';
 
 @Injectable()
@@ -24,8 +23,6 @@ export class FourtyTwoStrategy extends PassportStrategy(Strategy, '42') {
 
   async validate(accessToken: string, refreshToken: string) {
     try {
-      console.log('validate');
-      console.log(accessToken, refreshToken);
       //resource server에 자원요청
       const response = await fetch('https://api.intra.42.fr/v2/me', {
         method: 'GET',
@@ -44,9 +41,7 @@ export class FourtyTwoStrategy extends PassportStrategy(Strategy, '42') {
         profile: json.image.link,
         email: json.email,
       };
-      return {
-        ...user,
-      };
+      return user;
     } catch (e) {
       throw new InternalServerErrorException();
     }

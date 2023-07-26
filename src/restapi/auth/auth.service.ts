@@ -1,9 +1,17 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { User } from 'src/entities/user/user.entity';
 import { CreateUserDto } from 'src/restapi/user/dto/create-user.dto';
-import { ITokens } from 'src/interface/ITokens.types';
-import { IUser } from 'src/interface/IUser.types';
+import {
+  ITokenPayload,
+  IUser,
+  ITokens,
+  IJwtPayload,
+} from 'src/interface/IUser.types';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Token } from 'src/entities/auth/token.entity';
@@ -132,10 +140,27 @@ export class AuthService {
     return accessToken;
   }
 
-  /**
-   * @brief refresh token을 검증, 재발급한다.
-   * @description refresh token을 검증하고, refresh token, access token을 재발급해 DB에 저장한다.
-   * @return string
-   */
-  async refreshAccessToken() {}
+  async refreshTokens(jwtPayload: IJwtPayload): Promise<ITokens> {
+    /**
+     * 1. check the issuer
+     * cookie (acc, refresh) <--> database(acc, refresh)
+     * */
+    const databaseTok = await this.tokenRepository.findOne({
+      where: { ownerId: +jwtPayload.sub },
+    });
+    if (
+      //토큰을 발급한적이 없으면
+      !databaseTok ||
+      //마지막으로 발급된 토큰과 일치하지 않으면
+      jwtPayload.accessToken !== databaseTok.accessToken ||
+      //마지막으로 발급된 토큰과 일치하지 않으면
+      jwtPayload.refreshToken !== databaseTok.refreshToken
+    ) {
+      throw new UnauthorizedException();
+    } else {
+      //update
+      const tokens: ITokens = await this.issueTokens(databaseTok.ownerId);
+      return tokens;
+    }
+  }
 }

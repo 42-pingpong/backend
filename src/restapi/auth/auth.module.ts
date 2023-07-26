@@ -14,10 +14,13 @@ import { JwtService } from '@nestjs/jwt';
 import { AccessTokenStrategy } from './token/access-token.strategy';
 import { RefreshTokenStrategy } from './token/refresh-token.strategy';
 import { appDatabase } from 'src/datasource/appdatabase';
+import { FTAuthGuard } from './Guards/ft.guard';
+import { AppConfigModule } from 'src/config/app.config';
 
 @Module({
   imports: [
-    PassportModule,
+    AppConfigModule,
+    PassportModule.register({}),
     appDatabase,
     TypeOrmModule.forFeature([User, Token]),
   ],
@@ -32,6 +35,7 @@ import { appDatabase } from 'src/datasource/appdatabase';
     RefreshTokenStrategy,
     RefreshTokenGuard,
     FourtyTwoStrategy,
+    FTAuthGuard,
   ],
 })
 export class AuthModule {}

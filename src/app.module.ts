@@ -4,18 +4,11 @@ import { GameModule } from './game/game.module';
 import { StatusModule } from './status/status.module';
 import { RestapiModule } from './restapi/restapi.module';
 import { appDatabase } from './datasource/appdatabase';
-import { ConfigModule } from '@nestjs/config';
-import database from './config/database';
-import auth from './config/auth';
-import url from './config/url';
-import oauth42 from './config/oauth42';
+import { AppConfigModule } from './config/app.config';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      load: [database, auth, url, oauth42],
-    }),
+    AppConfigModule,
     appDatabase,
     ChatModule,
     GameModule,

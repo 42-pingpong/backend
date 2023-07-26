@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import * as cookieParser from 'cookie-parser';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { jwtPayload } from './interface/IUser.types';
+import { IJwtPayload } from './interface/IUser.types';
 import { ValidationPipe } from '@nestjs/common';
 import { logger } from './logger/logger.middleware';
 
@@ -10,7 +10,9 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     // eslint-disable-next-line @typescript-eslint/no-empty-interface
-    interface User extends jwtPayload {}
+    interface AuthInfo extends IJwtPayload {}
+    // eslint-disable-next-line @typescript-eslint/no-empty-interface
+    interface User extends IJwtPayload {}
   }
 }
 

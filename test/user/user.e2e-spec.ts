@@ -100,6 +100,9 @@ describe('User -/user (e2e)', () => {
   });
 
   afterAll(async () => {
+    await repository.delete(user1);
+    await repository.delete(user2);
+    await dataSource.destroy();
     await app.close();
   });
 });

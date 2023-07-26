@@ -21,7 +21,7 @@ export class AccessTokenStrategy extends PassportStrategy(Strategy, 'jwt') {
    * check only expiration in access token
    * 자원접근 제한을 위한 strategy
    * */
-  async validate(payload: ITokenPayload) {
+  async validate(payload: ITokenPayload): Promise<ITokenPayload> {
     console.log('payload:', payload);
     console.log(Date.now() / 1000, payload.exp);
     return payload;

@@ -6,8 +6,9 @@
 
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
+import { AppConfigModule } from 'src/config/app.config';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { DataSource } from 'typeorm';
     TypeOrmModule.forRootAsync({
       imports: [
         //config module을 동적모듈로 불러와 사용.
-        ConfigModule,
+        AppConfigModule,
       ],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
