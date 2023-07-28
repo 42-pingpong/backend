@@ -68,23 +68,24 @@ export class StatusGateway
   @SubscribeMessage('connect')
   async handleConnection(@ConnectedSocket() client: any, payload: any) {
     console.log('status gateway connection');
-    console.log(client.handshake.auth);
-    console.log(client.id);
     const sid = decodeURIComponent(
       client.handshake.headers.cookie.split(';')[0].split('=')[1],
     )
       .substring(2)
       .split('.')[0];
     const user = await this.redisClient.get('sess:' + sid);
-    console.log(user);
     const userObj = JSON.parse(user);
-    console.log(userObj.user);
-    this.statusProducer.login(client);
+    this.statusProducer.login(
+      userObj.user,
+      client.id,
+      client.handshake.auth.token,
+    );
   }
 
   @SubscribeMessage('get-friend-status')
   async handleStatusSync(@ConnectedSocket() client: any, payload: any) {
     console.log('status gateway sync');
+    console.log(client.id);
     const sid = decodeURIComponent(
       client.handshake.headers.cookie.split(';')[0].split('=')[1],
     );

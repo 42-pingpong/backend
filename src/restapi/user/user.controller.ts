@@ -6,6 +6,7 @@ import {
   Param,
   Req,
   UseGuards,
+  Post,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -49,11 +50,32 @@ export class UserController {
   @ApiBody({ type: UpdateUserDto })
   @ApiParam({ name: 'id', type: String })
   @Patch(':id')
+  //need auth guard
   async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     try {
       await this.userService.update(+id, updateUserDto);
     } catch (e) {
       console.log(e);
     }
+  }
+
+  @ApiOperation({
+    summary: 'get my friends',
+    description: '내 친구 조회',
+  })
+  @Get('/me/friends/:id')
+  //need auth guard
+  async getMyFriends(@Param('id') id: string) {
+    return await this.userService.getFriends(+id);
+  }
+
+  @ApiOperation({
+    summary: '친구 추가',
+    description: '친구 추가',
+  })
+  @Post('/me/friends/:id')
+  //need auth guard
+  async addFriend(@Param('id') id: string, @Body() friendId: number) {
+    return await this.userService.addFriend(+id, friendId);
   }
 }

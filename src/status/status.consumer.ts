@@ -1,5 +1,8 @@
 import { Process, Processor } from '@nestjs/bull';
+import axios from 'axios';
 import { Job } from 'bull';
+import { UpdateUserDto } from 'src/restapi/user/dto/update-user.dto';
+import { UserJobData } from './interface/user.jobdata';
 
 @Processor('status')
 export class StatusConsumer {
@@ -12,9 +15,29 @@ export class StatusConsumer {
    * @memberof StatusConsumer
    * */
   @Process('login')
-  async login(job: Job<unknown>) {
+  async login(job: Job<UserJobData>) {
     console.log('login');
     console.log(job.data);
+    try {
+      await axios.patch(
+        `http://localhost:10002/api/user/${job.data.user.id}`,
+        {
+          status: 'online',
+          socketId: job.data.clientId,
+        },
+        {
+          headers: {
+            Authorization: job.data.bearerToken,
+          },
+        },
+      );
+    } catch (error) {
+      console.log(error);
+    }
+    //접속중인 친구목록 가져오기
+    //GET /user/friends/:id
+
+    //접속중인 친구목록에게 상태 업데이트 이벤트 보내기
   }
 
   /**

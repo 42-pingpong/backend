@@ -64,4 +64,16 @@ export class UserService {
       },
     );
   }
+
+  async getFriends(id: number): Promise<User[]> {
+    const user = await this.userRepository.find({
+      where: { id: id },
+      relations: ['friendsWith'],
+    });
+    return user;
+  }
+
+  async addFriend(id: number, friendId: number): Promise<void> {
+    console.log(id, friendId);
+  }
 }
