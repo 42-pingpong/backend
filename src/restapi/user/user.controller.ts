@@ -37,6 +37,7 @@ export class UserController {
   @Get('/me')
   async getMe(@Req() req: Request) {
     console.log(req.session.id);
+    req.sessionStore.get(req.sessionID, (err, session) => console.log(session));
     return await this.userService.findOne(req.user.id);
   }
 
