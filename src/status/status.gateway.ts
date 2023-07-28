@@ -4,9 +4,18 @@ import {
   OnGatewayInit,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  ConnectedSocket,
+  WebSocketServer,
 } from '@nestjs/websockets';
-import { StatusService } from './status.service';
 import { Socket } from 'net';
+import { UseGuards } from '@nestjs/common';
+import { AccessTokenGuard } from 'src/restapi/auth/Guards/accessToken.guard';
+import { StatusProducer } from './status.producer';
+import { createClient } from 'redis';
+import RedisStore from 'connect-redis';
+import { JwtService } from '@nestjs/jwt';
+import { Redis } from 'ioredis';
+import { ApiOperation } from '@nestjs/swagger';
 
 /**
  * @brief status gateway
@@ -26,20 +35,62 @@ import { Socket } from 'net';
 export class StatusGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
-  constructor(private readonly statusService: StatusService) {}
+  @WebSocketServer()
+  server: any;
 
-  afterInit(server: any) {
+  private readonly redisClient: Redis;
+
+  constructor(
+    private readonly statusProducer: StatusProducer,
+    private readonly jwtService: JwtService,
+  ) {
+    this.redisClient = new Redis({
+      host: 'redis',
+      port: 6379,
+    });
+  }
+
+  async afterInit() {
     console.log('status gateway init');
   }
 
-  @SubscribeMessage('login')
-  handleConnection(client: Socket) {
+  /**
+   * @brief handleConnection
+   *
+   * @description
+   * connection event handler
+   * 로그인시 유저의 상태정보를 업데이트한다.
+   */
+  @ApiOperation({
+    summary: 'connect',
+    description: '유저의 상태정보를 업데이트한다.',
+  })
+  @SubscribeMessage('connect')
+  async handleConnection(@ConnectedSocket() client: any, payload: any) {
     console.log('status gateway connection');
-    console.log('client :', client);
-    return 'hello';
+    console.log(client.handshake.auth);
+    console.log(client.id);
+    const sid = decodeURIComponent(
+      client.handshake.headers.cookie.split(';')[0].split('=')[1],
+    )
+      .substring(2)
+      .split('.')[0];
+    const user = await this.redisClient.get('sess:' + sid);
+    console.log(user);
+    const userObj = JSON.parse(user);
+    console.log(userObj.user);
+    this.statusProducer.login(client);
   }
 
-  @SubscribeMessage('logout')
+  @SubscribeMessage('get-friend-status')
+  async handleStatusSync(@ConnectedSocket() client: any, payload: any) {
+    console.log('status gateway sync');
+    const sid = decodeURIComponent(
+      client.handshake.headers.cookie.split(';')[0].split('=')[1],
+    );
+  }
+
+  @SubscribeMessage('disconnect')
   handleDisconnect(client: Socket) {
     console.log('status gateway disconnect');
     return 'hello';
