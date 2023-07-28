@@ -43,4 +43,16 @@ export class CreateUserDto {
     example: 1.0,
   })
   level: number;
+
+  @ApiProperty({
+    description: 'User Status',
+    example: 'online',
+  })
+  status: string;
+
+  @ApiProperty({
+    description: 'User Socket Id',
+    example: '1234',
+  })
+  socketId: string;
 }

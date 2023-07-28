@@ -10,15 +10,17 @@ import { user1 } from 'test/fixtures/users/user-1';
 import { user2 } from 'test/fixtures/users/user-2';
 import { ConfigService } from '@nestjs/config';
 import { appDatabase } from 'src/datasource/appdatabase';
+import { UserFactory } from './user.factory';
 
 describe('User -/user (e2e)', () => {
   let app: INestApplication;
   let dataSource: DataSource;
   let repository: Repository<User>;
+  let factory: UserFactory;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [UserModule],
+      imports: [UserModule, UserFactory],
     })
       .overrideModule(appDatabase)
       .useModule(testDatabase)
@@ -29,6 +31,7 @@ describe('User -/user (e2e)', () => {
 
     dataSource = moduleFixture.get<DataSource>(DataSource);
     repository = dataSource.getRepository(User);
+    factory = moduleFixture.get<UserFactory>(UserFactory);
   });
 
   const defaultUser = user1;
@@ -97,6 +100,24 @@ describe('User -/user (e2e)', () => {
         .send(updateUserDto)
         .expect(409);
     });
+
+    describe('GET /me/friends/{id}', () => {
+        const user7 = await repository.save(factory.createUser(7));
+        const user8 = await repository.save(factory.createUser(8));
+        const user9 = await repository.save(factory.createUser(9));
+        const user10 = await  repository.save(factory.createUser(10));
+		user7.friendsWith = [user8, user9, user10];
+		user8.friendsWith = [user7, user10];
+
+	  it('GET /me/friends/{id} success', async () => {
+		const res = await request(app.getHttpServer()).get('/user/me/friends/7').expect(200);
+		expect(res.body).toEqual([user8, user9, user10]);
+
+
+	  }
+    });
+
+	describe('')
   });
 
   afterAll(async () => {

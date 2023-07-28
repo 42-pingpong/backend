@@ -32,11 +32,11 @@ export default registerAs('database', () => ({
     Token,
   ],
   synchronize:
-    process.env.NODE_ENV === 'development'
+    process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
       ? true //true for dev
       : false,
   dropSchema:
-    process.env.NODE_ENV === 'development'
+    process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
       ? true //true for dev
       : false,
   logging:

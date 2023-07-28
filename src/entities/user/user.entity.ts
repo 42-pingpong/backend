@@ -62,6 +62,26 @@ export class User {
   })
   selfIntroduction: string;
 
+  /**
+   * user의 현재 상태
+   * 0: offline
+   * 1: online
+   * 2: in game
+   * */
+  @Column({
+    type: 'enum',
+    enum: ['offline', 'online', 'in game'],
+    default: 'online',
+  })
+  status: string;
+
+  @Column({
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+  })
+  socketId: string;
+
   @OneToMany(() => GroupChat, (groupChat) => groupChat.owner)
   groupChats: GroupChat[];
 

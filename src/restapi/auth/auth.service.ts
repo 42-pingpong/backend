@@ -61,6 +61,8 @@ export class AuthService {
       profile: user.profile,
       selfIntroduction: user.selfIntroduction,
       level: user.level,
+      status: 'online',
+      socketId: null,
     };
     return await this.userRepository.save(createUserDto);
   }
@@ -107,7 +109,7 @@ export class AuthService {
       },
       {
         // this expires check in refresh token guard
-        expiresIn: 60,
+        expiresIn: 60 * 60 * 24 * 7,
         secret: this.configService.get<string>('jwt.refresh_secret'),
       },
     );
@@ -128,7 +130,7 @@ export class AuthService {
       },
       {
         // this expires check in access token guard
-        expiresIn: 30,
+        expiresIn: 60 * 60 * 24,
         secret: this.configService.get<string>('jwt.access_secret'),
       },
     );

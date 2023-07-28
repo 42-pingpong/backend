@@ -4,9 +4,9 @@ import {
   Body,
   Patch,
   Param,
-  Res,
   Req,
   UseGuards,
+  Post,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -17,7 +17,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { CreateUserDto } from './dto/create-user.dto';
 import { AccessTokenGuard } from '../auth/Guards/accessToken.guard';
 
@@ -37,7 +37,8 @@ export class UserController {
   @UseGuards(AccessTokenGuard)
   @Get('/me')
   async getMe(@Req() req: Request) {
-    return await this.userService.findOne(req.user.id);
+    // req.sessionStore.get(req.sessionID, (err, session) => console.log(session));
+    return await this.userService.findOne(+req.user.sub);
   }
 
   @ApiParam({ name: 'id', type: String })
@@ -49,7 +50,32 @@ export class UserController {
   @ApiBody({ type: UpdateUserDto })
   @ApiParam({ name: 'id', type: String })
   @Patch(':id')
+  //need auth guard
   async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    await this.userService.update(+id, updateUserDto);
+    try {
+      await this.userService.update(+id, updateUserDto);
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  @ApiOperation({
+    summary: 'get my friends',
+    description: '내 친구 조회',
+  })
+  @Get('/me/friends/:id')
+  //need auth guard
+  async getMyFriends(@Param('id') id: string) {
+    return await this.userService.getFriends(+id);
+  }
+
+  @ApiOperation({
+    summary: '친구 추가',
+    description: '친구 추가',
+  })
+  @Post('/me/friends/:id')
+  //need auth guard
+  async addFriend(@Param('id') id: string, @Body() friendId: number) {
+    return await this.userService.addFriend(+id, friendId);
   }
 }
