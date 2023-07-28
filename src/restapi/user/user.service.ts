@@ -45,16 +45,20 @@ export class UserService {
         if (!user) throw new NotFoundException();
 
         //닉네임 중복 체크
-        const dupNickNameUser = await manager.findOne(User, {
-          where: { nickName: updateUserDto.nickName },
-        });
-        if (dupNickNameUser) throw new ConflictException();
+        if (updateUserDto.nickName) {
+          const dupNickNameUser = await manager.findOne(User, {
+            where: { nickName: updateUserDto.nickName },
+          });
+          if (dupNickNameUser) throw new ConflictException();
+        }
 
-        const dupEmailUser = await manager.findOne(User, {
-          where: { email: updateUserDto.email },
-        });
-        if (dupEmailUser) throw new ConflictException();
-
+        //이메일 중복 체크
+        if (updateUserDto.email) {
+          const dupEmailUser = await manager.findOne(User, {
+            where: { email: updateUserDto.email },
+          });
+          if (dupEmailUser) throw new ConflictException();
+        }
         //닉네임 변경
         await manager.update(User, id, updateUserDto);
       },

@@ -61,6 +61,8 @@ export class AuthService {
       profile: user.profile,
       selfIntroduction: user.selfIntroduction,
       level: user.level,
+      status: 'online',
+      socketId: null,
     };
     return await this.userRepository.save(createUserDto);
   }

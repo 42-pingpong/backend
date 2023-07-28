@@ -50,6 +50,10 @@ export class UserController {
   @ApiParam({ name: 'id', type: String })
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    await this.userService.update(+id, updateUserDto);
+    try {
+      await this.userService.update(+id, updateUserDto);
+    } catch (e) {
+      console.log(e);
+    }
   }
 }
