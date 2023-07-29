@@ -14,7 +14,9 @@ import { MessageInfo } from '../chat/messageInfo.entity';
 import { GameInvitation } from '../game/gameInvitation.entity';
 import { GameScore } from '../game/gameScore.entity';
 import { BlockUserList } from './blockUserList.entity';
+import { FriendsOf } from './friendsOf.entity';
 import { FriendRequest } from './friendRequest.entity';
+import { FriendsWith } from './friendsWith.entity';
 
 @Entity()
 @Unique(['nickName'])
@@ -62,6 +64,40 @@ export class User {
   })
   selfIntroduction: string;
 
+  /**
+   * user의 현재 상태
+   * 0: offline
+   * 1: online
+   * 2: in game
+   * */
+  @Column({
+    type: 'enum',
+    enum: ['offline', 'online', 'inGame'],
+    default: 'online',
+  })
+  status: string;
+
+  @Column({
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+  })
+  statusSocketId: string;
+
+  @Column({
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+  })
+  chatSocketId: string;
+
+  @Column({
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+  })
+  gameSocketId: string;
+
   @OneToMany(() => GroupChat, (groupChat) => groupChat.owner)
   groupChats: GroupChat[];
 
@@ -74,13 +110,11 @@ export class User {
   @ManyToMany(() => GroupChat, (groupChat) => groupChat.joinedUser)
   joinedGroupChats: GroupChat[];
 
-  @ManyToMany(() => User, (user) => user.friendOf)
-  @JoinTable()
-  friendsWith: User[];
+  @OneToMany(() => FriendsWith, (friendsWith) => friendsWith.user)
+  friendsWith: FriendsWith[];
 
-  @ManyToMany(() => User, (user) => user.friendsWith)
-  @JoinTable()
-  friendOf: User[];
+  @OneToMany(() => FriendsOf, (friendsOf) => friendsOf.user)
+  friendsOf: FriendsOf[];
 
   @OneToMany(() => MessageInfo, (messageInfo) => messageInfo.sender)
   messages: MessageInfo[];

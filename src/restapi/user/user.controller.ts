@@ -4,9 +4,10 @@ import {
   Body,
   Patch,
   Param,
-  Res,
   Req,
   UseGuards,
+  Post,
+  Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -14,12 +15,15 @@ import {
   ApiBody,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Request, Response } from 'express';
+import { Request } from 'express';
 import { CreateUserDto } from './dto/create-user.dto';
 import { AccessTokenGuard } from '../auth/Guards/accessToken.guard';
+import { GetFriendDto } from './dto/get-friend.dto';
+import { AddFriendDto } from './dto/add-friend.dto';
 
 @ApiTags('user')
 @Controller('user')
@@ -37,7 +41,8 @@ export class UserController {
   @UseGuards(AccessTokenGuard)
   @Get('/me')
   async getMe(@Req() req: Request) {
-    return await this.userService.findOne(req.user.id);
+    // req.sessionStore.get(req.sessionID, (err, session) => console.log(session));
+    return await this.userService.findOne(+req.user.sub);
   }
 
   @ApiParam({ name: 'id', type: String })
@@ -49,7 +54,42 @@ export class UserController {
   @ApiBody({ type: UpdateUserDto })
   @ApiParam({ name: 'id', type: String })
   @Patch(':id')
+  //need auth guard
   async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     await this.userService.update(+id, updateUserDto);
+  }
+
+  @ApiOperation({
+    summary: 'get my friends',
+    description: '내 친구 조회',
+  })
+  @ApiResponse({
+    status: 200,
+    type: GetFriendDto,
+  })
+  @ApiQuery({
+    name: 'status',
+    type: String,
+    description: '현재상태',
+    allowEmptyValue: true,
+    isArray: true,
+    required: false,
+    enum: ['online', 'offline', 'inGame', 'all'],
+  })
+  @Get('/me/friends/:id')
+  //need auth guard
+  async getMyFriends(@Param('id') id: string, @Query('status') query: string) {
+    return await this.userService.getFriends(+id);
+  }
+
+  @ApiOperation({
+    summary: '친구 추가',
+    description: '친구 추가',
+  })
+  @ApiBody({ type: AddFriendDto })
+  @Post('/me/friends/:id')
+  //need auth guard
+  async addFriend(@Param('id') id: string, @Body() friend: AddFriendDto) {
+    return await this.userService.addFriend(+id, friend.friendId);
   }
 }

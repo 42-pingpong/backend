@@ -1,4 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { IsNumber } from 'class-validator';
 
 export class CreateUserDto {
   @ApiProperty({
@@ -6,6 +8,8 @@ export class CreateUserDto {
     example: 1,
     required: true,
   })
+  @Type(() => Number)
+  @IsNumber()
   id: number;
 
   @ApiProperty({
@@ -43,4 +47,28 @@ export class CreateUserDto {
     example: 1.0,
   })
   level: number;
+
+  @ApiProperty({
+    description: 'User Status',
+    example: 'online',
+  })
+  status: string;
+
+  @ApiProperty({
+    description: 'User Status Socket Id',
+    example: '1234',
+  })
+  statusSocketId: string;
+
+  @ApiProperty({
+    description: 'User Game Socket Id',
+    example: '1234',
+  })
+  gameSocketId: string;
+
+  @ApiProperty({
+    description: 'User Chat Socket Id',
+    example: '1234',
+  })
+  chatSocketId: string;
 }

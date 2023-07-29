@@ -40,19 +40,18 @@ export class AuthController {
   async redirect42(@Req() req: Request, @Res() res: Response) {
     const rtn = await this.authService.login(req.user);
     res.cookie('accessToken', rtn.accessToken, {
-      httpOnly: true,
       //this expires is checked by browser
-      expires: new Date(Date.now() + 1000 * 30),
+      expires: new Date(Date.now() + 1000 * 60 * 60),
     });
     res.cookie('refreshToken', rtn.refreshToken, {
       httpOnly: true,
       //this expires is checked by browser
-      expires: new Date(Date.now() + 1000 * 60),
+      expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
     });
     res.redirect(
       `${this.configService.get('url').frontHost}:${
         this.configService.get('url').frontPort
-      }/`,
+      }/token?accessToken=${rtn.accessToken}`,
     );
   }
 
@@ -72,13 +71,11 @@ export class AuthController {
       res.cookie('accessToken', tokens.accessToken, {
         httpOnly: true,
         //this expires is checked by browser
-        //access token은 60초간 유효
-        expires: new Date(Date.now() + 1000 * 60),
+        expires: new Date(Date.now() + 1000 * 60 * 60),
       });
       res.cookie('refreshToken', tokens.refreshToken, {
         httpOnly: true,
         //this expires is checked by browser
-        //refresh token은 7일간 유효
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
       });
       res.redirect(
