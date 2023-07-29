@@ -13,7 +13,9 @@ export class UserFactory {
       email: 'loginEmail' + id,
       selfIntroduction: '00',
       status: 'online',
-      socketId: null,
+      statusSocketId: null,
+      gameSocketId: null,
+      chatSocketId: null,
     };
     return user;
   }
