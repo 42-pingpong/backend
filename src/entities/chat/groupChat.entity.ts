@@ -17,8 +17,11 @@ export class GroupChat {
   @PrimaryGeneratedColumn()
   groupChatId: number;
 
-  @CreateDateColumn()
-  createdAt: Date;
+  @Column({
+    type: 'varchar',
+    length: 50,
+  })
+  chatName: string;
 
   @Column({
     type: 'enum',
@@ -36,6 +39,11 @@ export class GroupChat {
     type: 'bigint',
   })
   maxParticipants: number;
+
+  @Column({
+    type: 'bigint',
+  })
+  curParticipants: number;
 
   @ManyToOne(() => User, (user) => user.groupChats)
   @JoinColumn()
