@@ -5,5 +5,5 @@ export class AddFriendDto {
     description: '친구 추가할 유저의 id',
     example: 1,
   })
-  userId: number;
+  friendId: number;
 }

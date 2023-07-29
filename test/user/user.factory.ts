@@ -1,8 +1,5 @@
-// user.factory.ts
-import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from 'src/restapi/user/dto/create-user.dto';
 
-@Injectable()
 export class UserFactory {
   createUser(id: number): CreateUserDto {
     // You can implement the logic to fetch a user from a database or any other data source

@@ -27,29 +27,6 @@ declare module 'express-session' {
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  const redisClient = createClient({
-    url: 'redis://redis:6379',
-    database: 0,
-  });
-  await redisClient.connect();
-
-  const redisStore = new RedisStore({
-    client: redisClient,
-  });
-
-  app.use(
-    session({
-      store: redisStore,
-      resave: false,
-      saveUninitialized: true,
-      secret: 't',
-      cookie: {
-        httpOnly: true,
-        secure: false,
-      },
-    }),
-  );
-
   app.useWebSocketAdapter(new SessionIoAdaptor(app));
 
   app.use(logger);

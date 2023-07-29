@@ -9,6 +9,7 @@ import { EntityManager, Repository } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Token } from 'src/entities/auth/token.entity';
+import { FriendsWith } from 'src/entities/user/friendsWith.entity';
 
 @Injectable()
 export class UserService {
@@ -18,6 +19,9 @@ export class UserService {
 
     @InjectRepository(Token)
     private tokenRepository: Repository<Token>,
+
+    @InjectRepository(FriendsWith)
+    private friendsWithRepository: Repository<FriendsWith>,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -65,15 +69,35 @@ export class UserService {
     );
   }
 
-  async getFriends(id: number): Promise<User[]> {
-    const user = await this.userRepository.find({
-      where: { id: id },
-      relations: ['friendsWith'],
+  async getFriends(id: number) {
+    const friends = await this.friendsWithRepository.find({
+      where: { userId: id },
+      relations: ['friend'],
     });
-    return user;
+    return friends;
   }
 
   async addFriend(id: number, friendId: number): Promise<void> {
-    console.log(id, friendId);
+    await this.friendsWithRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        //유저 조회
+        const user = await manager.findOne(User, {
+          where: { id: id },
+        });
+        if (!user) throw new NotFoundException();
+
+        //친구 조회
+        const friend = await manager.findOne(User, {
+          where: { id: friendId },
+        });
+        if (!friend) throw new NotFoundException();
+
+        //친구 추가
+        await manager.save(FriendsWith, {
+          userId: id,
+          friendId: friendId,
+        });
+      },
+    );
   }
 }

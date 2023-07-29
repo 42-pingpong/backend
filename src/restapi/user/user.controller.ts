@@ -20,6 +20,8 @@ import {
 import { Request } from 'express';
 import { CreateUserDto } from './dto/create-user.dto';
 import { AccessTokenGuard } from '../auth/Guards/accessToken.guard';
+import { GetFriendDto } from './dto/get-friend.dto';
+import { AddFriendDto } from './dto/add-friend.dto';
 
 @ApiTags('user')
 @Controller('user')
@@ -52,16 +54,16 @@ export class UserController {
   @Patch(':id')
   //need auth guard
   async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    try {
-      await this.userService.update(+id, updateUserDto);
-    } catch (e) {
-      console.log(e);
-    }
+    await this.userService.update(+id, updateUserDto);
   }
 
   @ApiOperation({
     summary: 'get my friends',
     description: '내 친구 조회',
+  })
+  @ApiResponse({
+    status: 200,
+    type: GetFriendDto,
   })
   @Get('/me/friends/:id')
   //need auth guard
@@ -73,9 +75,10 @@ export class UserController {
     summary: '친구 추가',
     description: '친구 추가',
   })
+  @ApiBody({ type: AddFriendDto })
   @Post('/me/friends/:id')
   //need auth guard
-  async addFriend(@Param('id') id: string, @Body() friendId: number) {
-    return await this.userService.addFriend(+id, friendId);
+  async addFriend(@Param('id') id: string, @Body() friend: AddFriendDto) {
+    return await this.userService.addFriend(+id, friend.friendId);
   }
 }

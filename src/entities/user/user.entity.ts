@@ -14,7 +14,9 @@ import { MessageInfo } from '../chat/messageInfo.entity';
 import { GameInvitation } from '../game/gameInvitation.entity';
 import { GameScore } from '../game/gameScore.entity';
 import { BlockUserList } from './blockUserList.entity';
+import { FriendsOf } from './friendsOf.entity';
 import { FriendRequest } from './friendRequest.entity';
+import { FriendsWith } from './friendsWith.entity';
 
 @Entity()
 @Unique(['nickName'])
@@ -94,13 +96,11 @@ export class User {
   @ManyToMany(() => GroupChat, (groupChat) => groupChat.joinedUser)
   joinedGroupChats: GroupChat[];
 
-  @ManyToMany(() => User, (user) => user.friendOf)
-  @JoinTable()
-  friendsWith: User[];
+  @OneToMany(() => FriendsWith, (friendsWith) => friendsWith.user)
+  friendsWith: FriendsWith[];
 
-  @ManyToMany(() => User, (user) => user.friendsWith)
-  @JoinTable()
-  friendOf: User[];
+  @OneToMany(() => FriendsOf, (friendsOf) => friendsOf.user)
+  friendsOf: FriendsOf[];
 
   @OneToMany(() => MessageInfo, (messageInfo) => messageInfo.sender)
   messages: MessageInfo[];
