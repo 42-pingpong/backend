@@ -3,8 +3,10 @@ import { StatusGateway } from './status.gateway';
 import { QueueModule } from 'src/queue/queue.module';
 import { BullModule } from '@nestjs/bull';
 import { StatusProducer } from './status.producer';
-import { StatusConsumer } from './status.consumer';
 import { JwtModule, JwtService } from '@nestjs/jwt';
+import { StatusService } from './status.service';
+import { AccessTokenStrategy } from 'src/restapi/auth/token/access-token.strategy';
+import { AccessTokenGuard } from 'src/restapi/auth/Guards/accessToken.guard';
 
 @Module({
   imports: [
@@ -12,6 +14,13 @@ import { JwtModule, JwtService } from '@nestjs/jwt';
     JwtModule,
     BullModule.registerQueue({ name: 'status' }),
   ],
-  providers: [StatusGateway, StatusProducer, StatusConsumer, JwtService],
+  providers: [
+    StatusGateway,
+    StatusProducer,
+    JwtService,
+    AccessTokenStrategy,
+    AccessTokenGuard,
+    StatusService,
+  ],
 })
 export class StatusModule {}
