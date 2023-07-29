@@ -51,7 +51,7 @@ export class AuthController {
     res.redirect(
       `${this.configService.get('url').frontHost}:${
         this.configService.get('url').frontPort
-      }/`,
+      }/token?accessToken=${rtn.accessToken}`,
     );
   }
 
