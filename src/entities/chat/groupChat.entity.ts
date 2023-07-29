@@ -32,6 +32,7 @@ export class GroupChat {
   @Column({
     type: 'varchar',
     length: 100,
+    nullable: true,
   })
   password: string;
 
@@ -42,6 +43,7 @@ export class GroupChat {
 
   @Column({
     type: 'bigint',
+    default: 0,
   })
   curParticipants: number;
 
