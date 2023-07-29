@@ -31,6 +31,15 @@ export class ChatController {
     this.chatService.createGroupChat(createChatDto);
   }
 
+  @Patch('groupChat/:groupChatId')
+  updateGroupChat(
+    @Param('groupChatId') groupChatId: string,
+    @Body() updateGroupChatDto: UpdateGroupChatDto,
+  ) {
+    // 그룹 채팅방의 정보를 수정하는 메서드
+    this.chatService.updateGroupChat(updateGroupChatDto, +groupChatId);
+  }
+
   @Post()
   sendMessage(@Body() message: string): void {
     // 클라이언트로부터 채팅 메시지를 받아와서 처리하는 메서드
@@ -43,4 +52,3 @@ export class ChatController {
     return this.chatService.getAllMessages();
   }
 }
-

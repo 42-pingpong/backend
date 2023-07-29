@@ -80,6 +80,14 @@ describe('Chat', () => {
     });
   });
 
+  describe('GET /api/chat/groupChat/:groupChatId', () => {
+    it.todo('GET /api/chat/groupChat/:groupChatId');
+  });
+
+  describe('PATCH /api/chat/groupChat/:groupChatId', () => {
+    it.todo('PATCH /api/chat/groupChat/:groupChatId');
+  });
+
   afterAll(async () => {
     await dataSource.destroy();
     await app.close();

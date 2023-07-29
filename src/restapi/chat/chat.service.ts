@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { GroupChat } from 'src/entities/chat/groupChat.entity';
 import { Repository } from 'typeorm';
 import { CreateGroupChatDto } from './dto/create-group-chat.dto';
+import { UpdateGroupChatDto } from './dto/update-group-chat.dto';
 
 @Injectable()
 export class ChatService {
@@ -27,6 +28,19 @@ export class ChatService {
   async createGroupChat(createChatDto: CreateGroupChatDto) {
     // 그룹 채팅방을 생성하고 저장하는 로직
     await this.groupChatRepository.save(createChatDto);
+  }
+
+  async updateGroupChat(
+    updateGroupChatDto: UpdateGroupChatDto,
+    groupChatId: number,
+  ) {
+    // 그룹 채팅방의 정보를 수정하는 로직
+    await this.groupChatRepository.update(
+      {
+        groupChatId: groupChatId,
+      },
+      updateGroupChatDto,
+    );
   }
 
   sendMessage(messageData: any) {
