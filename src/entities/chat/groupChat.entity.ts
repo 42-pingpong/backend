@@ -41,6 +41,11 @@ export class GroupChat {
   @JoinColumn()
   owner: User;
 
+  @Column({
+    type: 'int',
+  })
+  ownerId: number;
+
   @ManyToMany(() => User, (user) => user.bannedGroupChats)
   @JoinTable({
     name: 'BannedGroupChat_user_joinTable',

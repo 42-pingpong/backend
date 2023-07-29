@@ -72,7 +72,7 @@ export class User {
    * */
   @Column({
     type: 'enum',
-    enum: ['offline', 'online', 'in game'],
+    enum: ['offline', 'online', 'inGame'],
     default: 'online',
   })
   status: string;
