@@ -82,7 +82,21 @@ export class User {
     length: 200,
     nullable: true,
   })
-  socketId: string;
+  statusSocketId: string;
+
+  @Column({
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+  })
+  chatSocketId: string;
+
+  @Column({
+    type: 'varchar',
+    length: 200,
+    nullable: true,
+  })
+  gameSocketId: string;
 
   @OneToMany(() => GroupChat, (groupChat) => groupChat.owner)
   groupChats: GroupChat[];

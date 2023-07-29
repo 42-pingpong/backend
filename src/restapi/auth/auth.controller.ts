@@ -98,9 +98,6 @@ export class AuthController {
   @Get('/logout')
   async logout(@Req() req: Request, @Res() res: Response) {
     await this.authService.logout(+req.user.sub);
-    req.session.destroy((err) => {
-      console.log(err);
-    });
     res.clearCookie('accessToken');
     res.clearCookie('refreshToken');
     res.sendStatus(200);
