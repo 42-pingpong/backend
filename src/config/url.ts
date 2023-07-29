@@ -5,7 +5,7 @@ export default registerAs('url', () => ({
     process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
       ? 'http://localhost'
       : process.env.REACT_APP_HOST,
-  frontPort: process.env.REACT_APP_PORT,
+  frontPort: process.env.REACT_PORT,
 
   testUrl:
     process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
