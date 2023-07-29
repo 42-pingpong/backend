@@ -44,11 +44,10 @@ export class StatusConsumer {
           },
         },
       );
+      //접속중인 친구목록에게 상태 업데이트 이벤트 보내기
     } catch (error) {
       console.log(error);
     }
-
-    //접속중인 친구목록에게 상태 업데이트 이벤트 보내기
   }
 
   /**

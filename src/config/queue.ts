@@ -15,5 +15,5 @@ export default registerAs('queue', () => ({
       ? 6379
       : parseInt(process.env.REDIS_PORT),
 
-  bullDatabase: process.env.BULL_DATABASE,
+  bullDatabase: parseInt(process.env.BULL_DATABASE),
 }));

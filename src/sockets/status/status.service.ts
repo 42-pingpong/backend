@@ -7,7 +7,9 @@ export class StatusService {
 
   getSub(auth: string): number {
     const bearer = auth.substring(7);
+    console.log('bearer: ', bearer);
     const payload = this.jwtService.decode(bearer);
+    console.log('payload: ', payload);
     return payload.sub;
   }
 }
