@@ -1,7 +1,5 @@
-import { IUser } from 'src/interface/IUser.types';
-
 export interface UserJobData {
-  user: IUser;
+  userId: number;
   clientId: string;
   bearerToken: string;
 }

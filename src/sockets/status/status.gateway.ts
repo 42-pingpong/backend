@@ -11,17 +11,18 @@ import { Socket } from 'net';
 import { UseGuards } from '@nestjs/common';
 import { AccessTokenGuard } from 'src/restapi/auth/Guards/accessToken.guard';
 import { StatusProducer } from './status.producer';
-import { createClient } from 'redis';
-import RedisStore from 'connect-redis';
 import { JwtService } from '@nestjs/jwt';
 import { Redis } from 'ioredis';
-import { ApiOperation } from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { UserJobData } from 'src/interface/user.jobdata';
+import { StatusService } from './status.service';
 
 /**
  * @brief status gateway
  *
  * @description 유저 상태정보를 관리하는 gateway
  */
+@ApiTags('status')
 @WebSocketGateway({
   namespace: 'status',
   cors: {
@@ -42,13 +43,8 @@ export class StatusGateway
 
   constructor(
     private readonly statusProducer: StatusProducer,
-    private readonly jwtService: JwtService,
-  ) {
-    this.redisClient = new Redis({
-      host: 'redis',
-      port: 6379,
-    });
-  }
+    private readonly statusService: StatusService,
+  ) {}
 
   async afterInit() {
     console.log('status gateway init');
@@ -61,39 +57,27 @@ export class StatusGateway
    * connection event handler
    * 로그인시 유저의 상태정보를 업데이트한다.
    */
-  @ApiOperation({
-    summary: 'connect',
-    description: '유저의 상태정보를 업데이트한다.',
-  })
   @SubscribeMessage('connect')
-  async handleConnection(@ConnectedSocket() client: any, payload: any) {
+  @UseGuards(AccessTokenGuard)
+  async handleConnection(@ConnectedSocket() client: any) {
     console.log('status gateway connection');
-    const sid = decodeURIComponent(
-      client.handshake.headers.cookie.split(';')[0].split('=')[1],
-    )
-      .substring(2)
-      .split('.')[0];
-    const user = await this.redisClient.get('sess:' + sid);
-    const userObj = JSON.parse(user);
-    this.statusProducer.login(
-      userObj.user,
-      client.id,
-      client.handshake.auth.token,
-    );
+    const sub = this.statusService.getSub(client.handshake.auth.token);
+    if (sub == null) {
+      return;
+    }
+    this.statusProducer.login(sub, client.id, client.handshake.auth.token);
   }
 
   @SubscribeMessage('get-friend-status')
   async handleStatusSync(@ConnectedSocket() client: any, payload: any) {
     console.log('status gateway sync');
     console.log(client.id);
-    const sid = decodeURIComponent(
-      client.handshake.headers.cookie.split(';')[0].split('=')[1],
-    );
   }
 
   @SubscribeMessage('disconnect')
-  handleDisconnect(client: Socket) {
-    console.log('status gateway disconnect');
-    return 'hello';
+  handleDisconnect(client: any) {
+    const sub = this.statusService.getSub(client.handshake.auth.token);
+    if (!sub) return;
+    this.statusProducer.logout(sub, client.id, client.handshake.auth.token);
   }
 }

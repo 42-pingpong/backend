@@ -39,14 +39,6 @@ export class AuthController {
   @Get('42/redirect')
   async redirect42(@Req() req: Request, @Res() res: Response) {
     const rtn = await this.authService.login(req.user);
-    console.log('sid: ', req.sessionID);
-    req.sessionStore.set(req.sessionID, {
-      ...req.session,
-      user: req.user,
-    });
-    req.sessionStore.get(req.sessionID, (err, session) => {
-      console.log('session data:', session);
-    });
     res.cookie('accessToken', rtn.accessToken, {
       //this expires is checked by browser
       expires: new Date(Date.now() + 1000 * 60 * 60),
@@ -59,7 +51,7 @@ export class AuthController {
     res.redirect(
       `${this.configService.get('url').frontHost}:${
         this.configService.get('url').frontPort
-      }/`,
+      }/token?accessToken=${rtn.accessToken}`,
     );
   }
 
@@ -106,9 +98,6 @@ export class AuthController {
   @Get('/logout')
   async logout(@Req() req: Request, @Res() res: Response) {
     await this.authService.logout(+req.user.sub);
-    req.session.destroy((err) => {
-      console.log(err);
-    });
     res.clearCookie('accessToken');
     res.clearCookie('refreshToken');
     res.sendStatus(200);

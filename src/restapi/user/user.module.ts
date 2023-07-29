@@ -5,9 +5,15 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { appDatabase } from 'src/datasource/appdatabase';
 import { Token } from 'src/entities/auth/token.entity';
+import { AppConfigModule } from 'src/config/app.config';
+import { FriendsWith } from 'src/entities/user/friendsWith.entity';
 
 @Module({
-  imports: [appDatabase, TypeOrmModule.forFeature([User, Token])],
+  imports: [
+    AppConfigModule,
+    appDatabase,
+    TypeOrmModule.forFeature([User, Token, FriendsWith]),
+  ],
   controllers: [UserController],
   providers: [UserService],
 })

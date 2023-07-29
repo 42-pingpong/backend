@@ -16,13 +16,14 @@ import { RefreshTokenStrategy } from './token/refresh-token.strategy';
 import { appDatabase } from 'src/datasource/appdatabase';
 import { FTAuthGuard } from './Guards/ft.guard';
 import { AppConfigModule } from 'src/config/app.config';
+import { FriendsWith } from 'src/entities/user/friendsWith.entity';
 
 @Module({
   imports: [
     AppConfigModule,
     PassportModule.register({}),
     appDatabase,
-    TypeOrmModule.forFeature([User, Token]),
+    TypeOrmModule.forFeature([User, Token, FriendsWith]),
   ],
   controllers: [AuthController],
   providers: [

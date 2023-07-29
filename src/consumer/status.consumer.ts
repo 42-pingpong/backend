@@ -1,8 +1,7 @@
 import { Process, Processor } from '@nestjs/bull';
 import axios from 'axios';
 import { Job } from 'bull';
-import { UpdateUserDto } from 'src/restapi/user/dto/update-user.dto';
-import { UserJobData } from './interface/user.jobdata';
+import { UserJobData } from 'src/interface/user.jobdata';
 
 @Processor('status')
 export class StatusConsumer {
@@ -20,10 +19,10 @@ export class StatusConsumer {
     console.log(job.data);
     try {
       await axios.patch(
-        `http://localhost:10002/api/user/${job.data.user.id}`,
+        `http://localhost:10002/api/user/${job.data.userId}`,
         {
           status: 'online',
-          socketId: job.data.clientId,
+          statusSocketId: job.data.clientId,
         },
         {
           headers: {
@@ -36,8 +35,19 @@ export class StatusConsumer {
     }
     //접속중인 친구목록 가져오기
     //GET /user/friends/:id
-
-    //접속중인 친구목록에게 상태 업데이트 이벤트 보내기
+    try {
+      const response = await axios.get(
+        `http://localhost:10002/api/user/me/friends/${job.data.userId}`,
+        {
+          headers: {
+            Authorization: job.data.bearerToken,
+          },
+        },
+      );
+      //접속중인 친구목록에게 상태 업데이트 이벤트 보내기
+    } catch (error) {
+      console.log(error);
+    }
   }
 
   /**
