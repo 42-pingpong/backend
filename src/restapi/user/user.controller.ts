@@ -7,6 +7,7 @@ import {
   Req,
   UseGuards,
   Post,
+  Query,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -14,6 +15,7 @@ import {
   ApiBody,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -65,9 +67,18 @@ export class UserController {
     status: 200,
     type: GetFriendDto,
   })
+  @ApiQuery({
+    name: 'status',
+    type: String,
+    description: '현재상태',
+    allowEmptyValue: true,
+    isArray: true,
+    required: false,
+    enum: ['online', 'offline', 'inGame', 'all'],
+  })
   @Get('/me/friends/:id')
   //need auth guard
-  async getMyFriends(@Param('id') id: string) {
+  async getMyFriends(@Param('id') id: string, @Query('status') query: string) {
     return await this.userService.getFriends(+id);
   }
 
