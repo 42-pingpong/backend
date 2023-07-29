@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { GroupChat } from 'src/entities/chat/groupChat.entity';
 import { Repository } from 'typeorm';
 import { CreateGroupChatDto } from './dto/create-group-chat.dto';
 import { UpdateGroupChatDto } from './dto/update-group-chat.dto';
+import { ExceptionsHandler } from '@nestjs/core/exceptions/exceptions-handler';
 
 @Injectable()
 export class ChatService {
@@ -35,12 +36,25 @@ export class ChatService {
     groupChatId: number,
   ) {
     // 그룹 채팅방의 정보를 수정하는 로직
-    await this.groupChatRepository.update(
-      {
-        groupChatId: groupChatId,
-      },
-      updateGroupChatDto,
-    );
+    /**
+     * 요청한 유저가 admin/owner인지 확인하는 로직이 필요합니다.
+     */
+    await this.groupChatRepository.manager.transaction(async (manager) => {
+      const curGroupChat = await manager.findOne(GroupChat, {
+        where: { groupChatId: groupChatId },
+        select: ['curParticipants'],
+      });
+
+      if (curGroupChat.curParticipants >= updateGroupChatDto.maxParticipants) {
+        throw new ForbiddenException();
+      }
+
+      await manager.update(
+        GroupChat,
+        { groupChatId: groupChatId },
+        updateGroupChatDto,
+      );
+    });
   }
 
   sendMessage(messageData: any) {
