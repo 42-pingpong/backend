@@ -6,16 +6,15 @@ import {
   OnGatewayDisconnect,
   ConnectedSocket,
   WebSocketServer,
+  MessageBody,
 } from '@nestjs/websockets';
-import { Socket } from 'net';
 import { UseGuards } from '@nestjs/common';
 import { AccessTokenGuard } from 'src/restapi/auth/Guards/accessToken.guard';
 import { StatusProducer } from './status.producer';
-import { JwtService } from '@nestjs/jwt';
 import { Redis } from 'ioredis';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { UserJobData } from 'src/interface/user.jobdata';
+import { ApiTags } from '@nestjs/swagger';
 import { StatusService } from './status.service';
+import { GetFriendResponseDto } from 'src/restapi/user/dto/get-friend-response.dto';
 
 /**
  * @brief status gateway
@@ -61,6 +60,13 @@ export class StatusGateway
   @UseGuards(AccessTokenGuard)
   async handleConnection(@ConnectedSocket() client: any) {
     console.log('status gateway connection');
+    if (client.handshake.auth.server) {
+      console.log('consumer connected');
+      return;
+    }
+    if (!client.handshake.auth.token) {
+      return;
+    }
     const sub = this.statusService.getSub(client.handshake.auth.token);
     if (sub == null) {
       return;
@@ -68,10 +74,20 @@ export class StatusGateway
     this.statusProducer.login(sub, client.id, client.handshake.auth.token);
   }
 
-  @SubscribeMessage('get-friend-status')
-  async handleStatusSync(@ConnectedSocket() client: any, payload: any) {
-    console.log('status gateway sync');
+  @SubscribeMessage('change-status')
+  async handleStatusSync(
+    @ConnectedSocket() client: any,
+    @MessageBody() message: string,
+  ) {
+    console.log('status gateway change-status');
     console.log(client.id);
+    const data: GetFriendResponseDto[] = JSON.parse(message);
+    for (const user of data) {
+      //친구에게 로그인한 유저의 상태정보를 전송한다.
+      this.server
+        .to(user.friend.statusSocketId)
+        .emit('change-status', user.user);
+    }
   }
 
   @SubscribeMessage('disconnect')

@@ -10,7 +10,6 @@ import { GameScore } from 'src/entities/game/gameScore.entity';
 import { BlockUserList } from 'src/entities/user/blockUserList.entity';
 import { FriendRequest } from 'src/entities/user/friendRequest.entity';
 import { Token } from 'src/entities/auth/token.entity';
-import { FriendsOf } from 'src/entities/user/friendsOf.entity';
 import { FriendsWith } from 'src/entities/user/friendsWith.entity';
 
 export default registerAs('database', () => ({
@@ -32,7 +31,6 @@ export default registerAs('database', () => ({
     BlockUserList,
     FriendRequest,
     Token,
-    FriendsOf,
     FriendsWith,
   ],
   synchronize:
