@@ -3,13 +3,19 @@ import axios from 'axios';
 import { Job } from 'bull';
 import { UserJobData } from 'src/interface/user.jobdata';
 import { io } from 'socket.io-client';
+import { ConfigService } from '@nestjs/config';
 
 const URL = `ws://localhost:10002/status`;
 @Processor('status')
 export class StatusConsumer {
   private readonly StatusSocket;
-  constructor() {
-    this.StatusSocket = io(URL, {
+  private readonly restApiUrl;
+  private readonly statusServerUrl;
+
+  constructor(private readonly configService: ConfigService) {
+    this.restApiUrl = configService.get('url.restApiUrl');
+    this.statusServerUrl = configService.get('url.statusServerUrl');
+    this.StatusSocket = io(this.statusServerUrl, {
       transports: ['websocket'],
       autoConnect: false,
       auth: {
@@ -32,7 +38,7 @@ export class StatusConsumer {
     console.log(job.data);
     try {
       await axios.patch(
-        `http://localhost:10002/api/user/${job.data.userId}`,
+        `${this.restApiUrl}/user/${job.data.userId}`,
         {
           status: 'online',
           statusSocketId: job.data.clientId,
@@ -50,7 +56,7 @@ export class StatusConsumer {
     //GET /user/friends/:id
     try {
       const response = await axios.get(
-        `http://localhost:10002/api/user/me/friends/${job.data.userId}?status=online&includeMe=true`,
+        `${this.restApiUrl}/user/me/friends/${job.data.userId}?status=online&includeMe=true`,
         {
           headers: {
             Authorization: job.data.bearerToken,
