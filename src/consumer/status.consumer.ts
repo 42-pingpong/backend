@@ -5,7 +5,6 @@ import { UserJobData } from 'src/interface/user.jobdata';
 import { io } from 'socket.io-client';
 import { ConfigService } from '@nestjs/config';
 
-const URL = `ws://localhost:10002/status`;
 @Processor('status')
 export class StatusConsumer {
   private readonly StatusSocket;
