@@ -7,33 +7,33 @@ import { DataSource } from 'typeorm';
 import { io } from 'socket.io-client';
 import { AppModule } from 'src/app.module';
 import { appDatabase } from 'src/datasource/appdatabase';
+import { StatusGateway } from 'src/sockets/status/status.gateway';
+
+async function createNestApp(...gateways): Promise<INestApplication> {
+  const testingModule = await Test.createTestingModule({
+    providers: gateways,
+  })
+    .overrideModule(appDatabase)
+    .useModule(testDatabase)
+    .overrideModule(AppConfigModule)
+    .useModule(TestConfigModule)
+    .compile();
+
+  const app = testingModule.createNestApplication();
+  return app;
+}
 
 describe('Status-Socket', () => {
   let app: INestApplication;
   let datasource: DataSource;
 
-  beforeAll(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    })
-      .overrideModule(appDatabase)
-      .useModule(testDatabase)
-      .overrideModule(AppConfigModule)
-      .useModule(TestConfigModule)
-      .compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
-
-    datasource = moduleFixture.get<DataSource>(DataSource);
-    app.listen(10009);
-  });
-
-  describe('Status-Socket', () => {
-    it('login', async () => {});
+  it('login', async () => {
+    app = await createNestApp(StatusGateway);
+    await app.listen(3000);
   });
 
   afterAll(async () => {
+    await datasource.destroy();
     await app.close();
   });
 });

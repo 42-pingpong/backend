@@ -4,7 +4,6 @@ import {
   OneToMany,
   ManyToMany,
   PrimaryColumn,
-  JoinTable,
   Unique,
 } from 'typeorm';
 import { Token } from '../auth/token.entity';
@@ -14,9 +13,8 @@ import { MessageInfo } from '../chat/messageInfo.entity';
 import { GameInvitation } from '../game/gameInvitation.entity';
 import { GameScore } from '../game/gameScore.entity';
 import { BlockUserList } from './blockUserList.entity';
-import { FriendsOf } from './friendsOf.entity';
-import { FriendRequest } from './friendRequest.entity';
 import { FriendsWith } from './friendsWith.entity';
+import { FriendRequest } from './friendRequest.entity';
 
 @Entity()
 @Unique(['nickName'])
@@ -112,9 +110,6 @@ export class User {
 
   @OneToMany(() => FriendsWith, (friendsWith) => friendsWith.user)
   friendsWith: FriendsWith[];
-
-  @OneToMany(() => FriendsOf, (friendsOf) => friendsOf.user)
-  friendsOf: FriendsOf[];
 
   @OneToMany(() => MessageInfo, (messageInfo) => messageInfo.sender)
   messages: MessageInfo[];

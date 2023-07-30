@@ -10,6 +10,7 @@ import { User } from 'src/entities/user/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Token } from 'src/entities/auth/token.entity';
 import { FriendsWith } from 'src/entities/user/friendsWith.entity';
+import { GetFriendQueryDto } from './dto/get-friend-query.dto';
 
 @Injectable()
 export class UserService {
@@ -69,12 +70,21 @@ export class UserService {
     );
   }
 
-  async getFriends(id: number) {
-    const friends = await this.friendsWithRepository.find({
-      where: { userId: id },
+  async getFriends(id: number, query: GetFriendQueryDto) {
+    const friendQuery = {
+      where: {
+        userId: id,
+      },
       relations: ['friend'],
-    });
-    return friends;
+    };
+    // dynamic query
+    if (query.status && query.status !== 'all') {
+      friendQuery.where['friend'] = { status: query.status };
+    }
+    if (query.includeMe) {
+      friendQuery.relations.push('user');
+    }
+    return await this.friendsWithRepository.find(friendQuery);
   }
 
   async addFriend(id: number, friendId: number): Promise<void> {
@@ -96,6 +106,11 @@ export class UserService {
         await manager.save(FriendsWith, {
           userId: id,
           friendId: friendId,
+        });
+        //친구 추가
+        await manager.save(FriendsWith, {
+          userId: friendId,
+          friendId: id,
         });
       },
     );

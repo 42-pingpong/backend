@@ -22,8 +22,9 @@ import {
 import { Request } from 'express';
 import { CreateUserDto } from './dto/create-user.dto';
 import { AccessTokenGuard } from '../auth/Guards/accessToken.guard';
-import { GetFriendDto } from './dto/get-friend.dto';
+import { GetFriendResponseDto } from './dto/get-friend-response.dto';
 import { AddFriendDto } from './dto/add-friend.dto';
+import { GetFriendQueryDto } from './dto/get-friend-query.dto';
 
 @ApiTags('user')
 @Controller('user')
@@ -65,21 +66,15 @@ export class UserController {
   })
   @ApiResponse({
     status: 200,
-    type: GetFriendDto,
-  })
-  @ApiQuery({
-    name: 'status',
-    type: String,
-    description: '현재상태',
-    allowEmptyValue: true,
-    isArray: true,
-    required: false,
-    enum: ['online', 'offline', 'inGame', 'all'],
+    type: GetFriendResponseDto,
   })
   @Get('/me/friends/:id')
   //need auth guard
-  async getMyFriends(@Param('id') id: string, @Query('status') query: string) {
-    return await this.userService.getFriends(+id);
+  async getMyFriends(
+    @Param('id') id: string,
+    @Query() query: GetFriendQueryDto,
+  ) {
+    return await this.userService.getFriends(+id, query);
   }
 
   @ApiOperation({

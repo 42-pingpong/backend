@@ -1,7 +1,25 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { User } from 'src/entities/user/user.entity';
 
-export class GetFriendDto {
+export class GetFriendResponseDto {
+  @ApiProperty({
+    description: '유저',
+    example: {
+      email: 'loginEmail8',
+      fullName: 'fullName',
+      id: 8,
+      level: 5.5,
+      nickName: 'user8',
+      profile: 'ttt',
+      selfIntroduction: '00',
+      statusSocketId: null,
+      chatSocketId: null,
+      gameSocketId: null,
+      status: 'online',
+    },
+  })
+  user: User;
+
   @ApiProperty({
     description: '유저의 id',
     example: 1,

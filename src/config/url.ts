@@ -7,8 +7,23 @@ export default registerAs('url', () => ({
       : process.env.REACT_APP_HOST,
   frontPort: process.env.REACT_PORT,
 
-  testUrl:
+  restApiUrl:
     process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
-      ? `http://localhost:${process.env.NEST_PORT}/api`
+      ? process.env.RESTAPISERVER
+      : '',
+
+  statusServerUrl:
+    process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
+      ? process.env.STATUSSERVER
+      : '',
+
+  gameServerUrl:
+    process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
+      ? process.env.GAMESERVER
+      : '',
+
+  chatServerUrl:
+    process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test'
+      ? process.env.CHATSERVER
       : '',
 }));
