@@ -79,6 +79,25 @@ async function fakeUserSeeding(dataSource: DataSource, qt: number) {
   }
 }
 
+async function fakeFriendsSeeding(
+  dataSource: DataSource,
+  qt: number,
+  realIds: number[],
+) {
+  for (const id of realIds) {
+    for (let i = 1; i < qt + 1; i++) {
+      await dataSource.getRepository(FriendsWith).save({
+        userId: id,
+        friendId: i,
+      });
+      await dataSource.getRepository(FriendsWith).save({
+        userId: i,
+        friendId: id,
+      });
+    }
+  }
+}
+
 /**
  * @brief user data seed
  *
@@ -91,13 +110,5 @@ export default async function userSeeder(dataSource: DataSource) {
   const qt = 40;
   await realUserSeeding(dataSource);
   await fakeUserSeeding(dataSource, qt);
-
-  for (const id of realIds) {
-    for (let i = 1; i < qt + 1; i++) {
-      await dataSource.getRepository(FriendsWith).save({
-        userId: id,
-        friendId: i,
-      });
-    }
-  }
+  await fakeFriendsSeeding(dataSource, qt, realIds);
 }
