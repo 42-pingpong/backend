@@ -2,9 +2,27 @@ import { Process, Processor } from '@nestjs/bull';
 import axios from 'axios';
 import { Job } from 'bull';
 import { UserJobData } from 'src/interface/user.jobdata';
+import { io } from 'socket.io-client';
+import { ConfigService } from '@nestjs/config';
 
 @Processor('status')
 export class StatusConsumer {
+  private readonly StatusSocket;
+  private readonly restApiUrl;
+  private readonly statusServerUrl;
+
+  constructor(private readonly configService: ConfigService) {
+    this.restApiUrl = configService.get('url.restApiUrl');
+    this.statusServerUrl = configService.get('url.statusServerUrl');
+    this.StatusSocket = io(this.statusServerUrl, {
+      transports: ['websocket'],
+      autoConnect: false,
+      auth: {
+        server: 'true',
+      },
+    });
+    this.StatusSocket.connect();
+  }
   /**
    * 1. 로그인 시, 로그인 상태/연결된 소켓 정보를 저장한다.
    * 2. 친구목록에서, 로그인 상태 유저 소켓들에게 상태 업데이트 이벤트를 보낸다.
@@ -19,7 +37,7 @@ export class StatusConsumer {
     console.log(job.data);
     try {
       await axios.patch(
-        `http://localhost:10002/api/user/${job.data.userId}`,
+        `${this.restApiUrl}/user/${job.data.userId}`,
         {
           status: 'online',
           statusSocketId: job.data.clientId,
@@ -37,13 +55,15 @@ export class StatusConsumer {
     //GET /user/friends/:id
     try {
       const response = await axios.get(
-        `http://localhost:10002/api/user/me/friends/${job.data.userId}`,
+        `${this.restApiUrl}/user/me/friends/${job.data.userId}?status=online&includeMe=true`,
         {
           headers: {
             Authorization: job.data.bearerToken,
           },
         },
       );
+      console.log('response.data', response.data);
+      this.StatusSocket.emit('change-status', JSON.stringify(response.data));
       //접속중인 친구목록에게 상태 업데이트 이벤트 보내기
     } catch (error) {
       console.log(error);

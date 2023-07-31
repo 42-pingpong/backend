@@ -19,6 +19,11 @@ export class StatusProducer {
   }
 
   async logout(userId: number, clientId: string, bearerToken: string) {
-    await this.statusQueue.add('logout', {});
+    const userJobData: UserJobData = {
+      userId,
+      clientId,
+      bearerToken,
+    };
+    await this.statusQueue.add('logout', userJobData);
   }
 }
