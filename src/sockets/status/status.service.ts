@@ -10,6 +10,8 @@ export class StatusService {
     console.log('bearer: ', bearer);
     const payload = this.jwtService.decode(bearer);
     console.log('payload: ', payload);
-    return payload.sub;
+    if (payload == null) {
+      return null;
+    } else return payload.sub;
   }
 }
