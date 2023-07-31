@@ -30,7 +30,6 @@ import { FriendsWith } from 'src/entities/user/friendsWith.entity';
     AuthService,
     ConfigService,
     JwtService,
-    UserService,
     AccessTokenStrategy,
     AccessTokenGuard,
     RefreshTokenStrategy,
