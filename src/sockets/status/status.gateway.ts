@@ -11,7 +11,6 @@ import {
 import { UseGuards } from '@nestjs/common';
 import { AccessTokenGuard } from 'src/restapi/auth/Guards/accessToken.guard';
 import { StatusProducer } from './status.producer';
-import { Redis } from 'ioredis';
 import { ApiTags } from '@nestjs/swagger';
 import { StatusService } from './status.service';
 import { GetFriendResponseDto } from 'src/restapi/user/dto/get-friend-response.dto';
@@ -80,16 +79,18 @@ export class StatusGateway
   @SubscribeMessage('change-status')
   async handleStatusSync(
     @ConnectedSocket() client: any,
-    @MessageBody() message: string,
+    @MessageBody() body: string,
   ) {
     console.log('status gateway change-status');
-    console.log(client.id);
-    const data: GetFriendResponseDto[] = JSON.parse(message);
-    for (const user of data) {
+    const friends: GetFriendResponseDto[] = JSON.parse(body);
+    if (friends.length == 0) {
+      return false;
+    }
+    for (const friend of friends) {
       //온라인 친구에게 로그인/로그아웃한 유저의 상태정보를 전송한다.
       this.server
-        .to(user.friend.statusSocketId)
-        .emit('change-status', user.user);
+        .to(friend.friend.statusSocketId)
+        .emit('change-status', friend.user);
     }
   }
 
@@ -99,5 +100,35 @@ export class StatusGateway
     const sub = this.statusService.getSub(client.handshake.auth.token);
     if (!sub) return;
     this.statusProducer.logout(sub, client.id, client.handshake.auth.token);
+  }
+
+  @SubscribeMessage('request-friend')
+  handleRequestFriend(
+    @ConnectedSocket() client: any,
+    @MessageBody() body: string,
+  ) {
+    console.log('friend-request');
+    const requestUser = this.statusService.getSub(client.handshake.auth.token);
+    if (!requestUser) return;
+    this.statusProducer.requestFriend(
+      requestUser,
+      client.id,
+      client.handshake.auth.token,
+    );
+  }
+
+  @SubscribeMessage('accept-friend')
+  handleAcceptFriend(
+    @ConnectedSocket() client: any,
+    @MessageBody() body: string,
+  ) {
+    console.log('accept friend');
+    const requestUser = this.statusService.getSub(client.handshake.auth.token);
+    if (!requestUser) return;
+    this.statusProducer.acceptFriend(
+      requestUser,
+      client.id,
+      client.handshake.auth.token,
+    );
   }
 }
