@@ -25,6 +25,8 @@ import { AccessTokenGuard } from '../auth/Guards/accessToken.guard';
 import { GetFriendResponseDto } from './dto/get-friend-response.dto';
 import { AddFriendDto } from './dto/add-friend.dto';
 import { GetFriendQueryDto } from './dto/get-friend-query.dto';
+import { SearchUserDto } from './dto/search-user.dto';
+import { SearchUserResponseDto } from './dto/search-user-response.dto';
 
 @ApiTags('user')
 @Controller('user')
@@ -44,12 +46,6 @@ export class UserController {
   async getMe(@Req() req: Request) {
     // req.sessionStore.get(req.sessionID, (err, session) => console.log(session));
     return await this.userService.findOne(+req.user.sub);
-  }
-
-  @ApiParam({ name: 'id', type: String })
-  @Get(':id')
-  async findOne(@Param('id') id: string) {
-    return await this.userService.findOne(+id);
   }
 
   @ApiBody({ type: UpdateUserDto })
@@ -86,5 +82,19 @@ export class UserController {
   //need auth guard
   async addFriend(@Param('id') id: string, @Body() friend: AddFriendDto) {
     return await this.userService.addFriend(+id, friend.friendId);
+  }
+
+  @ApiOperation({
+    summary: '유저 검색',
+    description: '유저 검색',
+  })
+  @ApiResponse({
+    status: 200,
+    type: SearchUserResponseDto,
+  })
+  @Get('/search')
+  async searchUser(@Query() query: SearchUserDto) {
+    console.log('query: ', query);
+    return await this.userService.searchUser(query);
   }
 }

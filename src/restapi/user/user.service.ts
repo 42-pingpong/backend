@@ -11,6 +11,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Token } from 'src/entities/auth/token.entity';
 import { FriendsWith } from 'src/entities/user/friendsWith.entity';
 import { GetFriendQueryDto } from './dto/get-friend-query.dto';
+import { SearchUserDto } from './dto/search-user.dto';
+import { Like } from 'typeorm';
 
 @Injectable()
 export class UserService {
@@ -115,5 +117,13 @@ export class UserService {
         });
       },
     );
+  }
+
+  async searchUser(query: SearchUserDto): Promise<User[]> {
+    const { nickName, email } = query;
+    const where = {};
+    if (nickName) where['nickName'] = Like(`%${nickName}%`);
+    if (email) where['email'] = Like(`%${email}%`);
+    return await this.userRepository.findBy(where);
   }
 }
