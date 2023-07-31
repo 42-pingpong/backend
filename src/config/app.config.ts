@@ -10,6 +10,13 @@ import url from './url';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      ignoreEnvVars: true,
+      envFilePath:
+        process.env.NODE_ENV === 'development'
+          ? '.env.dev'
+          : process.env.NODE_ENV === 'test'
+          ? '.env.test'
+          : '.env.prod',
       load: [database, auth, url, oauth42, queue],
     }),
   ],

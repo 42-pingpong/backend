@@ -36,6 +36,8 @@ export class StatusConsumer {
     console.log('login');
     console.log(job.data);
     try {
+      // status online으로 변경,
+      // socketId 변경
       await axios.patch(
         `${this.restApiUrl}/user/${job.data.userId}`,
         {
@@ -79,8 +81,42 @@ export class StatusConsumer {
    * @memberof StatusConsumer
    * */
   @Process('logout')
-  async logout(job: Job<unknown>) {
+  async logout(job: Job<UserJobData>) {
     console.log('logout');
     console.log(job.data);
+    //1. 로그아웃 시, 로그인 상태/연결된 소켓 정보를 삭제한다.
+    try {
+      const res = await axios.patch(
+        `${this.restApiUrl}/api/user/${job.data.userId}`,
+        {
+          status: 'offline',
+          statusSocketId: null,
+        },
+        {
+          headers: {
+            Authorization: job.data.bearerToken,
+          },
+        },
+      );
+      console.log(res.data);
+    } catch (error) {
+      console.log(error);
+    }
+
+    //2. 친구목록에서, 로그인 상태 유저 소켓들에게 상태 업데이트 이벤트를 보낸다.
+    try {
+      const response = await axios.get(
+        `${this.restApiUrl}/user/me/friends/${job.data.userId}?status=online&includeMe=true`,
+        {
+          headers: {
+            Authorization: job.data.bearerToken,
+          },
+        },
+      );
+      console.log('response.data', response.data);
+      this.StatusSocket.emit('change-status', JSON.stringify(response.data));
+    } catch (error) {
+      console.log(error);
+    }
   }
 }

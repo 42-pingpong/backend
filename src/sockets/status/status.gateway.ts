@@ -38,8 +38,6 @@ export class StatusGateway
   @WebSocketServer()
   server: any;
 
-  private readonly redisClient: Redis;
-
   constructor(
     private readonly statusProducer: StatusProducer,
     private readonly statusService: StatusService,
@@ -83,7 +81,7 @@ export class StatusGateway
     console.log(client.id);
     const data: GetFriendResponseDto[] = JSON.parse(message);
     for (const user of data) {
-      //친구에게 로그인한 유저의 상태정보를 전송한다.
+      //친구에게 로그인/로그아웃한 유저의 상태정보를 전송한다.
       this.server
         .to(user.friend.statusSocketId)
         .emit('change-status', user.user);
@@ -92,6 +90,7 @@ export class StatusGateway
 
   @SubscribeMessage('disconnect')
   handleDisconnect(client: any) {
+    console.log('status gateway disconnect');
     const sub = this.statusService.getSub(client.handshake.auth.token);
     if (!sub) return;
     this.statusProducer.logout(sub, client.id, client.handshake.auth.token);
