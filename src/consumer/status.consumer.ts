@@ -66,7 +66,8 @@ export class StatusConsumer {
       );
       console.log('response.data', response.data);
       this.StatusSocket.emit('change-status', JSON.stringify(response.data));
-      //접속중인 친구목록에게 상태 업데이트 이벤트 보내기
+      //소켓 서버에게 상태 업데이트 이벤트 보내기
+      //접속중인 친구목록을 줌.
     } catch (error) {
       console.log(error);
     }
