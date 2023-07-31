@@ -72,6 +72,11 @@ export class StatusGateway
     this.statusProducer.login(sub, client.id, client.handshake.auth.token);
   }
 
+  /**
+   * @brief handleStatusSync
+   *
+   * @param message: online인 친구목록
+   */
   @SubscribeMessage('change-status')
   async handleStatusSync(
     @ConnectedSocket() client: any,
@@ -81,7 +86,7 @@ export class StatusGateway
     console.log(client.id);
     const data: GetFriendResponseDto[] = JSON.parse(message);
     for (const user of data) {
-      //친구에게 로그인/로그아웃한 유저의 상태정보를 전송한다.
+      //온라인 친구에게 로그인/로그아웃한 유저의 상태정보를 전송한다.
       this.server
         .to(user.friend.statusSocketId)
         .emit('change-status', user.user);

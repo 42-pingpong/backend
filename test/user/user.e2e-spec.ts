@@ -9,7 +9,7 @@ import { UpdateUserDto } from 'src/restapi/user/dto/update-user.dto';
 import { user1 } from 'test/fixtures/users/user-1';
 import { user2 } from 'test/fixtures/users/user-2';
 import { appDatabase } from 'src/datasource/appdatabase';
-import { UserFactory } from './user.factory';
+import { UserFactory } from 'src/factory/user.factory';
 import { AppConfigModule } from 'src/config/app.config';
 import { TestConfigModule } from 'src/config/test.config';
 import { FriendsWith } from 'src/entities/user/friendsWith.entity';

@@ -74,12 +74,13 @@ export class UserService {
     const friendQuery = {
       where: {
         userId: id,
+        friend: {},
       },
       relations: ['friend'],
     };
     // dynamic query
     if (query.status && query.status !== 'all') {
-      friendQuery.where['friend'] = { status: query.status };
+      friendQuery.where.friend = { status: query.status };
     }
     if (query.includeMe) {
       friendQuery.relations.push('user');

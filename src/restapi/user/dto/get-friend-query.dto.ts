@@ -11,9 +11,9 @@ export class GetFriendQueryDto {
   @ApiProperty({
     description: '친구의 상태',
     example: 'online',
-    enum: ['offline', 'online', 'inGame'],
+    enum: ['offline', 'online', 'inGame', 'all'],
   })
-  @IsEnum(['offline', 'online', 'inGame'])
+  @IsEnum(['offline', 'online', 'inGame', 'all'])
   @IsOptional()
   status?: string;
 
