@@ -57,6 +57,24 @@ export class ChatService {
     });
   }
 
+  async addAdmin(groupChatId: number, adminId: number) {
+    // 그룹 채팅방에 admin을 추가하는 로직
+    // 미완성
+    // 분기문으로 인가된 유저인지 확인하는 로직 필요
+    await this.groupChatRepository.save({
+      groupChatId: groupChatId,
+    });
+  }
+
+  async deleteAdmin(groupChatId: number, addAdminId: number) {
+    // 그룹 채팅방에서 admin을 삭제하는 로직
+    // 미완성
+    // 분기문으로 인가된 유저인지 확인하는 로직 필요
+    await this.groupChatRepository.delete({
+      groupChatId: groupChatId,
+    });
+  }
+
   sendMessage(messageData: any) {
     // 새로운 채팅 메시지를 생성하고 저장하는 로직
     const newMessage = {

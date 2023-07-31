@@ -88,6 +88,14 @@ describe('Chat', () => {
     it.todo('PATCH /api/chat/groupChat/:groupChatId');
   });
 
+  describe('POST /api/chat/groupChat/:groupChatId/admin', () => {
+    it.todo('POST /api/chat/groupChat/:groupChatId/admin');
+  });
+
+  describe('DELETE /api/chat/groupChat/:groupChatId/admin', () => {
+    it.todo('DELETE /api/chat/groupChat/:groupChatId/admin');
+  });
+
   afterAll(async () => {
     await dataSource.destroy();
     await app.close();
