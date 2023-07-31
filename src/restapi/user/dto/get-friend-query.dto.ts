@@ -1,11 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import {
-  IsBooleanString,
-  IsEnum,
-  IsOptional,
-  ValidationError,
-} from 'class-validator';
+import { IsEnum, IsOptional, ValidationError } from 'class-validator';
 
 export class GetFriendQueryDto {
   @ApiProperty({

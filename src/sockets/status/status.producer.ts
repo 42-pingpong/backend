@@ -15,7 +15,7 @@ export class StatusProducer {
       clientId,
       bearerToken,
     };
-    await this.statusQueue.add('login', userJobData);
+    this.statusQueue.add('login', userJobData);
   }
 
   async logout(userId: number, clientId: string, bearerToken: string) {
@@ -24,6 +24,14 @@ export class StatusProducer {
       clientId,
       bearerToken,
     };
-    await this.statusQueue.add('logout', userJobData);
+    this.statusQueue.add('logout', userJobData);
+  }
+
+  async requestFriend(userId: number, clientId: string, bearerToken: string) {
+    this.statusQueue.add('request-friend', {});
+  }
+
+  async acceptFriend(userId: number, clientId: string, bearerToken: string) {
+    this.statusQueue.add('accept-friend', {});
   }
 }

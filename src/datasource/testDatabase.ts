@@ -27,6 +27,7 @@ import { TestConfigModule } from 'src/config/test.config';
         entities: configService.get<any[]>('database.entities'),
         dropSchema: true,
         synchronize: true,
+        logging: true,
       }),
       dataSourceFactory: async (options) => {
         const dataSource = await new DataSource(options).initialize();

@@ -88,7 +88,7 @@ export class StatusConsumer {
     //1. 로그아웃 시, 로그인 상태/연결된 소켓 정보를 삭제한다.
     try {
       const res = await axios.patch(
-        `${this.restApiUrl}/api/user/${job.data.userId}`,
+        `${this.restApiUrl}/user/${job.data.userId}`,
         {
           status: 'offline',
           statusSocketId: null,
@@ -114,7 +114,6 @@ export class StatusConsumer {
           },
         },
       );
-      console.log('response.data', response.data);
       this.StatusSocket.emit('change-status', JSON.stringify(response.data));
     } catch (error) {
       console.log(error);

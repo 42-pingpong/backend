@@ -38,7 +38,7 @@ describe('Seeding Database', () => {
   describe('Seeding Database', () => {
     it('Seeding User', async () => {
       await userSeeder(dataSource);
-    });
+    }, 10000);
   });
 
   afterAll(async () => {
