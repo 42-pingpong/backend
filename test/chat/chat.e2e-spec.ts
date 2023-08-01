@@ -80,16 +80,31 @@ describe('Chat', () => {
     });
   });
 
+  describe('POST /api/chat/groupChat/:groupChatId/admin', () => {
+    it.todo('POST /api/chat/groupChat/:groupChatId/admin');
+    // it('should return 201', async () => {
+    //   const uf = new UserFactory();
+    //   const user1 = uf.createUser(101234);
+    //   const user2 = uf.createUser(101235);
+    //   await userRepository.save([user1, user2]);
+    //   const createChatDto = new CreateGroupChatDto();
+    //   createChatDto.password = '1234';
+    //   createChatDto.chatName = '테스트 채팅방';
+    //   createChatDto.levelOfPublicity = 'Priv';
+    //   createChatDto.maxParticipants = 10;
+    //   createChatDto.ownerId = 101234;
+    //   const response = await request(app.getHttpServer())
+    //     .post('/chat/groupChat/:groupChatId/admin')
+    //     .send(createChatDto);
+    // });
+  });
+
   describe('GET /api/chat/groupChat/:groupChatId', () => {
     it.todo('GET /api/chat/groupChat/:groupChatId');
   });
 
   describe('PATCH /api/chat/groupChat/:groupChatId', () => {
     it.todo('PATCH /api/chat/groupChat/:groupChatId');
-  });
-
-  describe('POST /api/chat/groupChat/:groupChatId/admin', () => {
-    it.todo('POST /api/chat/groupChat/:groupChatId/admin');
   });
 
   describe('DELETE /api/chat/groupChat/:groupChatId/admin', () => {
