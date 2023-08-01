@@ -63,10 +63,21 @@ export class ChatService {
 
     await this.groupChatRepository.manager.transaction(async (manager) => {
       //1. 그룹 안의 어드민 정보를 뽑아내는 로직
-      const groupChatAdmin = await this.groupChatRepository.find({
-        where: {
-          groupChatId: groupChatId,
-        },
+      const groupChatAdmin = await manager.getRepository(GroupChat).find({
+        where: [
+          {
+            groupChatId: groupChatId,
+            admin: {
+              id: adminId,
+            },
+          },
+          {
+            groupChatId: groupChatId,
+            owner: {
+              id: adminId,
+            },
+          },
+        ],
         relations: {
           admin: true,
           owner: true,
@@ -77,12 +88,13 @@ export class ChatService {
           // group안의 admin을 뽑을 때 어떻게 뽑아야할지 모르겠어여
         },
       });
+      console.log(groupChatAdmin);
       // if (groupChatAdmin.find((admin) => admin.ownerId !== adminId)) {
       //   throw new ForbiddenException();
       // }
       // 분기문으로 인가된 유저인지 확인하는 로직 필요
 
-      await this.groupChatRepository.manager.save(adminId);
+      // await manager.getRepository(GroupChat).save(adminId);
     });
   }
 
