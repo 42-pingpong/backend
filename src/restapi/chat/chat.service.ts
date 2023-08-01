@@ -104,4 +104,6 @@ export class ChatService {
  * 4. saveGroupChat
  * 5. getDmChat
  * 6. getGroupChat
+ * 7. ban
+ * 8. mute
  */
