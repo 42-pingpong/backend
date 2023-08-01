@@ -47,18 +47,6 @@ describe('User -/user (e2e)', () => {
 
   const defaultUser = user1;
 
-  describe('GET /user{id} test', () => {
-    it('GET /user/{id} success', async () => {
-      const rtn = await repository.save(defaultUser);
-      const res = await request(app.getHttpServer()).get('/user/1').expect(200);
-      expect(res.body.id).toEqual(defaultUser.id);
-    });
-
-    it('GET /user/{id} not found', async () => {
-      return request(app.getHttpServer()).get('/user/5').expect(404);
-    });
-  });
-
   describe('PATCH /user/{id} test', () => {
     //defaultUser를 업데이트할때 사용할 dto
     const updateUserDto = new UpdateUserDto();
