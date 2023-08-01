@@ -103,7 +103,7 @@ export class ChatService {
     // if (groupChatAdmin.find((admin) => admin.admin.id !== userId)) {
     //   throw new ForbiddenException();
     // }
-    //이거 안되네 ㅜㅜㅜ
+    //이거 안돼여 ㅜㅜ
 
     // await this.groupChatRepository.save({ id });
   }
