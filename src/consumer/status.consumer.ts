@@ -1,7 +1,7 @@
 import { Process, Processor } from '@nestjs/bull';
 import axios from 'axios';
 import { Job } from 'bull';
-import { UserJobData } from 'src/interface/user.jobdata';
+import { FriendRequestJobData, UserJobData } from 'src/interface/user.jobdata';
 import { io } from 'socket.io-client';
 import { ConfigService } from '@nestjs/config';
 
@@ -118,5 +118,21 @@ export class StatusConsumer {
     } catch (error) {
       console.log(error);
     }
+  }
+
+  /**
+   * [친구요청 프로세스]
+   * 1. 친구요청 시, 친구요청 정보를 저장한다.
+   * 2. 친구목록에서, 친구요청을 받은 유저 소켓들에게 친구요청 이벤트를 보낸다.
+   * 오프라인 상태는 데이터베이스에 NOTALRAM으로 저장한다.
+   * */
+  @Process('request-friend')
+  async requestFriend(job: Job<FriendRequestJobData>) {
+    try {
+      const saved = await axios.post(
+        `${this.restApiUrl}/user/me/friend/request/${job.data.userId}`,
+        job.data.friendRequestBody,
+      );
+    } catch (e) {}
   }
 }

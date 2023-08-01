@@ -15,7 +15,6 @@ import {
   ApiBody,
   ApiOperation,
   ApiParam,
-  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -25,6 +24,7 @@ import { AccessTokenGuard } from '../auth/Guards/accessToken.guard';
 import { GetFriendResponseDto } from './dto/get-friend-response.dto';
 import { AddFriendDto } from './dto/add-friend.dto';
 import { GetFriendQueryDto } from './dto/get-friend-query.dto';
+import { CreateRequestFriendDto } from './dto/create-request-friend.dto';
 
 @ApiTags('user')
 @Controller('user')
@@ -77,6 +77,9 @@ export class UserController {
     return await this.userService.getFriends(+id, query);
   }
 
+  /**
+   * @deprecated not completed
+   * */
   @ApiOperation({
     summary: '친구 추가',
     description: '친구 추가',
@@ -86,5 +89,36 @@ export class UserController {
   //need auth guard
   async addFriend(@Param('id') id: string, @Body() friend: AddFriendDto) {
     return await this.userService.addFriend(+id, friend.friendId);
+  }
+
+  /**
+   * @description 친구 요청 생성
+   * @description 친구요청 과정
+   * 1. Status socket통해 request-friend 요청 알림.
+   * 2-1. 해당 유저가 로그인 상태라면, socket통해 요청 알림.
+   * 	- 소켓통해 알람된 요청은 테이블에 PENDING 상태로 저장.
+   * 2-2. 해당 유저가 로그인 상태가 아니라면, DB에 저장.
+   * 	- 소켓통해 알람되지 않은 요청은 테이블에 NOTALARMED 상태로 저장.
+   * 	- 이후, 로그인 시 알람되지 않은 요청을 알람.
+   * */
+  @ApiOperation({
+    summary: '친구 요청 생성',
+    description: '친구 요청 생성',
+  })
+  @ApiParam({
+    name: 'id',
+    type: String,
+    example: '1',
+    description: '친구 요청을 하는 유저 id',
+  })
+  @Post('/me/friend/request/:id')
+  async requestFriend(
+    @Param('id') id: string,
+    @Body() friend: CreateRequestFriendDto,
+  ) {
+    return await this.userService.saveRequestFriend(
+      +id,
+      friend.requestedUserId,
+    );
   }
 }

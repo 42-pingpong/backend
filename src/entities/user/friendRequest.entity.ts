@@ -14,13 +14,19 @@ export class FriendRequest {
   @PrimaryGeneratedColumn()
   friendRequestId: number;
 
+  @ManyToOne(() => User, (user) => user.friendRequesting)
+  @JoinColumn()
+  requestingUser: User;
+
+  @Column()
+  requestingUserId: number;
+
   @ManyToOne(() => User, (user) => user.friendRequested)
   @JoinColumn()
   requestedUser: User;
 
-  @ManyToOne(() => User, (user) => user.friendRequesting)
-  @JoinColumn()
-  requestingUser: User;
+  @Column()
+  requestedUserId: number;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -28,7 +34,7 @@ export class FriendRequest {
   @Column({
     type: 'enum',
     enum: InvitationStatus,
-    default: InvitationStatus.PENDING,
+    default: InvitationStatus.NOTALARMED,
   })
   isAccepted: InvitationStatus;
 }

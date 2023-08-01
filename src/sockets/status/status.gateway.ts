@@ -14,6 +14,7 @@ import { StatusProducer } from './status.producer';
 import { ApiTags } from '@nestjs/swagger';
 import { StatusService } from './status.service';
 import { GetFriendResponseDto } from 'src/restapi/user/dto/get-friend-response.dto';
+import { FriendRequestJobData } from 'src/interface/user.jobdata';
 
 /**
  * @brief status gateway
@@ -102,6 +103,9 @@ export class StatusGateway
     this.statusProducer.logout(sub, client.id, client.handshake.auth.token);
   }
 
+  /** [친구요청 프로세스]
+   * client: socket.emit으로 시작.
+   * */
   @SubscribeMessage('request-friend')
   handleRequestFriend(
     @ConnectedSocket() client: any,
@@ -110,7 +114,24 @@ export class StatusGateway
     console.log('friend-request');
     const requestUser = this.statusService.getSub(client.handshake.auth.token);
     if (!requestUser) return;
-    this.statusProducer.requestFriend(
+    const requestFriendDto: FriendRequestJobData = {
+      userId: requestUser,
+      clientId: client.id,
+      bearerToken: client.handshake.auth.token,
+      friendRequestBody: JSON.parse(body),
+    };
+    this.statusProducer.requestFriend(requestFriendDto);
+  }
+
+  @SubscribeMessage('send-request-friend-to-user')
+  handleSendRequestFriend(
+    @ConnectedSocket() client: any,
+    @MessageBody() body: string,
+  ) {
+    console.log('send-request-friend-to-user');
+    const requestUser = this.statusService.getSub(client.handshake.auth.token);
+    if (!requestUser) return;
+    this.statusProducer.sendRequestFriendToUser(
       requestUser,
       client.id,
       client.handshake.auth.token,
