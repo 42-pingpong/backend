@@ -13,7 +13,8 @@ import { ApiBody, ApiCreatedResponse, ApiTags } from '@nestjs/swagger';
 import { ChatService } from './chat.service';
 import { CreateGroupChatDto } from './dto/create-group-chat.dto';
 import { UpdateGroupChatDto } from './dto/update-group-chat.dto';
-import { AddDeleteAdminDto } from './dto/add-delete-admin.dto';
+import { AddAdminDto } from './dto/add-admin.dto';
+import { DeleteAdminDto } from './dto/delete-admin.dto';
 
 @ApiTags('chat')
 @Controller('chat')
@@ -48,7 +49,7 @@ export class ChatController {
   @Post('groupChat/:groupChatId/admin')
   async addAdmin(
     @Param('groupChatId') groupChatId: string,
-    @Query() query: AddDeleteAdminDto,
+    @Query() query: AddAdminDto,
   ) {
     // 그룹 채팅방에 admin(id)을 추가하는 메서드
     // this.chatService.addAdmin(+groupChatId, req.user.userId, id);
@@ -58,10 +59,10 @@ export class ChatController {
   @Delete('groupChat/:groupChatId/admin')
   async deleteAdmin(
     @Param('groupChatId') groupChatId: string,
-    @Query() query: AddDeleteAdminDto,
+    @Query() query: DeleteAdminDto,
   ) {
     // 그룹 채팅방에서 admin을 삭제하는 메서드
-    this.chatService.deleteAdmin(+groupChatId, query);
+    await this.chatService.deleteAdmin(+groupChatId, query);
   }
 
   ///////////////////////////////////////////////////////////////

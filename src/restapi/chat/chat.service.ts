@@ -10,8 +10,9 @@ import { CreateGroupChatDto } from './dto/create-group-chat.dto';
 import { UpdateGroupChatDto } from './dto/update-group-chat.dto';
 import { ExceptionsHandler } from '@nestjs/core/exceptions/exceptions-handler';
 import { NotFoundError } from 'rxjs';
-import { AddDeleteAdminDto } from './dto/add-delete-admin.dto';
+import { AddAdminDto } from './dto/add-admin.dto';
 import { User } from 'src/entities/user/user.entity';
+import { DeleteAdminDto } from './dto/delete-admin.dto';
 
 @Injectable()
 export class ChatService {
@@ -64,7 +65,7 @@ export class ChatService {
     );
   }
 
-  async addAdmin(groupChatId: number, dto: AddDeleteAdminDto) {
+  async addAdmin(groupChatId: number, dto: AddAdminDto) {
     // 그룹 채팅방에 admin을 추가하는 로직
     //1. 그룹 안의 admin과 owner 정보를 뽑아내는 로직
     try {
@@ -109,7 +110,7 @@ export class ChatService {
     }
   }
 
-  async deleteAdmin(groupChatId: number, dto: AddDeleteAdminDto) {
+  async deleteAdmin(groupChatId: number, dto: DeleteAdminDto) {
     // 그룹 채팅방에서 admin을 제거하는 로직
     try {
       await this.groupChatRepository.manager.transaction(
