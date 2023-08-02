@@ -42,7 +42,7 @@ export class GroupChat {
 
   @Column({
     type: 'bigint',
-    default: 0,
+    default: 1,
   })
   curParticipants: number;
 
