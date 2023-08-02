@@ -68,54 +68,44 @@ export class ChatService {
     // 그룹 채팅방에 admin을 추가하는 로직
     // 미완성
     //1. 그룹 안의 admin과 owner 정보를 뽑아내는 로직
-    const groupChatAdmin = await this.groupChatRepository.find({
-      where: [
-        {
-          groupChatId: groupChatId,
-          admin: {
-            id: dto.userId,
-          },
-        },
-        {
-          groupChatId: groupChatId,
-          owner: {
-            id: dto.userId,
-          },
-        },
-      ],
-      relations: {
-        admin: true,
-        owner: true,
-      },
-      select: {
-        ownerId: true,
-        admin: true,
-      },
-    });
-    console.log(groupChatAdmin);
-
-    //위 쿼리 정상작동다는 가정하에, 쿼리의 리턴값이 비어있으면 groupChat의 ownerId도 admin도 아닌 유저가 추가하는 경우.
-    //forbidden acception
-    if (groupChatAdmin.length === 0) {
-      throw new ForbiddenException();
-    }
-
-    // 2. groupchat 안에 admin 추가.
     await this.groupChatRepository.manager.transaction(
       async (manager: EntityManager) => {
-        const groupChat = await manager.findOne(GroupChat, {
-          where: { groupChatId },
-          relations: ['admin'],
+        const groupChat = await manager.getRepository(GroupChat).find({
+          where: [
+            {
+              groupChatId: groupChatId,
+              admin: {
+                id: dto.userId,
+              },
+            },
+            {
+              groupChatId: groupChatId,
+              owner: {
+                id: dto.userId,
+              },
+            },
+          ],
+          relations: {
+            admin: true,
+            owner: true,
+          },
+          select: {
+            ownerId: true,
+            admin: true,
+          },
         });
-        const user = await manager.findOne(User, {
+        console.log(groupChat);
+
+        if (groupChat.length === 0) {
+          throw new ForbiddenException();
+        }
+        const user = await manager.getRepository(User).findOne({
           where: { id: dto.requestedId },
         });
-        groupChat.admin.push(user);
-        await manager.save(groupChat);
+        groupChat[0].admin.push(user);
+        await manager.save(groupChat[0]);
       },
     );
-
-    // await this.groupChatRepository.save({ id });
   }
 
   async deleteAdmin(groupChatId: number, addAdminId: number) {
