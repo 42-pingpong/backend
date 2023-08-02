@@ -48,12 +48,11 @@ export class ChatController {
   @Post('groupChat/:groupChatId/admin')
   async addAdmin(
     @Param('groupChatId') groupChatId: string,
-    // @Req() req,
     @Query() query: AddAdminDto,
   ) {
     // 그룹 채팅방에 admin(id)을 추가하는 메서드
     // this.chatService.addAdmin(+groupChatId, req.user.userId, id);
-    this.chatService.addAdmin(+groupChatId, query);
+    await this.chatService.addAdmin(+groupChatId, query);
   }
 
   @Delete('groupChat/:groupChatId/admin')

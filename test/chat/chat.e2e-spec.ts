@@ -12,6 +12,7 @@ import * as request from 'supertest';
 import { UserFactory } from 'test/user/user.factory';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from 'src/entities/user/user.entity';
+import { AddAdminDto } from 'src/restapi/chat/dto/add-admin.dto';
 
 describe('Chat', () => {
   let app: INestApplication;
@@ -81,7 +82,7 @@ describe('Chat', () => {
   });
 
   describe('POST /api/chat/groupChat/:groupChatId/admin', () => {
-    it.todo('POST /api/chat/groupChat/:groupChatId/admin');
+    // it.todo('POST /api/chat/groupChat/:groupChatId/admin');
     it('should return 201', async () => {
       const uf = new UserFactory();
       const user1 = uf.createUser(101234);
@@ -93,9 +94,31 @@ describe('Chat', () => {
       createChatDto.levelOfPublicity = 'Priv';
       createChatDto.maxParticipants = 10;
       createChatDto.ownerId = 101234;
-      const response = await request(app.getHttpServer())
-        .post('/chat/groupChat/:groupChatId/admin')
-        .send(createChatDto);
+
+      const groupChat = await groupChatRepository.save(createChatDto);
+
+      console.log(groupChat);
+
+      const addAdminDto = new AddAdminDto();
+      addAdminDto.userId = 101234;
+      addAdminDto.requestedId = 101235;
+
+      //query param으로 받을때는 쿼리파라미터로 넣어줘야함
+      //body는 send로, query는 query로 넣어줘야함
+      const response = await request(app.getHttpServer()).post(
+        `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${addAdminDto.userId}&requestedId=${addAdminDto.requestedId}`,
+      );
+
+      expect(response.status).toBe(201);
+
+      const data = await groupChatRepository.find({
+        where: {
+          groupChatId: groupChat.groupChatId,
+        },
+        relations: ['admin'],
+      });
+
+      expect(data[0].admin[0].id).toBe(addAdminDto.requestedId);
     });
   });
 
