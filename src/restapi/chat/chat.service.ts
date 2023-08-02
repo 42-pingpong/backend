@@ -11,6 +11,7 @@ import { UpdateGroupChatDto } from './dto/update-group-chat.dto';
 import { ExceptionsHandler } from '@nestjs/core/exceptions/exceptions-handler';
 import { NotFoundError } from 'rxjs';
 import { AddAdminDto } from './dto/add-admin.dto';
+import { User } from 'src/entities/user/user.entity';
 
 @Injectable()
 export class ChatService {
@@ -63,7 +64,7 @@ export class ChatService {
     );
   }
 
-  async addAdmin(groupChatId: number, userId: AddAdminDto, id: number) {
+  async addAdmin(groupChatId: number, dto: AddAdminDto) {
     // 그룹 채팅방에 admin을 추가하는 로직
     // 미완성
     //1. 그룹 안의 admin과 owner 정보를 뽑아내는 로직
@@ -72,13 +73,13 @@ export class ChatService {
         {
           groupChatId: groupChatId,
           admin: {
-            id: userId.adminId,
+            id: dto.userId,
           },
         },
         {
           groupChatId: groupChatId,
           owner: {
-            id: userId.ownerId,
+            id: dto.userId,
           },
         },
       ],
@@ -92,18 +93,27 @@ export class ChatService {
       },
     });
     console.log(groupChatAdmin);
-    if (!groupChatAdmin) {
-      throw new NotFoundException();
-    }
-    //2. 그룹 안의 owner 정보와 요청한 유저의 id를 비교하는 로직
-    if (groupChatAdmin.find((admin) => admin.ownerId !== userId.adminId)) {
+
+    //위 쿼리 정상작동다는 가정하에, 쿼리의 리턴값이 비어있으면 groupChat의 ownerId도 admin도 아닌 유저가 추가하는 경우.
+    //forbidden acception
+    if (groupChatAdmin.length === 0) {
       throw new ForbiddenException();
     }
-    //3. 그룹 안의 admin 정보에 요청한 유저의 id가 있는지 확인하는 로직
-    // if (groupChatAdmin.find((admin) => admin.admin.id !== userId)) {
-    //   throw new ForbiddenException();
-    // }
-    //이거 안돼여 ㅜㅜ
+
+    // 2. groupchat 안에 admin 추가.
+    await this.groupChatRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        const groupChat = await manager.findOne(GroupChat, {
+          where: { groupChatId },
+          relations: ['admin'],
+        });
+        const user = await manager.findOne(User, {
+          where: { id: dto.requestedId },
+        });
+        groupChat.admin.push(user);
+        await manager.save(groupChat);
+      },
+    );
 
     // await this.groupChatRepository.save({ id });
   }
