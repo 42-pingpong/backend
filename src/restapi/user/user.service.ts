@@ -13,6 +13,9 @@ import { FriendsWith } from 'src/entities/user/friendsWith.entity';
 import { GetFriendQueryDto } from './dto/get-friend-query.dto';
 import { FriendRequest } from 'src/entities/user/friendRequest.entity';
 import { InvitationStatus } from 'src/enum/invitation.enum';
+import { SearchUserDto } from './dto/search-user.dto';
+import { Like } from 'typeorm';
+
 
 @Injectable()
 export class UserService {
@@ -144,5 +147,12 @@ export class UserService {
         });
       },
     );
+
+  async searchUser(query: SearchUserDto): Promise<User[]> {
+    const { nickName, email } = query;
+    const where = {};
+    if (nickName) where['nickName'] = Like(`%${nickName}%`);
+    if (email) where['email'] = Like(`%${email}%`);
+    return await this.userRepository.findBy(where);
   }
 }

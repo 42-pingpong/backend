@@ -12,6 +12,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Token } from 'src/entities/auth/token.entity';
 import { AppModule } from 'src/app.module';
 import userSeeder from './user';
+import chatSeeder from './chat';
 
 describe('Seeding Database', () => {
   let app: INestApplication;
@@ -36,9 +37,10 @@ describe('Seeding Database', () => {
   });
 
   describe('Seeding Database', () => {
-    it('Seeding User', async () => {
+    it('Seeding', async () => {
       await userSeeder(dataSource);
-    }, 10000);
+      await chatSeeder(dataSource);
+    }, 100000);
   });
 
   afterAll(async () => {

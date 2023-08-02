@@ -25,6 +25,9 @@ import { AddFriendDto } from './dto/add-friend.dto';
 import { GetFriendQueryDto } from './dto/get-friend-query.dto';
 import { CreateRequestFriendDto } from './dto/create-request-friend.dto';
 import { GetFriendResponse } from './response/get-friend.response';
+import { SearchUserDto } from './dto/search-user.dto';
+import { SearchUserResponseDto } from './dto/search-user-response.dto';
+
 
 @ApiTags('user')
 @Controller('user')
@@ -44,12 +47,6 @@ export class UserController {
   async getMe(@Req() req: Request) {
     // req.sessionStore.get(req.sessionID, (err, session) => console.log(session));
     return await this.userService.findOne(+req.user.sub);
-  }
-
-  @ApiParam({ name: 'id', type: String })
-  @Get(':id')
-  async findOne(@Param('id') id: string) {
-    return await this.userService.findOne(+id);
   }
 
   @ApiBody({ type: UpdateUserDto })
@@ -121,5 +118,18 @@ export class UserController {
       +id,
       friend.requestedUserId,
     );
+
+  @ApiOperation({
+    summary: '유저 검색',
+    description: '유저 검색',
+  })
+  @ApiResponse({
+    status: 200,
+    type: SearchUserResponseDto,
+  })
+  @Get('/search')
+  async searchUser(@Query() query: SearchUserDto) {
+    console.log('query: ', query);
+    return await this.userService.searchUser(query);
   }
 }
