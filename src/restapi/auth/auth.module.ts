@@ -3,7 +3,6 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { FourtyTwoStrategy } from './Oauth/42-strategy';
 import { PassportModule } from '@nestjs/passport';
-import { UserService } from '../user/user.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { ConfigService } from '@nestjs/config';
@@ -30,7 +29,6 @@ import { FriendsWith } from 'src/entities/user/friendsWith.entity';
     AuthService,
     ConfigService,
     JwtService,
-    UserService,
     AccessTokenStrategy,
     AccessTokenGuard,
     RefreshTokenStrategy,

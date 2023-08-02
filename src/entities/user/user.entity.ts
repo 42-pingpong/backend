@@ -111,6 +111,9 @@ export class User {
   @OneToMany(() => FriendsWith, (friendsWith) => friendsWith.user)
   friendsWith: FriendsWith[];
 
+  @OneToMany(() => FriendsWith, (friendsWith) => friendsWith.friend)
+  friendsOf: FriendsWith[];
+
   @OneToMany(() => MessageInfo, (messageInfo) => messageInfo.sender)
   messages: MessageInfo[];
 

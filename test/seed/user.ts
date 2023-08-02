@@ -72,9 +72,7 @@ async function fakeUserSeeding(dataSource: DataSource, qt: number) {
   const userFactory = new UserFactory();
   for (let i = 1; i < qt + 1; i++) {
     const user = userFactory.createUser(i);
-    if (i % 3 == 0) user.status = 'online';
-    else if (i % 3 == 1) user.status = 'offline';
-    else user.status = 'inGame';
+    user.status = 'offline';
     await dataSource.getRepository(User).save(user);
   }
 }
@@ -130,7 +128,7 @@ async function realFriendsSeeding(dataSource: DataSource, realIds: number[]) {
  */
 export default async function userSeeder(dataSource: DataSource) {
   const realIds = [107112, 106987, 106982, 106930];
-  const qt = 40;
+  const qt = 10;
   await realUserSeeding(dataSource);
   await fakeUserSeeding(dataSource, qt);
   await fakeFriendsSeeding(dataSource, qt, realIds);

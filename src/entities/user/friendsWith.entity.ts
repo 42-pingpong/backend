@@ -18,7 +18,7 @@ export class FriendsWith {
   })
   userId: number;
 
-  @OneToOne(() => User)
+  @ManyToOne(() => User, (user) => user.friendsOf)
   @JoinColumn({ name: 'friendId' })
   friend: User;
 

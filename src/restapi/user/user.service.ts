@@ -5,14 +5,17 @@ import {
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { EntityManager, Repository } from 'typeorm';
+import { EntityManager, Raw, Repository } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Token } from 'src/entities/auth/token.entity';
 import { FriendsWith } from 'src/entities/user/friendsWith.entity';
 import { GetFriendQueryDto } from './dto/get-friend-query.dto';
+import { FriendRequest } from 'src/entities/user/friendRequest.entity';
+import { InvitationStatus } from 'src/enum/invitation.enum';
 import { SearchUserDto } from './dto/search-user.dto';
 import { Like } from 'typeorm';
+
 
 @Injectable()
 export class UserService {
@@ -25,6 +28,9 @@ export class UserService {
 
     @InjectRepository(FriendsWith)
     private friendsWithRepository: Repository<FriendsWith>,
+
+    @InjectRepository(FriendRequest)
+    private friendRequestRepository: Repository<FriendRequest>,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -73,21 +79,20 @@ export class UserService {
   }
 
   async getFriends(id: number, query: GetFriendQueryDto) {
-    const friendQuery = {
+    const quer = {
+      relation: ['friendsWith'],
       where: {
-        userId: id,
-        friend: {},
+        friendsWith: {
+          friendId: id,
+        },
       },
-      relations: ['friend'],
     };
-    // dynamic query
+
     if (query.status && query.status !== 'all') {
-      friendQuery.where.friend = { status: query.status };
+      quer.where['status'] = query.status;
     }
-    if (query.includeMe) {
-      friendQuery.relations.push('user');
-    }
-    return await this.friendsWithRepository.find(friendQuery);
+
+    return await this.userRepository.find(quer);
   }
 
   async addFriend(id: number, friendId: number): Promise<void> {
@@ -118,6 +123,30 @@ export class UserService {
       },
     );
   }
+
+  async saveRequestFriend(id: number, friendId: number): Promise<void> {
+    await this.friendRequestRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        //유저 조회
+        const user = await manager.findOne(User, {
+          where: { id: id },
+        });
+        if (!user) throw new NotFoundException();
+
+        //친구 조회
+        const friend = await manager.findOne(User, {
+          where: { id: friendId },
+        });
+        if (!friend) throw new NotFoundException();
+
+        //친구 추가
+        await manager.save(FriendRequest, {
+          requestingUserId: id,
+          requestedUserId: friendId,
+          isAccepted: InvitationStatus.NOTALARMED,
+        });
+      },
+    );
 
   async searchUser(query: SearchUserDto): Promise<User[]> {
     const { nickName, email } = query;

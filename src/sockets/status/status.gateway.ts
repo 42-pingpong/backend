@@ -13,7 +13,9 @@ import { AccessTokenGuard } from 'src/restapi/auth/Guards/accessToken.guard';
 import { StatusProducer } from './status.producer';
 import { ApiTags } from '@nestjs/swagger';
 import { StatusService } from './status.service';
-import { GetFriendResponseDto } from 'src/restapi/user/dto/get-friend-response.dto';
+import { FriendRequestJobData } from 'src/interface/user.jobdata';
+import { GetFriendResponse } from 'src/restapi/user/response/get-friend.response';
+import { CreateUserDto } from 'src/restapi/user/dto/create-user.dto';
 
 /**
  * @brief status gateway
@@ -82,15 +84,28 @@ export class StatusGateway
     @MessageBody() body: string,
   ) {
     console.log('status gateway change-status');
-    const friends: GetFriendResponseDto[] = JSON.parse(body);
-    if (friends.length == 0) {
+
+    interface changeStatusData {
+      friendList: GetFriendResponse[];
+      me: CreateUserDto;
+    }
+
+    const changeStatusData: changeStatusData = JSON.parse(body);
+    console.log(changeStatusData);
+    if (!changeStatusData.friendList || !changeStatusData.me) {
       return false;
     }
-    for (const friend of friends) {
-      //온라인 친구에게 로그인/로그아웃한 유저의 상태정보를 전송한다.
+
+    if (changeStatusData.friendList.length == 0) {
+      return false;
+    }
+
+    for (const friend of changeStatusData.friendList) {
+      // 온라인 친구에게 로그인/로그아웃한 유저의 상태정보를 전송한다.
+      console.log('change-status', friend.statusSocketId, changeStatusData.me);
       this.server
-        .to(friend.friend.statusSocketId)
-        .emit('change-status', friend.user);
+        .to(friend.statusSocketId)
+        .emit('change-status', changeStatusData.me);
     }
   }
 
@@ -102,6 +117,9 @@ export class StatusGateway
     this.statusProducer.logout(sub, client.id, client.handshake.auth.token);
   }
 
+  /** [친구요청 프로세스]
+   * client: socket.emit으로 시작.
+   * */
   @SubscribeMessage('request-friend')
   handleRequestFriend(
     @ConnectedSocket() client: any,
@@ -110,7 +128,24 @@ export class StatusGateway
     console.log('friend-request');
     const requestUser = this.statusService.getSub(client.handshake.auth.token);
     if (!requestUser) return;
-    this.statusProducer.requestFriend(
+    const requestFriendDto: FriendRequestJobData = {
+      userId: requestUser,
+      clientId: client.id,
+      bearerToken: client.handshake.auth.token,
+      friendRequestBody: JSON.parse(body),
+    };
+    this.statusProducer.requestFriend(requestFriendDto);
+  }
+
+  @SubscribeMessage('send-request-friend-to-user')
+  handleSendRequestFriend(
+    @ConnectedSocket() client: any,
+    @MessageBody() body: string,
+  ) {
+    console.log('send-request-friend-to-user');
+    const requestUser = this.statusService.getSub(client.handshake.auth.token);
+    if (!requestUser) return;
+    this.statusProducer.sendRequestFriendToUser(
       requestUser,
       client.id,
       client.handshake.auth.token,
