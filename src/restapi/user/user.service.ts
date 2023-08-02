@@ -82,7 +82,7 @@ export class UserService {
       relation: ['friendsWith'],
       where: {
         friendsWith: {
-          friendId: id,
+          userId: id,
         },
       },
     };
@@ -90,7 +90,6 @@ export class UserService {
     if (query.status && query.status !== 'all') {
       quer.where['status'] = query.status;
     }
-
     return await this.userRepository.find(quer);
   }
 

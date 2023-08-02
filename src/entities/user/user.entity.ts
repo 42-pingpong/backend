@@ -108,11 +108,8 @@ export class User {
   @ManyToMany(() => GroupChat, (groupChat) => groupChat.joinedUser)
   joinedGroupChats: GroupChat[];
 
-  @OneToMany(() => FriendsWith, (friendsWith) => friendsWith.user)
-  friendsWith: FriendsWith[];
-
   @OneToMany(() => FriendsWith, (friendsWith) => friendsWith.friend)
-  friendsOf: FriendsWith[];
+  friendsWith: FriendsWith[];
 
   @OneToMany(() => MessageInfo, (messageInfo) => messageInfo.sender)
   messages: MessageInfo[];
