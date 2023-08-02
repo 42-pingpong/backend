@@ -28,10 +28,10 @@ export class FakeauthController {
 
     createUserDto.fullName = 'Fake User';
     createUserDto.level = 1;
-    createUserDto.nickName = 'Fake User';
+    createUserDto.nickName = 'Fake User' + fakeUserDto.id;
     createUserDto.profile =
       'https://devs.lol/uploads/2021/12/meme-dev-humor-when-you-are-a-typescript-developer-263.jpg';
-    createUserDto.email = 'test@email.com';
+    createUserDto.email = 'test@email.com' + fakeUserDto.id;
     createUserDto.selfIntroduction = 'Fake User';
 
     const tokens = await this.authService.login(createUserDto);
