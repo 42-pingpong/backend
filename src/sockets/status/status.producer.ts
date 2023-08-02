@@ -11,7 +11,7 @@ export class StatusProducer {
     const userJobData: UserJobData = {
       userId,
       clientId,
-      bearerToken,
+      bearerToken: 'Bearer ' + bearerToken.substring(6),
     };
     this.statusQueue.add('login', userJobData);
   }
@@ -20,7 +20,7 @@ export class StatusProducer {
     const userJobData: UserJobData = {
       userId,
       clientId,
-      bearerToken,
+      bearerToken: 'Bearer ' + bearerToken.substring(6),
     };
     this.statusQueue.add('logout', userJobData);
   }
@@ -41,12 +41,17 @@ export class StatusProducer {
     const userJobData: UserJobData = {
       userId,
       clientId,
-      bearerToken,
+      bearerToken: 'Bearer ' + bearerToken.substring(6),
     };
     this.statusQueue.add('send-request-friend-to-user', userJobData);
   }
 
   async acceptFriend(userId: number, clientId: string, bearerToken: string) {
+    const userJobData: UserJobData = {
+      userId,
+      clientId,
+      bearerToken: bearerToken.substring(6),
+    };
     this.statusQueue.add('accept-friend', {});
   }
 }

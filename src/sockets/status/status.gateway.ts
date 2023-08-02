@@ -13,8 +13,9 @@ import { AccessTokenGuard } from 'src/restapi/auth/Guards/accessToken.guard';
 import { StatusProducer } from './status.producer';
 import { ApiTags } from '@nestjs/swagger';
 import { StatusService } from './status.service';
-import { GetFriendResponseDto } from 'src/restapi/user/dto/get-friend-response.dto';
 import { FriendRequestJobData } from 'src/interface/user.jobdata';
+import { GetFriendResponse } from 'src/restapi/user/response/get-friend.response';
+import { CreateUserDto } from 'src/restapi/user/dto/create-user.dto';
 
 /**
  * @brief status gateway
@@ -83,15 +84,28 @@ export class StatusGateway
     @MessageBody() body: string,
   ) {
     console.log('status gateway change-status');
-    const friends: GetFriendResponseDto[] = JSON.parse(body);
-    if (friends.length == 0) {
+
+    interface changeStatusData {
+      friendList: GetFriendResponse[];
+      me: CreateUserDto;
+    }
+
+    const changeStatusData: changeStatusData = JSON.parse(body);
+    console.log(changeStatusData);
+    if (!changeStatusData.friendList || !changeStatusData.me) {
       return false;
     }
-    for (const friend of friends) {
-      //온라인 친구에게 로그인/로그아웃한 유저의 상태정보를 전송한다.
+
+    if (changeStatusData.friendList.length == 0) {
+      return false;
+    }
+
+    for (const friend of changeStatusData.friendList) {
+      // 온라인 친구에게 로그인/로그아웃한 유저의 상태정보를 전송한다.
+      console.log('change-status', friend.statusSocketId, changeStatusData.me);
       this.server
-        .to(friend.friend.statusSocketId)
-        .emit('change-status', friend.user);
+        .to(friend.statusSocketId)
+        .emit('change-status', changeStatusData.me);
     }
   }
 

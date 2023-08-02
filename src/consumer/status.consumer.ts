@@ -57,7 +57,7 @@ export class StatusConsumer {
     //GET /user/friends/:id
     try {
       const response = await axios.get(
-        `${this.restApiUrl}/user/me/friends/${job.data.userId}?status=online&includeMe=true`,
+        `${this.restApiUrl}/user/me/friends/${job.data.userId}?status=online`,
         {
           headers: {
             Authorization: job.data.bearerToken,
@@ -65,7 +65,17 @@ export class StatusConsumer {
         },
       );
       console.log('response.data', response.data);
-      this.StatusSocket.emit('change-status', JSON.stringify(response.data));
+
+      const me = await axios.get(`${this.restApiUrl}/user/me`, {
+        headers: {
+          Authorization: job.data.bearerToken,
+        },
+      });
+
+      this.StatusSocket.emit(
+        'change-status',
+        JSON.stringify({ friendList: response.data, me: me.data }),
+      );
       //소켓 서버에게 상태 업데이트 이벤트 보내기
       //접속중인 친구목록을 줌.
     } catch (error) {
@@ -107,14 +117,24 @@ export class StatusConsumer {
     //2. 친구목록에서, 로그인 상태 유저 소켓들에게 상태 업데이트 이벤트를 보낸다.
     try {
       const response = await axios.get(
-        `${this.restApiUrl}/user/me/friends/${job.data.userId}?status=online&includeMe=true`,
+        `${this.restApiUrl}/user/me/friends/${job.data.userId}?status=online`,
         {
           headers: {
             Authorization: job.data.bearerToken,
           },
         },
       );
-      this.StatusSocket.emit('change-status', JSON.stringify(response.data));
+
+      const me = await axios.get(`${this.restApiUrl}/user/me`, {
+        headers: {
+          Authorization: job.data.bearerToken,
+        },
+      });
+
+      this.StatusSocket.emit(
+        'change-status',
+        JSON.stringify({ friendList: response.data, me: me.data }),
+      );
     } catch (error) {
       console.log(error);
     }

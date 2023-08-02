@@ -21,10 +21,10 @@ import {
 import { Request } from 'express';
 import { CreateUserDto } from './dto/create-user.dto';
 import { AccessTokenGuard } from '../auth/Guards/accessToken.guard';
-import { GetFriendResponseDto } from './dto/get-friend-response.dto';
 import { AddFriendDto } from './dto/add-friend.dto';
 import { GetFriendQueryDto } from './dto/get-friend-query.dto';
 import { CreateRequestFriendDto } from './dto/create-request-friend.dto';
+import { GetFriendResponse } from './response/get-friend.response';
 
 @ApiTags('user')
 @Controller('user')
@@ -66,7 +66,8 @@ export class UserController {
   })
   @ApiResponse({
     status: 200,
-    type: GetFriendResponseDto,
+    type: GetFriendResponse,
+    isArray: true,
   })
   @Get('/me/friends/:id')
   //need auth guard

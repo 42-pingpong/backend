@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { EntityManager, Repository } from 'typeorm';
+import { EntityManager, Raw, Repository } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Token } from 'src/entities/auth/token.entity';
@@ -76,21 +76,20 @@ export class UserService {
   }
 
   async getFriends(id: number, query: GetFriendQueryDto) {
-    const friendQuery = {
+    const quer = {
+      relation: ['friendsWith'],
       where: {
-        userId: id,
-        friend: {},
+        friendsWith: {
+          friendId: id,
+        },
       },
-      relations: ['friend'],
     };
-    // dynamic query
+
     if (query.status && query.status !== 'all') {
-      friendQuery.where.friend = { status: query.status };
+      quer.where['status'] = query.status;
     }
-    if (query.includeMe) {
-      friendQuery.relations.push('user');
-    }
-    return await this.friendsWithRepository.find(friendQuery);
+
+    return await this.userRepository.find(quer);
   }
 
   async addFriend(id: number, friendId: number): Promise<void> {

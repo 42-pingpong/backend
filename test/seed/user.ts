@@ -128,7 +128,7 @@ async function realFriendsSeeding(dataSource: DataSource, realIds: number[]) {
  */
 export default async function userSeeder(dataSource: DataSource) {
   const realIds = [107112, 106987, 106982, 106930];
-  const qt = 40;
+  const qt = 10;
   await realUserSeeding(dataSource);
   await fakeUserSeeding(dataSource, qt);
   await fakeFriendsSeeding(dataSource, qt, realIds);
