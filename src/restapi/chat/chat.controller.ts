@@ -13,7 +13,7 @@ import { ApiBody, ApiCreatedResponse, ApiTags } from '@nestjs/swagger';
 import { ChatService } from './chat.service';
 import { CreateGroupChatDto } from './dto/create-group-chat.dto';
 import { UpdateGroupChatDto } from './dto/update-group-chat.dto';
-import { AddAdminDto } from './dto/add-admin.dto';
+import { AddDeleteAdminDto } from './dto/add-delete-admin.dto';
 
 @ApiTags('chat')
 @Controller('chat')
@@ -48,7 +48,7 @@ export class ChatController {
   @Post('groupChat/:groupChatId/admin')
   async addAdmin(
     @Param('groupChatId') groupChatId: string,
-    @Query() query: AddAdminDto,
+    @Query() query: AddDeleteAdminDto,
   ) {
     // 그룹 채팅방에 admin(id)을 추가하는 메서드
     // this.chatService.addAdmin(+groupChatId, req.user.userId, id);
@@ -58,49 +58,13 @@ export class ChatController {
   @Delete('groupChat/:groupChatId/admin')
   async deleteAdmin(
     @Param('groupChatId') groupChatId: string,
-    @Query('adminId') adminId: number,
+    @Query() query: AddDeleteAdminDto,
   ) {
     // 그룹 채팅방에서 admin을 삭제하는 메서드
-    this.chatService.deleteAdmin(+groupChatId, adminId);
+    this.chatService.deleteAdmin(+groupChatId, query);
   }
 
   ///////////////////////////////////////////////////////////////
-
-  @Post('groupChat/:groupChatId/setpriv')
-  async setPriv(
-    @Param('groupChatId') groupChatId: number,
-    @Query('levelOfPublicity') levelOfPublicity: number,
-  ) {
-    // 그룹 채팅방을 비공개로 설정하는 메서드
-    this.chatService.setPriv(+groupChatId, levelOfPublicity);
-  }
-
-  @Post('groupChat/:groupChatId/setpub')
-  async setPub(
-    @Param('groupChatId') groupChatId: number,
-    @Query('levelOfPublicity') levelOfPublicity: number,
-  ) {
-    // 그룹 채팅방을 공개로 설정하는 메서드
-    this.chatService.setPub(+groupChatId, levelOfPublicity);
-  }
-
-  // @Post('groupChat/:groupChatId/savedmchat')
-  // async saveDmChat(
-  //   @Param('groupChatId') groupChatId: number,
-  //   @Query('userId') userId: number,
-  // ) {
-  //   // 그룹 채팅방에서 DM을 보내는 메서드
-  //   this.chatService.saveDmChat(+groupChatId, userId);
-  // }
-
-  // @Post('groupChat/:groupChatId/savegrouptchat')
-  // async saveGroupChat(
-  //   @Param('groupChatId') groupChatId: number,
-  //   @Query('userId') userId: number,
-  // ) {
-  //   // 그룹 채팅방에서 그룹 채팅을 보내는 메서드
-  //   this.chatService.saveGroupChat(+groupChatId, userId);
-  // }
 
   @Get('groupChat/:groupChatId/getdmchat')
   async getDmChat(
@@ -120,12 +84,31 @@ export class ChatController {
     this.chatService.ban(+groupChatId, userId);
   }
 
-  @Post('groupChat/:groupChatId/mute')
-  async mute(
-    @Param('groupChatId') groupChatId: number,
-    @Query('userId') userId: number,
-  ) {
-    // 그룹 채팅방에서 유저를 뮤트하는 메서드
-    this.chatService.mute(+groupChatId, userId);
-  }
+  // @Post('groupChat/:groupChatId/setpriv')
+  // async setPriv(
+  //   @Param('groupChatId') groupChatId: number,
+  //   @Query() query: SetPrivDto,
+  // ) {
+  //   // 그룹 채팅방을 비공개로 설정하는 메서드
+  //   this.chatService.setPriv(+groupChatId, levelOfPublicity);
+  // }
+
+  // @Post('groupChat/:groupChatId/setpub')
+  // async setPub(
+  //   @Param('groupChatId') groupChatId: number,
+  //   @Query() levelOfPublicity: number,
+  // ) {
+  //   // 그룹 채팅방을 공개로 설정하는 메서드
+  //   this.chatService.setPub(+groupChatId, levelOfPublicity);
+  // }
+
+  // mute table 존재 x
+  // @Post('groupChat/:groupChatId/mute')
+  // async mute(
+  //   @Param('groupChatId') groupChatId: number,
+  //   @Query('userId') userId: number,
+  // ) {
+  //   // 그룹 채팅방에서 유저를 뮤트하는 메서드
+  //   this.chatService.mute(+groupChatId, userId);
+  // }
 }

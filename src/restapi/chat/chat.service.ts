@@ -10,7 +10,7 @@ import { CreateGroupChatDto } from './dto/create-group-chat.dto';
 import { UpdateGroupChatDto } from './dto/update-group-chat.dto';
 import { ExceptionsHandler } from '@nestjs/core/exceptions/exceptions-handler';
 import { NotFoundError } from 'rxjs';
-import { AddAdminDto } from './dto/add-admin.dto';
+import { AddDeleteAdminDto } from './dto/add-delete-admin.dto';
 import { User } from 'src/entities/user/user.entity';
 
 @Injectable()
@@ -64,7 +64,7 @@ export class ChatService {
     );
   }
 
-  async addAdmin(groupChatId: number, dto: AddAdminDto) {
+  async addAdmin(groupChatId: number, dto: AddDeleteAdminDto) {
     // 그룹 채팅방에 admin을 추가하는 로직
     //1. 그룹 안의 admin과 owner 정보를 뽑아내는 로직
     try {
@@ -109,36 +109,57 @@ export class ChatService {
     }
   }
 
-  async deleteAdmin(groupChatId: number, addAdminId: number) {
-    // 그룹 채팅방에서 admin을 삭제하는 로직
-    // 미완성
-    // 분기문으로 인가된 유저인지 확인하는 로직 필요
-    // 삭제하려는 id가 admin에 있는지 확인하는 로직 필요
-    await this.groupChatRepository.delete({
-      groupChatId: groupChatId,
-    });
-  }
+  async deleteAdmin(groupChatId: number, dto: AddDeleteAdminDto) {
+    // 그룹 채팅방에서 admin을 제거하는 로직
+    try {
+      await this.groupChatRepository.manager.transaction(
+        async (manager: EntityManager) => {
+          const groupChat: GroupChat[] = await manager
+            .getRepository(GroupChat)
+            .find({
+              where: [
+                {
+                  groupChatId: groupChatId,
+                  admin: {
+                    id: dto.userId,
+                  },
+                },
+                {
+                  groupChatId: groupChatId,
+                  owner: {
+                    id: dto.userId,
+                  },
+                },
+              ],
+              relations: {
+                admin: true,
+                owner: true,
+              },
+            });
 
-  async setPriv(groupChatId: number, levelOfPublicity: number) {
-    // 그룹 채팅방의 priv를 설정하는 로직
-    // await this.groupChatRepository.save(groupChatId, {
-    //   levelOfPublicity: levelOfPublicity,
-    // });
-  }
+          if (groupChat.length === 0) {
+            throw new ForbiddenException();
+          }
 
-  async setPub(groupChatId: number, levelOfPublicity: number) {
-    // 그룹 채팅방의 pub를 설정하는 로직
-    // await this.groupChatRepository.save(groupChatId, {
-    //   levelOfPublicity: levelOfPublicity,
-    // });
-  }
-
-  async saveDmChat(groupChatId: number, userId: number, content: string) {
-    // dm 채팅방을 저장하는 로직
-  }
-
-  async saveGroupChat(groupChatId: number, userId: number, content: string) {
-    // 그룹 채팅방을 저장하는 로직
+          // 요청한 유저의 id로 해당하는 admin을 찾아서 제거
+          const adminToRemove = groupChat[0].admin.find(
+            (admin) => admin.id === dto.requestedId,
+          );
+          if (!adminToRemove) {
+            throw new NotFoundException('Admin not found in the group');
+          }
+          groupChat[0].admin = groupChat[0].admin.filter(
+            (admin) => admin.id !== dto.requestedId,
+          );
+          await manager.remove(adminToRemove);
+          // await manager.save(GroupChat, groupChat[0]);
+          // 이거 넣어야할까요?
+        },
+      );
+    } catch (e) {
+      console.log(e);
+      // 예외 처리 로직 추가
+    }
   }
 
   async getDmChat(groupChatId: number, userId: number) {
@@ -149,7 +170,22 @@ export class ChatService {
     // 그룹 채팅방에서 유저를 밴하는 로직
   }
 
-  async mute(groupChatId: number, userId: number) {
-    // 그룹 채팅방에서 유저를 뮤트하는 로직
-  }
+  // async setPriv(groupChatId: number, levelOfPublicity: number) {
+  //   // 그룹 채팅방의 priv를 설정하는 로직
+  //   // await this.groupChatRepository.save(groupChatId, {
+  //   //   levelOfPublicity: levelOfPublicity,
+  //   // });
+  // }
+
+  // async setPub(groupChatId: number, levelOfPublicity: number) {
+  //   // 그룹 채팅방의 pub를 설정하는 로직
+  //   // await this.groupChatRepository.save(groupChatId, {
+  //   //   levelOfPublicity: levelOfPublicity,
+  //   // });
+  // }
+
+  // mute 테이블 아직 존재 X
+  // async mute(groupChatId: number, userId: number) {
+  //   // 그룹 채팅방에서 유저를 뮤트하는 로직
+  // }
 }

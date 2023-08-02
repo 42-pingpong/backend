@@ -12,7 +12,7 @@ import * as request from 'supertest';
 import { UserFactory } from 'test/user/user.factory';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from 'src/entities/user/user.entity';
-import { AddAdminDto } from 'src/restapi/chat/dto/add-admin.dto';
+import { AddDeleteAdminDto } from 'src/restapi/chat/dto/add-delete-admin.dto';
 
 describe('Chat', () => {
   let app: INestApplication;
@@ -99,7 +99,7 @@ describe('Chat', () => {
 
       console.log(groupChat);
 
-      const addAdminDto = new AddAdminDto();
+      const addAdminDto = new AddDeleteAdminDto();
       addAdminDto.userId = 101234;
       addAdminDto.requestedId = 101235;
 
