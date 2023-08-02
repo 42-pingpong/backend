@@ -28,7 +28,6 @@ import { GetFriendResponse } from './response/get-friend.response';
 import { SearchUserDto } from './dto/search-user.dto';
 import { SearchUserResponseDto } from './dto/search-user-response.dto';
 
-
 @ApiTags('user')
 @Controller('user')
 export class UserController {
@@ -118,6 +117,7 @@ export class UserController {
       +id,
       friend.requestedUserId,
     );
+  }
 
   @ApiOperation({
     summary: '유저 검색',
