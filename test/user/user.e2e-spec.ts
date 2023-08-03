@@ -15,6 +15,7 @@ import { TestConfigModule } from 'src/config/test.config';
 import { FriendsWith } from 'src/entities/user/friendsWith.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Token } from 'src/entities/auth/token.entity';
+import { GetFriendQueryDto } from 'src/restapi/user/dto/get-friend-query.dto';
 
 describe('User -/user (e2e)', () => {
   let app: INestApplication;
@@ -49,19 +50,24 @@ describe('User -/user (e2e)', () => {
 
   describe('PATCH /user/{id} test', () => {
     //defaultUser를 업데이트할때 사용할 dto
+
     const updateUserDto = new UpdateUserDto();
+
     it('PATCH /user/{id} success', async () => {
+      const user1 = factory.createUser(1);
+      await repository.save(user1);
+
       updateUserDto.nickName = 'updateNickname';
       updateUserDto.email = 'updateEmail';
 
       const res = await request(app.getHttpServer())
-        .patch(`/user/${defaultUser.id}`)
+        .patch(`/user/${user1.id}`)
         .send(updateUserDto)
         .expect(200);
 
       const updatedUser = await repository.findOne({
         where: {
-          id: defaultUser.id,
+          id: user1.id,
         },
       });
 
@@ -77,27 +83,59 @@ describe('User -/user (e2e)', () => {
     });
 
     it('PATCH /user/{id} nickname confict error', async () => {
-      const newUser = user2;
-
+      const newUser = factory.createUser(2);
       await repository.save(newUser);
+      const newUser2 = factory.createUser(3);
+      await repository.save(newUser2);
 
-      updateUserDto.nickName = 'newUser';
+      updateUserDto.nickName = 'user3';
       updateUserDto.email = 'updateEmail';
 
       await request(app.getHttpServer())
-        .patch(`/user/${defaultUser.id}`)
+        .patch(`/user/${newUser.id}`)
         .send(updateUserDto)
         .expect(409);
     });
 
     it('PATCH /user/{id} email confict error', async () => {
+      const newUser = factory.createUser(4);
+      await repository.save(newUser);
+      const newUser2 = factory.createUser(5);
+      await repository.save(newUser2);
+
       updateUserDto.nickName = 'not confNickname';
-      updateUserDto.email = 'newEmail'; // conflit with newUser
+      updateUserDto.email = 'loginEmail5'; // conflit with newUser
 
       await request(app.getHttpServer())
-        .patch(`/user/${defaultUser.id}`)
+        .patch(`/user/${newUser2.id}`)
         .send(updateUserDto)
         .expect(409);
+    });
+
+    it('PATCH /user/{id} partial update', async () => {
+      const user6 = factory.createUser(6);
+      await repository.save(user6);
+
+      updateUserDto.nickName = 'updateNickname6';
+      updateUserDto.email = 'updateEmail6';
+      updateUserDto.status = 'inGame';
+
+      const res = await request(app.getHttpServer())
+        .patch(`/user/${user6.id}`)
+        .send(updateUserDto)
+        .expect(200);
+
+      const updatedUser = await repository.findOne({
+        where: {
+          id: user6.id,
+        },
+      });
+
+      //update한 부분
+      expect(updatedUser.nickName).toEqual(updateUserDto.nickName);
+
+      //update하지 않은 부분
+      expect(updatedUser.profile).toEqual(user6.profile);
     });
 
     describe('GET /me/friends/{id}', () => {
@@ -109,24 +147,23 @@ describe('User -/user (e2e)', () => {
       createUser9.status = 'offline';
       const createUser10 = factory.createUser(10);
 
-      let user7;
-      let user8;
-      let user9;
-      let user10;
+      let user7: User;
+      let user8: User;
+      let user9: User;
+      let user10: User;
 
-      beforeAll(async () => {
+      beforeEach(async () => {
         await friendRepository.delete({ userId: 7 });
         await friendRepository.delete({ userId: 8 });
         await friendRepository.delete({ userId: 9 });
         await friendRepository.delete({ userId: 10 });
+      });
 
+      it('GET /me/friends/{id} success', async () => {
         user7 = await repository.save(createUser7);
         user8 = await repository.save(createUser8);
         user9 = await repository.save(createUser9);
         user10 = await repository.save(createUser10);
-      });
-
-      it('GET /me/friends/{id} success', async () => {
         await friendRepository.save({
           userId: user7.id,
           friendId: user8.id,
@@ -146,8 +183,85 @@ describe('User -/user (e2e)', () => {
           .get('/user/me/friends/7')
           .expect(200);
         console.log(res.body);
-        expect(res.body[0].friendId).toEqual(user8.id);
-        expect(res.body[1].friendId).toEqual(user9.id);
+        expect(res.body.length).toEqual(3);
+      });
+
+      it('GET /me/friends/{id} inversed success', async () => {
+        user7 = await repository.save(createUser7);
+        user8 = await repository.save(createUser8);
+        user9 = await repository.save(createUser9);
+        user10 = await repository.save(createUser10);
+        await friendRepository.save({
+          userId: user8.id,
+          friendId: user7.id,
+        });
+
+        await friendRepository.save({
+          userId: user9.id,
+          friendId: user7.id,
+        });
+
+        await friendRepository.save({
+          userId: user10.id,
+          friendId: user7.id,
+        });
+
+        const res = await request(app.getHttpServer())
+          .get('/user/me/friends/7')
+          .expect(200);
+        console.log(res.body);
+        expect(res.body.length).toEqual(0);
+
+        const res2 = await request(app.getHttpServer())
+          .get('/user/me/friends/8')
+          .expect(200);
+        expect(res2.body.length).toEqual(1);
+      });
+
+      it('GET /me/friends/{id} query', async () => {
+        const getFriendsDto = new GetFriendQueryDto();
+        getFriendsDto.status = 'online';
+
+        createUser7.status = 'online';
+        createUser8.status = 'offline';
+        createUser9.status = 'online';
+        createUser10.status = 'offline';
+
+        user7 = await repository.save(createUser7);
+        user8 = await repository.save(createUser8);
+        user9 = await repository.save(createUser9);
+        user10 = await repository.save(createUser10);
+        await friendRepository.save({
+          userId: user7.id,
+          friendId: user8.id,
+        });
+
+        await friendRepository.save({
+          userId: user7.id,
+          friendId: user9.id,
+        });
+
+        await friendRepository.save({
+          userId: user7.id,
+          friendId: user10.id,
+        });
+
+        const res = await request(app.getHttpServer())
+          .get('/user/me/friends/7?status=online')
+          .expect(200);
+        expect(res.body.length).toEqual(1);
+        expect(res.body[0].id).toEqual(user9.id);
+
+        const res2 = await request(app.getHttpServer())
+          .get('/user/me/friends/7?status=offline')
+          .expect(200);
+        expect(res2.body.length).toEqual(2);
+        expect(res2.body[0].id).toEqual(user8.id);
+
+        const res3 = await request(app.getHttpServer())
+          .get('/user/me/friends/7?status=all')
+          .expect(200);
+        expect(res3.body.length).toEqual(3);
       });
     });
 

@@ -11,7 +11,7 @@ export class UserFactory {
       profile: 'ttt',
       fullName: 'fullName',
       email: 'loginEmail' + id,
-      selfIntroduction: '00',
+      selfIntroduction: 'NONE',
       status: 'online',
       statusSocketId: null,
       gameSocketId: null,

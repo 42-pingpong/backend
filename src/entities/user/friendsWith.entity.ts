@@ -9,7 +9,7 @@ import { User } from './user.entity';
 
 @Entity()
 export class FriendsWith {
-  @ManyToOne(() => User, (user) => user.friendsWith)
+  @ManyToOne(() => User, (user) => user.id)
   @JoinColumn({ name: 'userId' })
   user: User;
 
@@ -18,7 +18,7 @@ export class FriendsWith {
   })
   userId: number;
 
-  @ManyToOne(() => User, (user) => user.friendsOf)
+  @ManyToOne(() => User, (user) => user.friendsWith)
   @JoinColumn({ name: 'friendId' })
   friend: User;
 

@@ -13,6 +13,7 @@ import { UserService } from './user.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import {
   ApiBody,
+  ApiConflictResponse,
   ApiOperation,
   ApiParam,
   ApiResponse,
@@ -50,6 +51,7 @@ export class UserController {
 
   @ApiBody({ type: UpdateUserDto })
   @ApiParam({ name: 'id', type: String })
+  @ApiConflictResponse({ description: '닉네임 중복 || 이메일 중복' })
   @Patch(':id')
   //need auth guard
   async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
