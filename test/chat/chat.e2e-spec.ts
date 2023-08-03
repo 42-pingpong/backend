@@ -1,4 +1,10 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  INestApplication,
+  NotFoundException,
+  ValidationPipe,
+} from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AppConfigModule } from 'src/config/app.config';
 import { TestConfigModule } from 'src/config/test.config';
@@ -15,6 +21,8 @@ import { User } from 'src/entities/user/user.entity';
 import { AddAdminDto } from 'src/restapi/chat/dto/add-admin.dto';
 import { DeleteAdminDto } from 'src/restapi/chat/dto/delete-admin.dto';
 import { UpdateGroupChatDto } from 'src/restapi/chat/dto/update-group-chat.dto';
+import exp from 'constants';
+import { NotFoundError } from 'rxjs';
 
 describe('Chat', () => {
   let app: INestApplication;
@@ -161,6 +169,8 @@ describe('Chat', () => {
 
       const groupChat = await groupChatRepository.save(createChatDto);
 
+      expect(groupChat).toBeDefined();
+
       const addAdminDto = new AddAdminDto();
       addAdminDto.userId = 101234;
       addAdminDto.requestedId = 101235;
@@ -181,6 +191,43 @@ describe('Chat', () => {
       });
 
       expect(data[0].admin[0].id).toBe(addAdminDto.requestedId);
+
+      // admin 권한 추가당하는 사람 예외처리
+      // 1. admin권한 추가하려는 유저가 채팅방 owner인경우
+      if (data[0].ownerId === addAdminDto.requestedId) {
+        // throw new ForbiddenException('onwer를 admin으로 만들 수 없습니다.');
+        expect(response.status).toBe(403);
+      }
+      // 2. admin권한 추가하려는 유저가 채팅방에 없는경우
+      const adminToAdd = data[0].admin.find((admin) => {
+        return admin.id === addAdminDto.requestedId;
+      });
+      if (!adminToAdd) {
+        // throw new NotFoundException('채팅방에 없는 유저입니다.');
+        expect(response.status).toBe(404);
+      }
+      // 3. admin권한 추가하려는 유저가 이미 admin인 경우
+      if (data[0].admin.find((admin) => admin.id === addAdminDto.requestedId)) {
+        // throw new ConflictException('이미 admin입니다.');
+        expect(response.status).toBe(409);
+      }
+      // admin권한 추가하려는 사람 예외처리
+      // 1. admin권한 추가하는 유저가 권한이 없는경우
+      if (
+        data[0].admin.find((admin) => admin.id !== addAdminDto.userId) &&
+        data[0].ownerId !== addAdminDto.userId
+      ) {
+        // throw new ForbiddenException('admin이 아닙니다.');
+        expect(response.status).toBe(403);
+      }
+      // 2. admin권한 추가하는 유저가 없는경우
+      const adminToAdd2 = data[0].admin.find((admin) => {
+        return admin.id === addAdminDto.userId;
+      });
+      if (!adminToAdd2) {
+        // throw new NotFoundException('채팅방에 없는 유저입니다.');
+        expect(response.status).toBe(404);
+      }
     });
   });
 
