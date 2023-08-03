@@ -169,7 +169,7 @@ describe('Chat', () => {
         },
         relations: ['admin'],
       });
-      expect(dataAfterDelete[0].admin[0].id).toBe(deleteAdminDto.requestedId);
+      expect(dataAfterDelete[0].admin[0]).toBe(undefined);
     });
   });
 
