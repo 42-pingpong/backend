@@ -579,6 +579,11 @@ describe('User -/user (e2e)', () => {
     //     });
   });
 
+  /**
+   * 친구 요청 알람
+   * user 40~
+   * @todo
+   * */
   describe('GET /alarms', () => {
     describe('친구요청 알람', () => {});
 

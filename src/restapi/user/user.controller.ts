@@ -139,9 +139,12 @@ export class UserController {
     summary: '유저의 모든 받은 요청 조회',
     description: '받은요청(알람) 조회',
   })
-  @UseGuards(AccessTokenGuard)
-  @Get('/alarms')
-  async getAlarms(@Req() req: Request) {
-    return await this.userService.getAlarms(+req.user.sub);
+  /**
+   * @Todo API response
+   * */
+  // @UseGuards(AccessTokenGuard)
+  @Get('/alarms/:id')
+  async getAlarms(@Req() req: Request, @Param('id') id: string) {
+    return await this.userService.getAlarms(+id);
   }
 }

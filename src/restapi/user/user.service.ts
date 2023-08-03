@@ -178,7 +178,7 @@ export class UserService {
   }
 
   async searchUser(query: SearchUserDto): Promise<User[]> {
-    const { nickName, email } = query;
+    const { nickName } = query;
     const where = {};
     if (nickName) {
       where['nickName'] = Like(`%${nickName}%`);
@@ -186,5 +186,28 @@ export class UserService {
     }
   }
 
-  async getAlarms(id: number) {}
+  /**
+   * @Todo test
+   * */
+  async getAlarms(id: number) {
+    return await this.requestRepository.find({
+      relations: { requestingUser: true },
+      where: {
+        requestedUserId: id,
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+      select: {
+        requestId: true,
+        requestingUser: {
+          id: true,
+          nickName: true,
+        },
+        requestType: true,
+        isAccepted: true,
+        createdAt: true,
+      },
+    });
+  }
 }
