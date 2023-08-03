@@ -21,18 +21,18 @@ import { DeleteAdminDto } from './dto/delete-admin.dto';
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
-  @Get('groupChat/:groupChatId')
-  async getGroupChat(@Param('groupChatId') groupChatId: string) {
-    // 그룹 채팅방의 정보를 반환하는 메서드
-    return this.chatService.getGroupChat(+groupChatId);
-  }
-
   @ApiBody({ type: CreateGroupChatDto })
   @ApiCreatedResponse({ description: '그룹 채팅방 생성' })
   @Post('groupChat')
   async createGroupChat(@Body() createChatDto: CreateGroupChatDto) {
     // 그룹 채팅방을 생성하는 메서드
     this.chatService.createGroupChat(createChatDto);
+  }
+
+  @Get('groupChat/:groupChatId')
+  async getGroupChat(@Param('groupChatId') groupChatId: string) {
+    // 그룹 채팅방의 정보를 반환하는 메서드
+    return this.chatService.getGroupChat(+groupChatId);
   }
 
   @ApiBody({ type: UpdateGroupChatDto })

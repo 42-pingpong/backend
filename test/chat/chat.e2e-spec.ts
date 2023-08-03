@@ -14,6 +14,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { AddAdminDto } from 'src/restapi/chat/dto/add-admin.dto';
 import { DeleteAdminDto } from 'src/restapi/chat/dto/delete-admin.dto';
+import { UpdateGroupChatDto } from 'src/restapi/chat/dto/update-group-chat.dto';
 
 describe('Chat', () => {
   let app: INestApplication;
@@ -78,6 +79,43 @@ describe('Chat', () => {
 
       expect(result).toBeDefined();
       expect(response.status).toBe(201);
+    });
+  });
+
+  describe('PATCH /api/chat/groupChat/:groupChatId', () => {
+    // it.todo('PATCH /api/chat/groupChat/:groupChatId');
+    it('should return 200', async () => {
+      const uf = new UserFactory();
+      const user = uf.createUser(101234);
+      await userRepository.save(user);
+      const createChatDto = new CreateGroupChatDto();
+      createChatDto.password = '1234';
+      createChatDto.chatName = '테스트 채팅방';
+      createChatDto.levelOfPublicity = 'Priv';
+      createChatDto.maxParticipants = 10;
+      createChatDto.ownerId = 101234;
+
+      const response = await request(app.getHttpServer())
+        .post('/chat/groupChat')
+        .send(createChatDto);
+
+      const groupChat = await groupChatRepository.save(createChatDto);
+
+      expect(groupChat).toBeDefined();
+      expect(response.status).toBe(201);
+
+      const updateChatDto = new UpdateGroupChatDto();
+      // updateChatDto.chatName = '테스트 채팅방2';
+      // 형 채팅방 이름도 수정 가능해야하지 않나요?
+      updateChatDto.password = '4321';
+      updateChatDto.levelOfPublicity = 'Pub';
+      updateChatDto.maxParticipants = 20;
+
+      const response2 = await request(app.getHttpServer())
+        .patch(`/chat/groupChat/${groupChat.groupChatId}`)
+        .send(updateChatDto);
+
+      expect(response2.status).toBe(200);
     });
   });
 
@@ -175,10 +213,6 @@ describe('Chat', () => {
 
   describe('GET /api/chat/groupChat/:groupChatId', () => {
     it.todo('GET /api/chat/groupChat/:groupChatId');
-  });
-
-  describe('PATCH /api/chat/groupChat/:groupChatId', () => {
-    it.todo('PATCH /api/chat/groupChat/:groupChatId');
   });
 
   afterAll(async () => {
