@@ -12,7 +12,7 @@ export class DeleteAdminDto {
   userId: number;
 
   @ApiProperty({
-    description: '삭제될 admin의 유저 아이디',
+    description: 'admin으로 추가될 유저 아이디',
     example: 2,
   })
   @Type(() => Number)

@@ -67,15 +67,6 @@ export class ChatController {
 
   ///////////////////////////////////////////////////////////////
 
-  @Get('groupChat/:groupChatId/getdmchat')
-  async getDmChat(
-    @Param('groupChatId') groupChatId: number,
-    @Query('userId') userId: number,
-  ) {
-    // 그룹 채팅방에서 DM을 받는 메서드
-    this.chatService.getDmChat(+groupChatId, userId);
-  }
-
   @Post('groupChat/:groupChatId/ban')
   async ban(
     @Param('groupChatId') groupChatId: number,

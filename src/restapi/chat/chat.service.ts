@@ -10,8 +10,8 @@ import { CreateGroupChatDto } from './dto/create-group-chat.dto';
 import { UpdateGroupChatDto } from './dto/update-group-chat.dto';
 import { ExceptionsHandler } from '@nestjs/core/exceptions/exceptions-handler';
 import { NotFoundError } from 'rxjs';
-import { AddAdminDto } from './dto/add-admin.dto';
 import { User } from 'src/entities/user/user.entity';
+import { AddAdminDto } from './dto/add-admin.dto';
 import { DeleteAdminDto } from './dto/delete-admin.dto';
 
 @Injectable()
@@ -152,8 +152,8 @@ export class ChatService {
           groupChat[0].admin = groupChat[0].admin.filter(
             (admin) => admin.id !== dto.requestedId,
           );
-          await manager.remove(adminToRemove);
-          // await manager.save(GroupChat, groupChat[0]);
+          // await manager.remove(adminToRemove);
+          await manager.save(GroupChat, groupChat[0]);
           // 이거 넣어야할까요?
         },
       );
@@ -161,10 +161,6 @@ export class ChatService {
       console.log(e);
       // 예외 처리 로직 추가
     }
-  }
-
-  async getDmChat(groupChatId: number, userId: number) {
-    // dm 채팅방을 조회하는 로직
   }
 
   async ban(groupChatId: number, userId: number) {

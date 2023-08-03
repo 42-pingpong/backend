@@ -121,70 +121,55 @@ describe('Chat', () => {
   });
 
   describe('DELETE /api/chat/groupChat/:groupChatId/admin', () => {
-    it('DELETE /api/chat/groupChat/:groupChatId/admin', async () => {
+    it('should return 200', async () => {
       const uf = new UserFactory();
-      //새로운 오너 생성
-      const user1 = uf.createUser(1012345);
-      await userRepository.save(user1);
+      const user1 = uf.createUser(101234);
+      const user2 = uf.createUser(101235);
+      await userRepository.save([user1, user2]);
+      const createChatDto = new CreateGroupChatDto();
+      createChatDto.password = '1234';
+      createChatDto.chatName = '테스트 채팅방';
+      createChatDto.levelOfPublicity = 'Priv';
+      createChatDto.maxParticipants = 10;
+      createChatDto.ownerId = 101234;
 
-      //새로운 그룹챗 생성
-      const newGroupChat = new CreateGroupChatDto();
-      newGroupChat.chatName = 'testGroupChat';
-      newGroupChat.password = '1234';
-      newGroupChat.levelOfPublicity = 'Pub';
-      newGroupChat.maxParticipants = 10;
-      newGroupChat.ownerId = 1012345;
-      let groupChat: GroupChat = await groupChatRepository.save(newGroupChat);
+      const groupChat = await groupChatRepository.save(createChatDto);
 
-      //새로운 어드민 생성
-      const adminUserDto = uf.createUser(1012346);
-      const adminUser = await userRepository.save(adminUserDto);
+      const addAdminDto = new AddAdminDto();
+      addAdminDto.userId = 101234;
+      addAdminDto.requestedId = 101235;
 
-      //그룹챗에 어드민 추가
-      groupChat = await groupChatRepository.findOne({
+      await request(app.getHttpServer())
+        .post(
+          `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${addAdminDto.userId}&requestedId=${addAdminDto.requestedId}`,
+        )
+        .expect(201);
+
+      const dataBeforeDelete = await groupChatRepository.find({
         where: {
           groupChatId: groupChat.groupChatId,
         },
         relations: ['admin'],
       });
+      expect(dataBeforeDelete[0].admin[0].id).toBe(addAdminDto.requestedId);
 
-      groupChat.admin.push(adminUser);
-      await groupChatRepository.save(groupChat);
-
-      //정상 추가 확인
-      groupChat = await groupChatRepository.findOne({
-        where: {
-          groupChatId: groupChat.groupChatId,
-        },
-        relations: ['admin'],
-      });
-
-      expect(groupChat.admin.length).toBe(1);
-
-      //DeleteAdminDto 생성
       const deleteAdminDto = new DeleteAdminDto();
-      deleteAdminDto.userId = 1012345;
-      deleteAdminDto.requestedId = 1012346;
+      deleteAdminDto.userId = 101234;
+      deleteAdminDto.requestedId = 101235;
 
-      //삭제 요청
-      const response = await request(app.getHttpServer()).delete(
-        `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${deleteAdminDto.userId}&requestedId=${deleteAdminDto.requestedId}`,
-      );
+      await request(app.getHttpServer())
+        .delete(
+          `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${deleteAdminDto.userId}&requestedId=${deleteAdminDto.requestedId}`,
+        )
+        .expect(200);
 
-      //삭제 확인
-      expect(response.status).toBe(200);
-
-      //삭제 확인
-      const data = await groupChatRepository.find({
+      const dataAfterDelete = await groupChatRepository.find({
         where: {
           groupChatId: groupChat.groupChatId,
         },
         relations: ['admin'],
       });
-
-      console.log(data);
-
-      expect(data[0].admin.length).toBe(0);
+      expect(dataAfterDelete[0].admin[0].id).toBe(deleteAdminDto.requestedId);
     });
   });
 
