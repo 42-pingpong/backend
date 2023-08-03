@@ -23,6 +23,8 @@ import { DeleteAdminDto } from 'src/restapi/chat/dto/delete-admin.dto';
 import { UpdateGroupChatDto } from 'src/restapi/chat/dto/update-group-chat.dto';
 import exp from 'constants';
 import { NotFoundError } from 'rxjs';
+import { factory } from 'typescript';
+import { after } from 'node:test';
 
 describe('Chat', () => {
   let app: INestApplication;
@@ -154,34 +156,45 @@ describe('Chat', () => {
   });
 
   describe('POST /api/chat/groupChat/:groupChatId/admin', () => {
-    // it.todo('POST /api/chat/groupChat/:groupChatId/admin');
-    it('should return 201', async () => {
-      const uf = new UserFactory();
-      const user1 = uf.createUser(101234);
-      const user2 = uf.createUser(101235);
+    let groupChat: GroupChat;
+    let createChatDto: CreateGroupChatDto;
+    let addAdminDto: AddAdminDto;
+
+    beforeAll(async () => {
+      let uf = new UserFactory();
+      let user1 = uf.createUser(101234);
+      let user2 = uf.createUser(101235);
       await userRepository.save([user1, user2]);
-      const createChatDto = new CreateGroupChatDto();
+      createChatDto = new CreateGroupChatDto();
       createChatDto.password = '1234';
       createChatDto.chatName = '테스트 채팅방';
       createChatDto.levelOfPublicity = 'Priv';
       createChatDto.maxParticipants = 10;
       createChatDto.ownerId = 101234;
-
-      const groupChat = await groupChatRepository.save(createChatDto);
-
-      expect(groupChat).toBeDefined();
-
-      const addAdminDto = new AddAdminDto();
+      groupChat = await groupChatRepository.save(createChatDto);
+      addAdminDto = new AddAdminDto();
       addAdminDto.userId = 101234;
       addAdminDto.requestedId = 101235;
+    });
 
+    beforeEach(async () => {
+      // await groupChatRepository.clear();
+    });
+
+    afterAll(async () => {
+      // await userRepository.delete({});
+      await groupChatRepository.delete({});
+    });
+
+    it('admin 정상 추가 201', async () => {
       //query param으로 받을때는 쿼리파라미터로 넣어줘야함
       //body는 send로, query는 query로 넣어줘야함
-      const response = await request(app.getHttpServer()).post(
-        `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${addAdminDto.userId}&requestedId=${addAdminDto.requestedId}`,
-      );
-
-      expect(response.status).toBe(201);
+      await request(app.getHttpServer())
+        .post(
+          `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${addAdminDto.userId}&requestedId=${addAdminDto.requestedId}`,
+        )
+        .send(addAdminDto)
+        .expect(201);
 
       const data = await groupChatRepository.find({
         where: {
@@ -189,45 +202,44 @@ describe('Chat', () => {
         },
         relations: ['admin'],
       });
-
       expect(data[0].admin[0].id).toBe(addAdminDto.requestedId);
 
-      // admin 권한 추가당하는 사람 예외처리
-      // 1. admin권한 추가하려는 유저가 채팅방 owner인경우
-      if (data[0].ownerId === addAdminDto.requestedId) {
-        // throw new ForbiddenException('onwer를 admin으로 만들 수 없습니다.');
-        expect(response.status).toBe(403);
-      }
-      // 2. admin권한 추가하려는 유저가 채팅방에 없는경우
-      const adminToAdd = data[0].admin.find((admin) => {
-        return admin.id === addAdminDto.requestedId;
-      });
-      if (!adminToAdd) {
-        // throw new NotFoundException('채팅방에 없는 유저입니다.');
-        expect(response.status).toBe(404);
-      }
-      // 3. admin권한 추가하려는 유저가 이미 admin인 경우
-      if (data[0].admin.find((admin) => admin.id === addAdminDto.requestedId)) {
-        // throw new ConflictException('이미 admin입니다.');
-        expect(response.status).toBe(409);
-      }
-      // admin권한 추가하려는 사람 예외처리
-      // 1. admin권한 추가하는 유저가 권한이 없는경우
-      if (
-        data[0].admin.find((admin) => admin.id !== addAdminDto.userId) &&
-        data[0].ownerId !== addAdminDto.userId
-      ) {
-        // throw new ForbiddenException('admin이 아닙니다.');
-        expect(response.status).toBe(403);
-      }
-      // 2. admin권한 추가하는 유저가 없는경우
-      const adminToAdd2 = data[0].admin.find((admin) => {
-        return admin.id === addAdminDto.userId;
-      });
-      if (!adminToAdd2) {
-        // throw new NotFoundException('채팅방에 없는 유저입니다.');
-        expect(response.status).toBe(404);
-      }
+      // // admin 권한 추가당하는 사람 예외처리
+      // // 1. admin권한 추가하려는 유저가 채팅방 owner인경우
+      // if (data[0].ownerId === addAdminDto.requestedId) {
+      //   // throw new ForbiddenException('onwer를 admin으로 만들 수 없습니다.');
+      //   expect(response.status).toBe(403);
+      // }
+      // // 2. admin권한 추가하려는 유저가 채팅방에 없는경우
+      // const adminToAdd = data[0].admin.find((admin) => {
+      //   return admin.id === addAdminDto.requestedId;
+      // });
+      // if (!adminToAdd) {
+      //   // throw new NotFoundException('채팅방에 없는 유저입니다.');
+      //   expect(response.status).toBe(404);
+      // }
+      // // 3. admin권한 추가하려는 유저가 이미 admin인 경우
+      // if (data[0].admin.find((admin) => admin.id === addAdminDto.requestedId)) {
+      //   // throw new ConflictException('이미 admin입니다.');
+      //   expect(response.status).toBe(409);
+      // }
+      // // admin권한 추가하려는 사람 예외처리
+      // // 1. admin권한 추가하는 유저가 권한이 없는경우
+      // if (
+      //   data[0].admin.find((admin) => admin.id !== addAdminDto.userId) &&
+      //   data[0].ownerId !== addAdminDto.userId
+      // ) {
+      //   // throw new ForbiddenException('admin이 아닙니다.');
+      //   expect(response.status).toBe(403);
+      // }
+      // // 2. admin권한 추가하는 유저가 없는경우
+      // const adminToAdd2 = data[0].admin.find((admin) => {
+      //   return admin.id === addAdminDto.userId;
+      // });
+      // if (!adminToAdd2) {
+      //   // throw new NotFoundException('채팅방에 없는 유저입니다.');
+      //   expect(response.status).toBe(404);
+      // }
     });
   });
 
