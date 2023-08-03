@@ -111,6 +111,7 @@ export class UserController {
     description: '친구 요청을 하는 유저 id',
   })
   @Post('/me/friend/request/:id')
+  //need auth guard
   async requestFriend(
     @Param('id') id: string,
     @Body() friend: CreateRequestFriendDto,
@@ -131,7 +132,16 @@ export class UserController {
   })
   @Get('/search')
   async searchUser(@Query() query: SearchUserDto) {
-    console.log('query: ', query);
     return await this.userService.searchUser(query);
+  }
+
+  @ApiOperation({
+    summary: '유저의 모든 받은 요청 조회',
+    description: '받은요청(알람) 조회',
+  })
+  @UseGuards(AccessTokenGuard)
+  @Get('/alarms')
+  async getAlarms(@Req() req: Request) {
+    return await this.userService.getAlarms(+req.user.sub);
   }
 }

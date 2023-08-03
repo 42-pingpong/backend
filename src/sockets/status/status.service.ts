@@ -6,6 +6,7 @@ export class StatusService {
   constructor(private readonly jwtService: JwtService) {}
 
   getSub(auth: string): number {
+    if (auth == undefined) return null;
     const bearer = auth.substring(6);
     console.log('bearer: ', bearer);
     const payload = this.jwtService.decode(bearer);

@@ -74,7 +74,5 @@ describe('Upload -/upload (e2e)', () => {
     expect(res.status).toBe(400);
   });
 
-  it('/image (GET) success', async () => {});
-
   it.todo('/upload (POST) fail file different magic number');
 });

@@ -10,11 +10,10 @@ import { Token } from '../auth/token.entity';
 import { DirectMessage } from '../chat/directMessage.entity';
 import { GroupChat } from '../chat/groupChat.entity';
 import { MessageInfo } from '../chat/messageInfo.entity';
-import { GameInvitation } from '../game/gameInvitation.entity';
 import { GameScore } from '../game/gameScore.entity';
 import { BlockUserList } from './blockUserList.entity';
 import { FriendsWith } from './friendsWith.entity';
-import { FriendRequest } from './friendRequest.entity';
+import { Request } from './request.entity';
 
 @Entity()
 @Unique(['nickName'])
@@ -120,17 +119,11 @@ export class User {
   )
   directMessages: DirectMessage;
 
-  @OneToMany(
-    () => FriendRequest,
-    (friendRequest) => friendRequest.requestedUser,
-  )
-  friendRequesting: FriendRequest;
+  @OneToMany(() => Request, (request) => request.requestingUser)
+  requesting: Request[];
 
-  @OneToMany(
-    () => FriendRequest,
-    (friendRequest) => friendRequest.requestedUser,
-  )
-  friendRequested: FriendRequest;
+  @OneToMany(() => Request, (request) => request.requestedUser)
+  requested: Request[];
 
   @OneToMany(() => BlockUserList, (blockUserList) => blockUserList.blockUserId)
   blockList: BlockUserList[];
@@ -143,12 +136,6 @@ export class User {
 
   @OneToMany(() => GameScore, (gameScore) => gameScore.userId)
   gameScores: GameScore[];
-
-  @OneToMany(() => GameInvitation, (gameInvitation) => gameInvitation.inviteeId)
-  invitedGame: GameInvitation[];
-
-  @OneToMany(() => GameInvitation, (gameInvitation) => gameInvitation.inviterId)
-  invitingGame: GameInvitation[];
 
   @OneToMany(() => Token, (Token) => Token.owner)
   tokens: Token[];

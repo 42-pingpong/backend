@@ -1,20 +1,21 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { EntityManager, Raw, Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Token } from 'src/entities/auth/token.entity';
 import { FriendsWith } from 'src/entities/user/friendsWith.entity';
 import { GetFriendQueryDto } from './dto/get-friend-query.dto';
-import { FriendRequest } from 'src/entities/user/friendRequest.entity';
 import { InvitationStatus } from 'src/enum/invitation.enum';
 import { SearchUserDto } from './dto/search-user.dto';
 import { Like } from 'typeorm';
+import { Request, RequestType } from 'src/entities/user/request.entity';
 
 @Injectable()
 export class UserService {
@@ -28,8 +29,8 @@ export class UserService {
     @InjectRepository(FriendsWith)
     private friendsWithRepository: Repository<FriendsWith>,
 
-    @InjectRepository(FriendRequest)
-    private friendRequestRepository: Repository<FriendRequest>,
+    @InjectRepository(Request)
+    private requestRepository: Repository<Request>,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -123,8 +124,30 @@ export class UserService {
   }
 
   async saveRequestFriend(id: number, friendId: number): Promise<void> {
-    await this.friendRequestRepository.manager.transaction(
+    //친구 요청 대상자가 자기자신.
+    if (id === friendId) throw new BadRequestException();
+
+    await this.requestRepository.manager.transaction(
       async (manager: EntityManager) => {
+        //친구 요청 중복 체크
+        const isRequested = await manager.findOne(Request, {
+          where: [
+            {
+              requestingUserId: id,
+              requestedUserId: friendId,
+              requestType: RequestType.FRIEND,
+              isAccepted: InvitationStatus.PENDING,
+            },
+            {
+              requestingUserId: id,
+              requestedUserId: friendId,
+              requestType: RequestType.FRIEND,
+              isAccepted: InvitationStatus.NOTALARMED,
+            },
+          ],
+        });
+        if (isRequested) throw new ConflictException();
+
         //유저 조회
         const user = await manager.findOne(User, {
           where: { id: id },
@@ -137,11 +160,18 @@ export class UserService {
         });
         if (!friend) throw new NotFoundException();
 
-        //친구 추가
-        await manager.save(FriendRequest, {
+        //이미 친구인가
+        const isFriend = await manager.findOne(FriendsWith, {
+          where: { userId: id, friendId: friendId },
+        });
+        if (isFriend) throw new ConflictException();
+
+        //친구 요청 저장
+        await manager.save(Request, {
           requestingUserId: id,
           requestedUserId: friendId,
           isAccepted: InvitationStatus.NOTALARMED,
+          requestType: RequestType.FRIEND,
         });
       },
     );
@@ -150,8 +180,11 @@ export class UserService {
   async searchUser(query: SearchUserDto): Promise<User[]> {
     const { nickName, email } = query;
     const where = {};
-    if (nickName) where['nickName'] = Like(`%${nickName}%`);
-    if (email) where['email'] = Like(`%${email}%`);
-    return await this.userRepository.findBy(where);
+    if (nickName) {
+      where['nickName'] = Like(`%${nickName}%`);
+      return await this.userRepository.findBy(where);
+    }
   }
+
+  async getAlarms(id: number) {}
 }

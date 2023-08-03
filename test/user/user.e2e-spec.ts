@@ -16,6 +16,12 @@ import { FriendsWith } from 'src/entities/user/friendsWith.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Token } from 'src/entities/auth/token.entity';
 import { GetFriendQueryDto } from 'src/restapi/user/dto/get-friend-query.dto';
+import { CreateUserDto } from 'src/restapi/user/dto/create-user.dto';
+import { CreateRequestFriendDto } from 'src/restapi/user/dto/create-request-friend.dto';
+import { async } from 'rxjs';
+import { Request, RequestType } from 'src/entities/user/request.entity';
+import { InvitationStatus } from 'src/enum/invitation.enum';
+import { SearchUserDto } from 'src/restapi/user/dto/search-user.dto';
 
 describe('User -/user (e2e)', () => {
   let app: INestApplication;
@@ -23,6 +29,7 @@ describe('User -/user (e2e)', () => {
   let repository: Repository<User>;
   let friendRepository: Repository<FriendsWith>;
   let tokenRepository: Repository<Token>;
+  let requestRepository: Repository<Request>;
   const factory: UserFactory = new UserFactory();
 
   beforeAll(async () => {
@@ -43,10 +50,9 @@ describe('User -/user (e2e)', () => {
     dataSource = moduleFixture.get<DataSource>(DataSource);
     repository = dataSource.getRepository(User);
     tokenRepository = dataSource.getRepository(Token);
+    requestRepository = dataSource.getRepository(Request);
     friendRepository = dataSource.getRepository(FriendsWith);
   });
-
-  const defaultUser = user1;
 
   describe('PATCH /user/{id} test', () => {
     //defaultUser를 업데이트할때 사용할 dto
@@ -182,7 +188,6 @@ describe('User -/user (e2e)', () => {
         const res = await request(app.getHttpServer())
           .get('/user/me/friends/7')
           .expect(200);
-        console.log(res.body);
         expect(res.body.length).toEqual(3);
       });
 
@@ -209,7 +214,6 @@ describe('User -/user (e2e)', () => {
         const res = await request(app.getHttpServer())
           .get('/user/me/friends/7')
           .expect(200);
-        console.log(res.body);
         expect(res.body.length).toEqual(0);
 
         const res2 = await request(app.getHttpServer())
@@ -313,6 +317,18 @@ describe('User -/user (e2e)', () => {
         }
       });
 
+      afterAll(async () => {
+        await friendRepository.delete({ userId: 11 });
+        await friendRepository.delete({ userId: 12 });
+        await friendRepository.delete({ userId: 13 });
+        await friendRepository.delete({ userId: 14 });
+
+        await repository.delete({ id: 11 });
+        await repository.delete({ id: 12 });
+        await repository.delete({ id: 13 });
+        await repository.delete({ id: 14 });
+      });
+
       it('success', async () => {
         const res = await request(app.getHttpServer())
           .post('/user/me/friends/11')
@@ -342,6 +358,233 @@ describe('User -/user (e2e)', () => {
         expect(friends.length).toEqual(3);
       });
     });
+  });
+
+  /**
+   * using user 20 ~
+   * */
+  describe('POST /me/friend/request/{id}', () => {
+    let user20: User;
+    let user21: User;
+    let user22: User;
+    let user23: User;
+    const createRequestFriendDto: CreateRequestFriendDto =
+      new CreateRequestFriendDto();
+
+    beforeAll(async () => {
+      let newUserDto: CreateUserDto = factory.createUser(20);
+      user20 = await repository.save(newUserDto);
+
+      newUserDto = factory.createUser(21);
+      user21 = await repository.save(newUserDto);
+
+      newUserDto = factory.createUser(22);
+      user22 = await repository.save(newUserDto);
+
+      newUserDto = factory.createUser(23);
+      user23 = await repository.save(newUserDto);
+    });
+
+    afterAll(async () => {
+      await friendRepository.delete({});
+      await requestRepository.delete({});
+      await repository.delete({ id: 20 });
+      await repository.delete({ id: 21 });
+      await repository.delete({ id: 22 });
+      await repository.delete({ id: 23 });
+    });
+
+    beforeEach(async () => {
+      await requestRepository.clear();
+    });
+
+    it('20->21에게 친구요청 정상생성', async () => {
+      createRequestFriendDto.requestedUserId = user21.id;
+      await request(app.getHttpServer())
+        .post('/user/me/friend/request/20')
+        .send(createRequestFriendDto)
+        .expect(201);
+    });
+
+    it('친구 요청자가 없음', async () => {
+      createRequestFriendDto.requestedUserId = user21.id;
+      await request(app.getHttpServer())
+        .post('/user/me/friend/request/10000000')
+        .send(createRequestFriendDto)
+        .expect(404);
+    });
+
+    it('친구 요청 대상자가 없음', async () => {
+      createRequestFriendDto.requestedUserId = 12345678;
+      await request(app.getHttpServer())
+        .post('/user/me/friend/request/20')
+        .send(createRequestFriendDto)
+        .expect(404);
+    });
+
+    it('친구 요청 대상자가 자기자신', async () => {
+      createRequestFriendDto.requestedUserId = user20.id;
+      await request(app.getHttpServer())
+        .post('/user/me/friend/request/20')
+        .send(createRequestFriendDto)
+        .expect(400);
+    });
+
+    it('이미 친구', async () => {
+      await friendRepository.save({
+        userId: user20.id,
+        friendId: user21.id,
+      });
+
+      await friendRepository.save({
+        userId: user21.id,
+        friendId: user20.id,
+      });
+
+      createRequestFriendDto.requestedUserId = user21.id;
+      await request(app.getHttpServer())
+        .post('/user/me/friend/request/20')
+        .send(createRequestFriendDto)
+        .expect(409);
+    });
+
+    it('이미 친구가 알람돼서 확인한 요청이 있음', async () => {
+      //친구가 확인한 요청: PENDING
+      await requestRepository.save({
+        requestingUserId: user20.id,
+        requestedUserId: user21.id,
+        isAccepted: InvitationStatus.PENDING,
+        requestType: RequestType.FRIEND,
+      });
+
+      createRequestFriendDto.requestedUserId = user21.id;
+      await request(app.getHttpServer())
+        .post('/user/me/friend/request/20')
+        .send(createRequestFriendDto)
+        .expect(409);
+    });
+
+    it('친구가 접속하지않아 알람되지 않은 요청이 있음', async () => {
+      //친구가 확인은 안한 요청: NOTALARMED
+      await requestRepository.save({
+        requestingUserId: user22.id,
+        requestedUserId: user23.id,
+        isAccepted: InvitationStatus.NOTALARMED,
+        requestType: RequestType.FRIEND,
+      });
+
+      createRequestFriendDto.requestedUserId = user23.id;
+      await request(app.getHttpServer())
+        .post('/user/me/friend/request/22')
+        .send(createRequestFriendDto)
+        .expect(409);
+    });
+  });
+
+  describe('GET /search', () => {
+    const searchUserDto: SearchUserDto = new SearchUserDto();
+
+    beforeAll(async () => {
+      const newUserDto: CreateUserDto = factory.createUser(30);
+      newUserDto.nickName = '강명환';
+      newUserDto.email = '강명환@naver.com';
+
+      await repository.save(newUserDto);
+
+      const newUserDto2: CreateUserDto = factory.createUser(31);
+      newUserDto2.nickName = '김정환';
+      newUserDto2.email = '김정환@naver.com';
+
+      await repository.save(newUserDto2);
+    });
+
+    afterAll(async () => {
+      repository.delete({ id: 30 });
+      repository.delete({ id: 31 });
+    });
+
+    describe('nickName search', () => {
+      it('~로 시작하는 유저', async () => {
+        searchUserDto.nickName = '강명';
+
+        const res = await request(app.getHttpServer())
+          .get('/user/search')
+          .query(searchUserDto)
+          .expect(200);
+
+        expect(res.body.length).toEqual(1);
+        expect(res.body[0].nickName).toEqual('강명환');
+      });
+
+      it('~로 끝나는 유저', async () => {
+        searchUserDto.nickName = '환';
+
+        const res = await request(app.getHttpServer())
+          .get('/user/search')
+          .query(searchUserDto)
+          .expect(200);
+
+        expect(res.body.length).toEqual(2);
+      });
+
+      it('~를 포함하는 유저', async () => {
+        searchUserDto.nickName = '명';
+
+        const res = await request(app.getHttpServer())
+          .get('/user/search')
+          .query(searchUserDto)
+          .expect(200);
+
+        expect(res.body.length).toEqual(1);
+      });
+    });
+
+    //     describe('email search', () => {
+    //       it('~로 시작하는 유저', async () => {
+    //         delete searchUserDto.nickName;
+    //         searchUserDto.email = '강명';
+
+    //         const res = await request(app.getHttpServer())
+    //           .get('/user/search')
+    //           .query(searchUserDto)
+    //           .expect(200);
+
+    //         expect(res.body.length).toEqual(1);
+    //         expect(res.body[0].email).toEqual('강명환@naver.com');
+    //       });
+
+    //       it('~로 끝나는 유저', async () => {
+    //         delete searchUserDto.nickName;
+    //         searchUserDto.email = '환';
+
+    //         const res = await request(app.getHttpServer())
+    //           .get('/user/search')
+    //           .query(searchUserDto)
+    //           .expect(200);
+
+    //         expect(res.body.length).toEqual(2);
+    //       });
+
+    //       it('도메인네임 검색 disable', async () => {
+    //         delete searchUserDto.nickName;
+    //         searchUserDto.email = 'naver.com';
+
+    //         const res = await request(app.getHttpServer())
+    //           .get('/user/search')
+    //           .query(searchUserDto)
+    //           .expect(200);
+
+    //         expect(res.body.length).toEqual(0);
+    //       });
+    //     });
+  });
+
+  describe('GET /alarms', () => {
+    describe('친구요청 알람', () => {});
+
+    describe('채팅방 초대 알람', () => {});
+
+    describe('게임 초대 알람', () => {});
   });
 
   afterAll(async () => {
