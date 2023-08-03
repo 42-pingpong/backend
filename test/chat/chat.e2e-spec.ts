@@ -52,10 +52,6 @@ describe('Chat', () => {
   });
 
   describe('POST /api/chat/groupChat', () => {
-    /**
-     * 1. 성공
-     * */
-
     it('should return 201', async () => {
       const uf = new UserFactory();
 
@@ -79,6 +75,36 @@ describe('Chat', () => {
 
       expect(result).toBeDefined();
       expect(response.status).toBe(201);
+    });
+  });
+
+  describe('GET /api/chat/groupChat/:groupChatId', () => {
+    // it.todo('GET /api/chat/groupChat/:groupChatId');
+    it('should return 200', async () => {
+      const uf = new UserFactory();
+      const user = uf.createUser(101234);
+      await userRepository.save(user);
+      const createChatDto = new CreateGroupChatDto();
+      createChatDto.password = '1234';
+      createChatDto.chatName = '테스트 채팅방';
+      createChatDto.levelOfPublicity = 'Priv';
+      createChatDto.maxParticipants = 10;
+      createChatDto.ownerId = 101234;
+
+      const response = await request(app.getHttpServer())
+        .post('/chat/groupChat')
+        .send(createChatDto);
+
+      const groupChat = await groupChatRepository.save(createChatDto);
+
+      expect(groupChat).toBeDefined();
+      expect(response.status).toBe(201);
+
+      const response2 = await request(app.getHttpServer()).get(
+        `/chat/groupChat/${groupChat.groupChatId}`,
+      );
+
+      expect(response2.status).toBe(200);
     });
   });
 
@@ -209,10 +235,6 @@ describe('Chat', () => {
       });
       expect(dataAfterDelete[0].admin[0]).toBe(undefined);
     });
-  });
-
-  describe('GET /api/chat/groupChat/:groupChatId', () => {
-    it.todo('GET /api/chat/groupChat/:groupChatId');
   });
 
   afterAll(async () => {
