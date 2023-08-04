@@ -92,16 +92,23 @@ export class ChatService {
             relations: {
               admin: true,
               owner: true,
+              joinedUser: true,
             },
           });
 
         if (groupChat.length === 0) {
-          throw new ForbiddenException();
+          throw new NotFoundException();
         }
-        for (let i = 0; i < groupChat[0].admin.length; i++) {
-          if (groupChat[0].admin[i].id === dto.requestedId) {
-            throw new ConflictException('이미 admin 권한이 있습니다.');
-          }
+        // for (let i = 0; i < groupChat[0].admin.length; i++) {
+        //   if (groupChat[0].admin[i].id === dto.requestedId) {
+        //     throw new ConflictException('이미 admin 권한이 있습니다.');
+        //   }
+        // }
+        const isalreadyAdmin = groupChat[0].admin.find(
+          (admin) => admin.id === dto.requestedId,
+        );
+        if (isalreadyAdmin) {
+          throw new ConflictException('이미 admin 권한이 있습니다.');
         }
         if (groupChat[0].ownerId === dto.requestedId) {
           throw new ForbiddenException('onwer를 admin으로 등록할 수 없습니다.');
@@ -109,17 +116,17 @@ export class ChatService {
         const isAdminUser = groupChat[0].admin.find(
           (admin) => admin.id === dto.userId,
         );
-        if (isAdminUser !== undefined) {
+        const isOwnerUser = groupChat[0].owner.id === dto.userId;
+        if (!isAdminUser && !isOwnerUser) {
           throw new ForbiddenException('admin 권한이 없습니다.');
         }
-
-        // console.log('groupChat[0].ownerId::', groupChat[0].ownerId);
         const user = await manager.getRepository(User).findOne({
           where: { id: dto.requestedId },
         });
+        if (!user) {
+          throw new NotFoundException('user가 존재하지 않습니다.');
+        }
         groupChat[0].admin.push(user);
-        // console.log('groupChat[0].admin[0]:::', groupChat[0].admin[0].id);
-        // console.log('dto.requestedId::', dto.requestedId);
         await manager.save(GroupChat, groupChat[0]);
       },
     );

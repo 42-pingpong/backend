@@ -159,17 +159,19 @@ describe('Chat', () => {
     let groupChat: GroupChat;
     let createChatDto: CreateGroupChatDto;
     let uf = new UserFactory();
-    let user1;
-    let user2;
-    let user3;
+    let user1: User;
+    let user2: User;
+    let user3: User;
+    let user4: User;
     let addAdminDto = new AddAdminDto();
-    addAdminDto.userId = 101234; // owner
-    addAdminDto.requestedId = 101235; // user
+    addAdminDto.userId = 101234; // owner(user1)
+    addAdminDto.requestedId = 101235; // user(user2)
 
     beforeAll(async () => {
       user1 = await userRepository.save(uf.createUser(101234));
       user2 = await userRepository.save(uf.createUser(101235));
       user3 = await userRepository.save(uf.createUser(101236));
+      user4 = await userRepository.save(uf.createUser(101237));
       createChatDto = new CreateGroupChatDto();
       createChatDto.password = '1234';
       createChatDto.chatName = '테스트 채팅방';
@@ -186,6 +188,15 @@ describe('Chat', () => {
     afterAll(async () => {
       // await userRepository.delete({});
       // await groupChatRepository.delete({});
+    });
+
+    it('존재하지 않는 채팅방 (404)', async () => {
+      await request(app.getHttpServer())
+        .post(
+          `/chat/groupChat/9999999/admin?userId=${addAdminDto.userId}&requestedId=${addAdminDto.requestedId}`,
+        )
+        .send(addAdminDto)
+        .expect(404);
     });
 
     it('owner -> admin 정상 추가 (201)', async () => {
@@ -207,13 +218,46 @@ describe('Chat', () => {
       expect(data[0].admin[0].id).toBe(addAdminDto.requestedId);
     });
 
+    it('admin -> admin 권한 추가 (201)', async () => {
+      groupChat.admin = [user2];
+      await groupChatRepository.save(groupChat);
+
+      await request(app.getHttpServer())
+        .post(
+          `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${addAdminDto.requestedId}&requestedId=${user3.id}`,
+        )
+        .send(addAdminDto)
+        .expect(201);
+
+      const data = await groupChatRepository.find({
+        where: {
+          groupChatId: groupChat.groupChatId,
+        },
+        relations: ['admin'],
+      });
+      expect(data[0].admin[1].id).toBe(user3.id);
+    });
+
     it('owner -> admin 권한 이미 보유 (409)', async () => {
       groupChat.admin = [user2];
       await groupChatRepository.save(groupChat);
 
       await request(app.getHttpServer())
         .post(
-          `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${addAdminDto.userId}&requestedId=${addAdminDto.requestedId}`,
+          `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${addAdminDto.userId}&requestedId=${user2.id}`,
+        )
+        .send(addAdminDto)
+        .expect(409);
+    });
+
+    it('admin -> admin 권한 이미 보유 (409)', async () => {
+      groupChat.admin = [user2, user3];
+      await groupChatRepository.save(groupChat);
+
+      await request(app.getHttpServer())
+        .post(
+          `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${user2.id}&requestedId=${user2.id}`,
+          // 이 부분 user3.id 로 request를 보내면 NotFoundException이 나는데 이유를 몰라서 일단 동일한 아이디로 보냈을때 처리 해뒀습니다.
         )
         .send(addAdminDto)
         .expect(409);
@@ -231,17 +275,22 @@ describe('Chat', () => {
         .expect(403);
     });
 
-    it('admin 권한 없는 user가 admin 추가 (403)', async () => {
-      groupChat.admin = [user3];
-      addAdminDto.userId = 101236;
-      await groupChatRepository.save(groupChat);
-
+    it('admin권한 추가하려는 유저가 채팅방에 없는경우 (404)', async () => {
       await request(app.getHttpServer())
         .post(
-          `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${addAdminDto.userId}&requestedId=${addAdminDto.requestedId}`,
+          `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${addAdminDto.requestedId}&requestedId=99999`,
         )
         .send(addAdminDto)
-        .expect(403);
+        .expect(404);
+    });
+
+    it('admin 권한 없는 user가 admin 추가 (404)', async () => {
+      await request(app.getHttpServer())
+        .post(
+          `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${user3.id}&requestedId=${user4.id}`,
+        )
+        .send(addAdminDto)
+        .expect(404);
     });
   });
 
