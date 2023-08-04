@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { WebSocketServer } from '@nestjs/websockets';
+import { WebSocketServer, WsException } from '@nestjs/websockets';
 import axios from 'axios';
 import { FriendRequestJobData, UserJobData } from 'src/interface/user.jobdata';
 import { ChangeStatusData } from './status.gateway';
@@ -23,19 +23,14 @@ export class StatusService {
   getSub(auth: string): number {
     if (auth == undefined) return null;
     const bearer = auth.substring(6);
-    console.log('bearer: ', bearer);
     const payload = this.jwtService.decode(bearer);
-    console.log('payload: ', payload);
     if (payload == null) {
       return null;
     } else return payload.sub;
   }
 
   async login(sub: number, clientId: string, bearerToken: string) {
-    console.log('status service login');
-    console.log(sub, clientId, bearerToken);
-
-    (bearerToken = 'Bearer ' + bearerToken.substring(6)), console.log('login');
+    bearerToken = 'Bearer ' + bearerToken.substring(6);
     try {
       // status online으로 변경,
       // socketId 변경
@@ -52,7 +47,7 @@ export class StatusService {
         },
       );
     } catch (error) {
-      console.log(error);
+      console.log(error.response.data.message);
     }
     //접속중인 친구목록 가져오기
     //GET /user/friends/:id
@@ -65,7 +60,6 @@ export class StatusService {
           },
         },
       );
-      console.log('response.data', response.data);
 
       const me = await axios.get(`${this.restApiUrl}/user/me`, {
         headers: {
@@ -73,29 +67,19 @@ export class StatusService {
         },
       });
 
-      this.server.emit(
-        'change-status',
-        JSON.stringify({ friendList: response.data, me: me.data }),
-      );
+      return {
+        friendList: response.data,
+        me: me.data,
+      };
       //소켓 서버에게 상태 업데이트 이벤트 보내기
       //접속중인 친구목록을 줌.
     } catch (error) {
-      console.log(error);
-    }
-  }
-
-  async changeStatus(changeStatusData: ChangeStatusData) {
-    for (const friend of changeStatusData.friendList) {
-      // 온라인 친구에게 로그인/로그아웃한 유저의 상태정보를 전송한다.
-      console.log('change-status', friend.statusSocketId, changeStatusData.me);
-      this.server
-        .to(friend.statusSocketId)
-        .emit('change-status', changeStatusData.me);
+      console.log(error.response.data.message);
     }
   }
 
   async disconnect(sub: number, clientId: string, bearerToken: string) {
-    console.log('logout');
+    bearerToken = 'Bearer ' + bearerToken.substring(6);
     //1. 로그아웃 시, 로그인 상태/연결된 소켓 정보를 삭제한다.
     try {
       const res = await axios.patch(
@@ -110,9 +94,8 @@ export class StatusService {
           },
         },
       );
-      console.log(res.data);
     } catch (error) {
-      console.log(error);
+      console.log(error.response.data.message);
     }
 
     //2. 친구목록에서, 로그인 상태 유저 소켓들에게 상태 업데이트 이벤트를 보낸다.
@@ -131,13 +114,12 @@ export class StatusService {
           Authorization: bearerToken,
         },
       });
-
-      this.server.emit(
-        'change-status',
-        JSON.stringify({ friendList: response.data, me: me.data }),
-      );
+      return {
+        friendList: response.data,
+        me: me.data,
+      };
     } catch (error) {
-      console.log(error);
+      console.log(error.response.data.message);
     }
   }
 

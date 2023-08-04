@@ -45,9 +45,7 @@ export class StatusGateway
 
   constructor(private readonly statusService: StatusService) {}
 
-  async afterInit() {
-    console.log('status gateway init');
-  }
+  async afterInit() {}
 
   /**
    * @brief handleConnection
@@ -71,23 +69,43 @@ export class StatusGateway
     if (sub == null) {
       return;
     }
-    this.statusService.login(sub, client.id, client.handshake.auth.token);
+    const changeStatusData: ChangeStatusData = await this.statusService.login(
+      sub,
+      client.id,
+      client.handshake.auth.token,
+    );
+
+    if (
+      changeStatusData === undefined ||
+      !changeStatusData.friendList ||
+      !changeStatusData.me
+    ) {
+      return false;
+    }
+
+    if (changeStatusData.friendList.length == 0) {
+      return false;
+    }
+
+    for (const friend of changeStatusData.friendList) {
+      // 온라인 친구에게 로그인/로그아웃한 유저의 상태정보를 전송한다.
+      this.server
+        .to(friend.statusSocketId)
+        .emit('change-status', changeStatusData.me);
+    }
   }
 
-  /**
-   * @brief handleStatusSync
-   *
-   * @param message: online인 친구목록
-   */
-  @SubscribeMessage('change-status')
-  async handleStatusSync(
-    @ConnectedSocket() client: any,
-    @MessageBody() body: string,
-  ) {
-    console.log('status gateway change-status');
-
-    const changeStatusData: ChangeStatusData = JSON.parse(body);
-    console.log(changeStatusData);
+  @SubscribeMessage('disconnect')
+  async handleDisconnect(client: any) {
+    console.log('status gateway disconnect');
+    const sub = this.statusService.getSub(client.handshake.auth.token);
+    if (!sub) return;
+    const changeStatusData: ChangeStatusData =
+      await this.statusService.disconnect(
+        sub,
+        client.id,
+        client.handshake.auth.token,
+      );
     if (!changeStatusData.friendList || !changeStatusData.me) {
       return false;
     }
@@ -95,15 +113,13 @@ export class StatusGateway
     if (changeStatusData.friendList.length == 0) {
       return false;
     }
-    this.statusService.changeStatus(changeStatusData);
-  }
 
-  @SubscribeMessage('disconnect')
-  handleDisconnect(client: any) {
-    console.log('status gateway disconnect');
-    const sub = this.statusService.getSub(client.handshake.auth.token);
-    if (!sub) return;
-    this.statusService.disconnect(sub, client.id, client.handshake.auth.token);
+    for (const friend of changeStatusData.friendList) {
+      // 온라인 친구에게 로그인/로그아웃한 유저의 상태정보를 전송한다.
+      this.server
+        .to(friend.statusSocketId)
+        .emit('change-status', changeStatusData.me);
+    }
   }
 
   /** [친구요청 프로세스]
