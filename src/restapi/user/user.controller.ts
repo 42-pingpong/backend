@@ -14,6 +14,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import {
   ApiBody,
   ApiConflictResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiResponse,
@@ -28,6 +29,7 @@ import { CreateRequestFriendDto } from './dto/create-request-friend.dto';
 import { GetFriendResponse } from './response/get-friend.response';
 import { SearchUserDto } from './dto/search-user.dto';
 import { SearchUserResponseDto } from './dto/search-user-response.dto';
+import { GetUserResponseDto } from './response/get-alarm.response';
 
 @ApiTags('user')
 @Controller('user')
@@ -138,6 +140,9 @@ export class UserController {
   @ApiOperation({
     summary: '유저의 모든 받은 요청 조회',
     description: '받은요청(알람) 조회',
+  })
+  @ApiOkResponse({
+    type: GetUserResponseDto,
   })
   /**
    * @Todo API response
