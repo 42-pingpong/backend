@@ -33,6 +33,7 @@ import { GetFriendResponse } from './response/get-friend.response';
 import { SearchUserDto } from './dto/search-user.dto';
 import { SearchUserResponseDto } from './dto/search-user-response.dto';
 import { GetUserResponseDto } from './response/get-alarm.response';
+import { PostRequestResponseDto } from './response/post-request-response';
 
 @ApiTags('user')
 @Controller('user')
@@ -115,6 +116,9 @@ export class UserController {
     example: '1',
     description: '친구 요청을 하는 유저 id',
   })
+  @ApiCreatedResponse({
+    type: PostRequestResponseDto,
+  })
   @Post('/me/friend/request/:id')
   //need auth guard
   async requestFriend(
@@ -146,6 +150,7 @@ export class UserController {
   })
   @ApiOkResponse({
     type: GetUserResponseDto,
+    isArray: true,
   })
   // @UseGuards(AccessTokenGuard)
   @Get('/alarms/:id')

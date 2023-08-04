@@ -4,6 +4,8 @@ import { JwtService } from '@nestjs/jwt';
 import { WebSocketServer, WsException } from '@nestjs/websockets';
 import axios from 'axios';
 import { FriendRequestJobData, UserJobData } from 'src/interface/user.jobdata';
+import { GetUserResponseDto } from 'src/restapi/user/response/get-alarm.response';
+import { PostRequestResponseDto } from 'src/restapi/user/response/post-request-response';
 
 @Injectable()
 export class StatusService {
@@ -124,13 +126,19 @@ export class StatusService {
     }
   }
 
-  async requestFriend(requestFriendJobData: FriendRequestJobData) {
+  async postRequestFriend(
+    requestFriendJobData: FriendRequestJobData,
+  ): Promise<PostRequestResponseDto> {
+    //1. request save
     try {
-      const saved = await axios.post(
+      const request = await axios.post(
         `${this.restApiUrl}/user/me/friend/request/${requestFriendJobData.userId}`,
         requestFriendJobData.friendRequestBody,
       );
-    } catch (e) {}
+      return request.data;
+    } catch (error) {
+      return null;
+    }
   }
 
   async sendRequestFriendToUser(
