@@ -21,6 +21,7 @@ export class StatusService {
 
   getSub(auth: string): number {
     if (auth == undefined) return null;
+    auth = auth.split(' ')[1];
     const payload = this.jwtService.decode(auth);
     if (payload == null) {
       return null;
@@ -44,6 +45,7 @@ export class StatusService {
         },
       );
     } catch (error) {
+      console.log(error);
       console.log(error.response.data.message);
     }
     //접속중인 친구목록 가져오기
@@ -71,6 +73,7 @@ export class StatusService {
       //소켓 서버에게 상태 업데이트 이벤트 보내기
       //접속중인 친구목록을 줌.
     } catch (error) {
+      console.log(error);
       console.log(error.response.data.message);
     }
   }
@@ -91,6 +94,7 @@ export class StatusService {
         },
       );
     } catch (error) {
+      console.log(error);
       console.log(error.response.data.message);
     }
 
@@ -115,6 +119,7 @@ export class StatusService {
         me: me.data,
       };
     } catch (error) {
+      console.log(error);
       console.log(error.response.data.message);
     }
   }

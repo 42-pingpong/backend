@@ -57,7 +57,6 @@ export class StatusGateway
   @SubscribeMessage('connect')
   @UseGuards(AccessTokenGuard)
   async handleConnection(@ConnectedSocket() client: any) {
-    console.log('status gateway connection');
     const sub = this.statusService.getSub(client.handshake.auth.token);
     if (sub == null) {
       return;
@@ -90,7 +89,6 @@ export class StatusGateway
 
   @SubscribeMessage('disconnect')
   async handleDisconnect(client: any) {
-    console.log('status gateway disconnect');
     const sub = this.statusService.getSub(client.handshake.auth.token);
     if (!sub) return;
     const changeStatusData: ChangeStatusData =
