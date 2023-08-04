@@ -5,6 +5,7 @@ import {
   ManyToMany,
   PrimaryColumn,
   Unique,
+  Index,
 } from 'typeorm';
 import { Token } from '../auth/token.entity';
 import { DirectMessage } from '../chat/directMessage.entity';
@@ -18,6 +19,7 @@ import { Request } from './request.entity';
 @Entity()
 @Unique(['nickName'])
 @Unique(['email'])
+@Index(['status'])
 //postgresql에서는 index 기본적으로 btree.
 //https://www.postgresql.org/docs/current/indexes-types.html
 export class User {
