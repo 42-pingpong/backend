@@ -189,7 +189,7 @@ export class UserService {
           requestType: RequestType.FRIEND,
         });
         const res = await manager.getRepository(Request).findOne({
-          relations: { requestingUser: true },
+          relations: { requestingUser: true, requestedUser: true },
           where: {
             requestId,
           },
