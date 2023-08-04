@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -68,46 +69,60 @@ export class ChatService {
   async addAdmin(groupChatId: number, dto: AddAdminDto) {
     // 그룹 채팅방에 admin을 추가하는 로직
     //1. 그룹 안의 admin과 owner 정보를 뽑아내는 로직
-    try {
-      await this.groupChatRepository.manager.transaction(
-        async (manager: EntityManager) => {
-          const groupChat: GroupChat[] = await manager
-            .getRepository(GroupChat)
-            .find({
-              where: [
-                {
-                  groupChatId: groupChatId,
-                  admin: {
-                    id: dto.userId,
-                  },
-                },
-                {
-                  groupChatId: groupChatId,
-                  owner: {
-                    id: dto.userId,
-                  },
-                },
-              ],
-              relations: {
-                admin: true,
-                owner: true,
-              },
-            });
-          console.log(groupChat);
 
-          if (groupChat.length === 0) {
-            throw new ForbiddenException();
-          }
-          const user = await manager.getRepository(User).findOne({
-            where: { id: dto.requestedId },
+    await this.groupChatRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        const groupChat: GroupChat[] = await manager
+          .getRepository(GroupChat)
+          .find({
+            where: [
+              {
+                groupChatId: groupChatId,
+                admin: {
+                  id: dto.userId,
+                },
+              },
+              {
+                groupChatId: groupChatId,
+                owner: {
+                  id: dto.userId,
+                },
+              },
+            ],
+            relations: {
+              admin: true,
+              owner: true,
+            },
           });
-          groupChat[0].admin.push(user);
-          await manager.save(GroupChat, groupChat[0]);
-        },
-      );
-    } catch (e) {
-      console.log(e);
-    }
+
+        if (groupChat.length === 0) {
+          throw new ForbiddenException();
+        }
+        for (let i = 0; i < groupChat[0].admin.length; i++) {
+          if (groupChat[0].admin[i].id === dto.requestedId) {
+            throw new ConflictException('이미 admin 권한이 있습니다.');
+          }
+        }
+        if (groupChat[0].ownerId === dto.requestedId) {
+          throw new ForbiddenException('onwer를 admin으로 등록할 수 없습니다.');
+        }
+        const isAdminUser = groupChat[0].admin.find(
+          (admin) => admin.id === dto.userId,
+        );
+        if (isAdminUser !== undefined) {
+          throw new ForbiddenException('admin 권한이 없습니다.');
+        }
+
+        // console.log('groupChat[0].ownerId::', groupChat[0].ownerId);
+        const user = await manager.getRepository(User).findOne({
+          where: { id: dto.requestedId },
+        });
+        groupChat[0].admin.push(user);
+        // console.log('groupChat[0].admin[0]:::', groupChat[0].admin[0].id);
+        // console.log('dto.requestedId::', dto.requestedId);
+        await manager.save(GroupChat, groupChat[0]);
+      },
+    );
   }
 
   async deleteAdmin(groupChatId: number, dto: DeleteAdminDto) {
