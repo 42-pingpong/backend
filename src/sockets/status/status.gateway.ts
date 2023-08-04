@@ -58,13 +58,6 @@ export class StatusGateway
   @UseGuards(AccessTokenGuard)
   async handleConnection(@ConnectedSocket() client: any) {
     console.log('status gateway connection');
-    if (client.handshake.auth.server) {
-      console.log('consumer connected');
-      return;
-    }
-    if (!client.handshake.auth.token) {
-      return;
-    }
     const sub = this.statusService.getSub(client.handshake.auth.token);
     if (sub == null) {
       return;
@@ -106,7 +99,11 @@ export class StatusGateway
         client.id,
         client.handshake.auth.token,
       );
-    if (!changeStatusData.friendList || !changeStatusData.me) {
+    if (
+      changeStatusData === undefined ||
+      !changeStatusData.friendList ||
+      !changeStatusData.me
+    ) {
       return false;
     }
 

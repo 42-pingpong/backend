@@ -4,7 +4,6 @@ import { JwtService } from '@nestjs/jwt';
 import { WebSocketServer, WsException } from '@nestjs/websockets';
 import axios from 'axios';
 import { FriendRequestJobData, UserJobData } from 'src/interface/user.jobdata';
-import { ChangeStatusData } from './status.gateway';
 
 @Injectable()
 export class StatusService {
@@ -22,15 +21,13 @@ export class StatusService {
 
   getSub(auth: string): number {
     if (auth == undefined) return null;
-    const bearer = auth.substring(6);
-    const payload = this.jwtService.decode(bearer);
+    const payload = this.jwtService.decode(auth);
     if (payload == null) {
       return null;
     } else return payload.sub;
   }
 
   async login(sub: number, clientId: string, bearerToken: string) {
-    bearerToken = 'Bearer ' + bearerToken.substring(6);
     try {
       // status online으로 변경,
       // socketId 변경
@@ -79,7 +76,6 @@ export class StatusService {
   }
 
   async disconnect(sub: number, clientId: string, bearerToken: string) {
-    bearerToken = 'Bearer ' + bearerToken.substring(6);
     //1. 로그아웃 시, 로그인 상태/연결된 소켓 정보를 삭제한다.
     try {
       const res = await axios.patch(
