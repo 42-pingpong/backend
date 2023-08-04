@@ -399,7 +399,8 @@ describe('User -/user (e2e)', () => {
         .post('/user/me/friend/request/20')
         .send(createRequestFriendDto)
         .expect(201);
-      console.log(body);
+      //for socket use
+      expect(body.requestedUser.statusSocketId).toBeDefined();
     });
 
     it('친구 요청자가 없음', async () => {
