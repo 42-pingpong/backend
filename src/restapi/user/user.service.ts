@@ -16,6 +16,7 @@ import { InvitationStatus } from 'src/enum/invitation.enum';
 import { SearchUserDto } from './dto/search-user.dto';
 import { Like } from 'typeorm';
 import { Request, RequestType } from 'src/entities/user/request.entity';
+import { GetUserResponseDto } from './response/get-alarm.response';
 
 @Injectable()
 export class UserService {
@@ -190,7 +191,7 @@ export class UserService {
    * @Todo test
    * */
   async getAlarms(id: number) {
-    return await this.requestRepository.find({
+    const res: GetUserResponseDto[] = await this.requestRepository.find({
       relations: { requestingUser: true },
       where: {
         requestedUserId: id,
@@ -209,5 +210,22 @@ export class UserService {
         createdAt: true,
       },
     });
+
+    //알람 시간 계산
+    const curTime = new Date();
+    res.forEach((alarm) => {
+      const diff = curTime.getTime() - alarm.createdAt.getTime();
+      const diffSec = Math.floor(diff / 1000);
+      if (diffSec < 60) {
+        alarm.pastTime = `${diffSec}초 전`;
+      } else if (diffSec < 3600) {
+        alarm.pastTime = `${Math.floor(diffSec / 60)}분 전`;
+      } else if (diffSec < 86400) {
+        alarm.pastTime = `${Math.floor(diffSec / 3600)}시간 전`;
+      } else {
+        alarm.pastTime = `${Math.floor(diffSec / 86400)}일 전`;
+      }
+    });
+    return res;
   }
 }

@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { RequestType } from 'src/entities/user/request.entity';
+import { ApiProperty, PartialType } from '@nestjs/swagger';
+import { Request, RequestType } from 'src/entities/user/request.entity';
 import { User } from 'src/entities/user/user.entity';
 import { InvitationStatus } from 'src/enum/invitation.enum';
 
@@ -7,7 +7,7 @@ import { InvitationStatus } from 'src/enum/invitation.enum';
  * @todo api property
  * */
 
-export class GetUserResponseDto {
+export class GetUserResponseDto extends PartialType(Request) {
   @ApiProperty({
     description: '요청 번호',
     example: 1,
@@ -21,7 +21,7 @@ export class GetUserResponseDto {
       nickName: '닉넴',
     },
   })
-  requestingUser: Partial<User>;
+  requestingUser: User;
 
   @ApiProperty({
     description: '요청 타입',
@@ -40,7 +40,13 @@ export class GetUserResponseDto {
 
   @ApiProperty({
     description: '만들어진 날짜',
-    example: Date.now(),
+    example: `${new Date().toISOString()}`,
   })
   createdAt: Date;
+
+  @ApiProperty({
+    description: '지난 시간',
+    example: '1시간 전',
+  })
+  pastTime?: string;
 }

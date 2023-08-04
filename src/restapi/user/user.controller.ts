@@ -14,6 +14,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import {
   ApiBody,
   ApiConflictResponse,
+  ApiExcludeController,
+  ApiExcludeEndpoint,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
@@ -149,4 +151,8 @@ export class UserController {
   async getAlarms(@Req() req: Request, @Param('id') id: string) {
     return await this.userService.getAlarms(+id);
   }
+
+  @ApiExcludeEndpoint()
+  @Patch('/alarms/:id')
+  async updateAlarm(@Param('id') id: string) {}
 }
