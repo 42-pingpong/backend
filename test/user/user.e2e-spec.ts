@@ -58,6 +58,27 @@ describe('User -/user (e2e)', () => {
   describe('PATCH /user/{id} test', () => {
     //defaultUser를 업데이트할때 사용할 dto
 
+    afterAll(async () => {
+      await repository.delete({
+        id: 1,
+      });
+      await repository.delete({
+        id: 2,
+      });
+      await repository.delete({
+        id: 3,
+      });
+      await repository.delete({
+        id: 4,
+      });
+      await repository.delete({
+        id: 5,
+      });
+      await repository.delete({
+        id: 6,
+      });
+    });
+
     const updateUserDto = new UpdateUserDto();
 
     it('PATCH /user/{id} success', async () => {
@@ -84,7 +105,7 @@ describe('User -/user (e2e)', () => {
 
     it('PATCH /user/{id} not found', async () => {
       await request(app.getHttpServer())
-        .patch(`/user/5`)
+        .patch(`/user/10203123`)
         .send(updateUserDto)
         .expect(404);
     });
@@ -374,10 +395,11 @@ describe('User -/user (e2e)', () => {
 
     it('20->21에게 친구요청 정상생성', async () => {
       createRequestFriendDto.requestedUserId = user21.id;
-      await request(app.getHttpServer())
+      const { body } = await request(app.getHttpServer())
         .post('/user/me/friend/request/20')
         .send(createRequestFriendDto)
         .expect(201);
+      console.log(body);
     });
 
     it('친구 요청자가 없음', async () => {
