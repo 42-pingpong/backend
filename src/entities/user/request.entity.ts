@@ -9,19 +9,25 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 
-@Entity()
-export class FriendRequest {
-  @PrimaryGeneratedColumn()
-  friendRequestId: number;
+export enum RequestType {
+  FRIEND = 'F',
+  GAME = 'G',
+  CHAT = 'C',
+}
 
-  @ManyToOne(() => User, (user) => user.friendRequesting)
+@Entity()
+export class Request {
+  @PrimaryGeneratedColumn()
+  requestId: number;
+
+  @ManyToOne(() => User, (user) => user.requesting)
   @JoinColumn()
   requestingUser: User;
 
   @Column()
   requestingUserId: number;
 
-  @ManyToOne(() => User, (user) => user.friendRequested)
+  @ManyToOne(() => User, (user) => user.requested)
   @JoinColumn()
   requestedUser: User;
 
@@ -30,6 +36,12 @@ export class FriendRequest {
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @Column({
+    type: 'enum',
+    enum: RequestType,
+  })
+  requestType: RequestType;
 
   @Column({
     type: 'enum',

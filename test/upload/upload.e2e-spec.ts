@@ -70,11 +70,8 @@ describe('Upload -/upload (e2e)', () => {
       .set('Content-Type', 'multipart/form-data')
       .attach('image', 'test/upload/invalidfile/test.cpp');
 
-    console.log(res.body);
     expect(res.status).toBe(400);
   });
-
-  it('/image (GET) success', async () => {});
 
   it.todo('/upload (POST) fail file different magic number');
 });

@@ -76,7 +76,6 @@ describe('Chat', () => {
 
       expect(result).toBeDefined();
       expect(response.status).toBe(201);
-      console.log(result);
     });
   });
 
