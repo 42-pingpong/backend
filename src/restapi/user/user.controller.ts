@@ -14,6 +14,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import {
   ApiBody,
   ApiConflictResponse,
+  ApiCreatedResponse,
   ApiExcludeController,
   ApiExcludeEndpoint,
   ApiOkResponse,

@@ -124,11 +124,11 @@ export class UserService {
     );
   }
 
-  async saveRequestFriend(id: number, friendId: number): Promise<void> {
+  async saveRequestFriend(id: number, friendId: number) {
     //친구 요청 대상자가 자기자신.
     if (id === friendId) throw new BadRequestException();
 
-    await this.requestRepository.manager.transaction(
+    return await this.requestRepository.manager.transaction(
       async (manager: EntityManager) => {
         //친구 요청 중복 체크
         const isRequested = await manager.findOne(Request, {
@@ -168,7 +168,7 @@ export class UserService {
         if (isFriend) throw new ConflictException();
 
         //친구 요청 저장
-        await manager.save(Request, {
+        return await manager.save(Request, {
           requestingUserId: id,
           requestedUserId: friendId,
           isAccepted: InvitationStatus.NOTALARMED,
