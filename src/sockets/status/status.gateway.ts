@@ -137,7 +137,7 @@ export class StatusGateway
     const rtn = await this.statusService.postRequestFriend(
       requestFriendJobData,
     );
-    if (rtn && rtn.requestedUser.status === 'online') {
+    if (rtn?.requestedUser?.status === 'online') {
       const socketId = rtn.requestedUser.statusSocketId;
       delete rtn.requestedUser;
       this.server.to(socketId).emit('request-friend-from-user', rtn);

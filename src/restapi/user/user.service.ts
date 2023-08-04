@@ -200,6 +200,7 @@ export class UserService {
             requestId: true,
             requestedUser: {
               statusSocketId: true,
+              status: true,
             },
             requestingUser: {
               id: true,
