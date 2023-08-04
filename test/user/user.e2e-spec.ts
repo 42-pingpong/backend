@@ -22,6 +22,7 @@ import { async } from 'rxjs';
 import { Request, RequestType } from 'src/entities/user/request.entity';
 import { InvitationStatus } from 'src/enum/invitation.enum';
 import { SearchUserDto } from 'src/restapi/user/dto/search-user.dto';
+import { CreateResponseDto } from 'src/restapi/upload/response/create.dto';
 
 describe('User -/user (e2e)', () => {
   let app: INestApplication;
@@ -143,220 +144,193 @@ describe('User -/user (e2e)', () => {
       //update하지 않은 부분
       expect(updatedUser.profile).toEqual(user6.profile);
     });
+  });
 
-    describe('GET /me/friends/{id}', () => {
-      const createUser7 = factory.createUser(7);
-      createUser7.status = 'online';
-      const createUser8 = factory.createUser(8);
-      createUser8.status = 'inGame';
-      const createUser9 = factory.createUser(9);
-      createUser9.status = 'offline';
-      const createUser10 = factory.createUser(10);
+  describe('GET /me/friends/{id}', () => {
+    const createUser7 = factory.createUser(7);
+    createUser7.status = 'online';
+    const createUser8 = factory.createUser(8);
+    createUser8.status = 'inGame';
+    const createUser9 = factory.createUser(9);
+    createUser9.status = 'offline';
+    const createUser10 = factory.createUser(10);
 
-      let user7: User;
-      let user8: User;
-      let user9: User;
-      let user10: User;
+    let user7: User;
+    let user8: User;
+    let user9: User;
+    let user10: User;
 
-      beforeEach(async () => {
-        await friendRepository.delete({ userId: 7 });
-        await friendRepository.delete({ userId: 8 });
-        await friendRepository.delete({ userId: 9 });
-        await friendRepository.delete({ userId: 10 });
-      });
-
-      it('GET /me/friends/{id} success', async () => {
-        user7 = await repository.save(createUser7);
-        user8 = await repository.save(createUser8);
-        user9 = await repository.save(createUser9);
-        user10 = await repository.save(createUser10);
-        await friendRepository.save({
-          userId: user7.id,
-          friendId: user8.id,
-        });
-
-        await friendRepository.save({
-          userId: user7.id,
-          friendId: user9.id,
-        });
-
-        await friendRepository.save({
-          userId: user7.id,
-          friendId: user10.id,
-        });
-
-        const res = await request(app.getHttpServer())
-          .get('/user/me/friends/7')
-          .expect(200);
-        expect(res.body.length).toEqual(3);
-      });
-
-      it('GET /me/friends/{id} inversed success', async () => {
-        user7 = await repository.save(createUser7);
-        user8 = await repository.save(createUser8);
-        user9 = await repository.save(createUser9);
-        user10 = await repository.save(createUser10);
-        await friendRepository.save({
-          userId: user8.id,
-          friendId: user7.id,
-        });
-
-        await friendRepository.save({
-          userId: user9.id,
-          friendId: user7.id,
-        });
-
-        await friendRepository.save({
-          userId: user10.id,
-          friendId: user7.id,
-        });
-
-        const res = await request(app.getHttpServer())
-          .get('/user/me/friends/7')
-          .expect(200);
-        expect(res.body.length).toEqual(0);
-
-        const res2 = await request(app.getHttpServer())
-          .get('/user/me/friends/8')
-          .expect(200);
-        expect(res2.body.length).toEqual(1);
-      });
-
-      it('GET /me/friends/{id} query', async () => {
-        const getFriendsDto = new GetFriendQueryDto();
-        getFriendsDto.status = 'online';
-
-        createUser7.status = 'online';
-        createUser8.status = 'offline';
-        createUser9.status = 'online';
-        createUser10.status = 'offline';
-
-        user7 = await repository.save(createUser7);
-        user8 = await repository.save(createUser8);
-        user9 = await repository.save(createUser9);
-        user10 = await repository.save(createUser10);
-        await friendRepository.save({
-          userId: user7.id,
-          friendId: user8.id,
-        });
-
-        await friendRepository.save({
-          userId: user7.id,
-          friendId: user9.id,
-        });
-
-        await friendRepository.save({
-          userId: user7.id,
-          friendId: user10.id,
-        });
-
-        const res = await request(app.getHttpServer())
-          .get('/user/me/friends/7?status=online')
-          .expect(200);
-        expect(res.body.length).toEqual(1);
-        expect(res.body[0].id).toEqual(user9.id);
-
-        const res2 = await request(app.getHttpServer())
-          .get('/user/me/friends/7?status=offline')
-          .expect(200);
-        expect(res2.body.length).toEqual(2);
-        expect(res2.body[0].id).toEqual(user8.id);
-
-        const res3 = await request(app.getHttpServer())
-          .get('/user/me/friends/7?status=all')
-          .expect(200);
-        expect(res3.body.length).toEqual(3);
-      });
+    beforeEach(async () => {
+      await friendRepository.delete({ userId: 7 });
+      await friendRepository.delete({ userId: 8 });
+      await friendRepository.delete({ userId: 9 });
+      await friendRepository.delete({ userId: 10 });
     });
 
-    describe('POST /me/friends/{id}', () => {
-      let user11 = factory.createUser(11);
-      let user12 = factory.createUser(12);
-      user12.status = 'online';
-      let user13 = factory.createUser(13);
-      user13.status = 'inGame';
-      let user14 = factory.createUser(14);
-      user14.status = 'offline';
-
-      beforeAll(async () => {
-        const realIds = [107112, 106987, 106982, 106930];
-
-        await friendRepository.delete({ userId: 11 });
-        await friendRepository.delete({ userId: 12 });
-        await friendRepository.delete({ userId: 13 });
-        await friendRepository.delete({ userId: 14 });
-
-        user11 = await repository.save(user11);
-        user12 = await repository.save(user12);
-        user13 = await repository.save(user13);
-        user14 = await repository.save(user14);
-
-        for (const id of realIds) {
-          const realUser = await repository.findOne({ where: { id: id } });
-          if (realUser) {
-            await friendRepository.save({
-              userId: id,
-              friendId: user11.id,
-            });
-
-            await friendRepository.save({
-              userId: id,
-              friendId: user12.id,
-            });
-
-            await friendRepository.save({
-              userId: id,
-              friendId: user13.id,
-            });
-
-            await friendRepository.save({
-              userId: id,
-              friendId: user14.id,
-            });
-          }
-        }
+    it('GET /me/friends/{id} success', async () => {
+      user7 = await repository.save(createUser7);
+      user8 = await repository.save(createUser8);
+      user9 = await repository.save(createUser9);
+      user10 = await repository.save(createUser10);
+      await friendRepository.save({
+        userId: user7.id,
+        friendId: user8.id,
       });
 
-      afterAll(async () => {
-        await friendRepository.delete({ userId: 11 });
-        await friendRepository.delete({ userId: 12 });
-        await friendRepository.delete({ userId: 13 });
-        await friendRepository.delete({ userId: 14 });
-
-        await repository.delete({ id: 11 });
-        await repository.delete({ id: 12 });
-        await repository.delete({ id: 13 });
-        await repository.delete({ id: 14 });
+      await friendRepository.save({
+        userId: user7.id,
+        friendId: user9.id,
       });
 
-      it('success', async () => {
-        const res = await request(app.getHttpServer())
-          .post('/user/me/friends/11')
-          .send({
-            friendId: user12.id,
-          })
-          .expect(201);
+      await friendRepository.save({
+        userId: user7.id,
+        friendId: user10.id,
+      });
 
-        const res2 = await request(app.getHttpServer())
-          .post('/user/me/friends/11')
-          .send({
-            friendId: user13.id,
-          })
-          .expect(201);
+      const res = await request(app.getHttpServer())
+        .get('/user/me/friends/7')
+        .expect(200);
+      expect(res.body.length).toEqual(3);
+    });
 
-        const res3 = await request(app.getHttpServer())
-          .post('/user/me/friends/11')
-          .send({
-            friendId: user14.id,
-          });
+    it('GET /me/friends/{id} inversed success', async () => {
+      user7 = await repository.save(createUser7);
+      user8 = await repository.save(createUser8);
+      user9 = await repository.save(createUser9);
+      user10 = await repository.save(createUser10);
+      await friendRepository.save({
+        userId: user8.id,
+        friendId: user7.id,
+      });
 
-        const friends = await friendRepository.find({
-          where: {
-            userId: 11,
-          },
+      await friendRepository.save({
+        userId: user9.id,
+        friendId: user7.id,
+      });
+
+      await friendRepository.save({
+        userId: user10.id,
+        friendId: user7.id,
+      });
+
+      const res = await request(app.getHttpServer())
+        .get('/user/me/friends/7')
+        .expect(200);
+      expect(res.body.length).toEqual(0);
+
+      const res2 = await request(app.getHttpServer())
+        .get('/user/me/friends/8')
+        .expect(200);
+      expect(res2.body.length).toEqual(1);
+    });
+
+    it('GET /me/friends/{id} query', async () => {
+      const getFriendsDto = new GetFriendQueryDto();
+      getFriendsDto.status = 'online';
+
+      createUser7.status = 'online';
+      createUser8.status = 'offline';
+      createUser9.status = 'online';
+      createUser10.status = 'offline';
+
+      user7 = await repository.save(createUser7);
+      user8 = await repository.save(createUser8);
+      user9 = await repository.save(createUser9);
+      user10 = await repository.save(createUser10);
+      await friendRepository.save({
+        userId: user7.id,
+        friendId: user8.id,
+      });
+
+      await friendRepository.save({
+        userId: user7.id,
+        friendId: user9.id,
+      });
+
+      await friendRepository.save({
+        userId: user7.id,
+        friendId: user10.id,
+      });
+
+      const res = await request(app.getHttpServer())
+        .get('/user/me/friends/7?status=online')
+        .expect(200);
+      expect(res.body.length).toEqual(1);
+      expect(res.body[0].id).toEqual(user9.id);
+
+      const res2 = await request(app.getHttpServer())
+        .get('/user/me/friends/7?status=offline')
+        .expect(200);
+      expect(res2.body.length).toEqual(2);
+      expect(res2.body[0].id).toEqual(user8.id);
+
+      const res3 = await request(app.getHttpServer())
+        .get('/user/me/friends/7?status=all')
+        .expect(200);
+      expect(res3.body.length).toEqual(3);
+    });
+  });
+
+  describe('POST /me/friends/{id}', () => {
+    let user11 = factory.createUser(11);
+    let user12 = factory.createUser(12);
+    user12.status = 'online';
+    let user13 = factory.createUser(13);
+    user13.status = 'inGame';
+    let user14 = factory.createUser(14);
+    user14.status = 'offline';
+
+    beforeAll(async () => {
+      await friendRepository.delete({ userId: 11 });
+      await friendRepository.delete({ userId: 12 });
+      await friendRepository.delete({ userId: 13 });
+      await friendRepository.delete({ userId: 14 });
+
+      user11 = await repository.save(user11);
+      user12 = await repository.save(user12);
+      user13 = await repository.save(user13);
+      user14 = await repository.save(user14);
+    });
+
+    afterAll(async () => {
+      await friendRepository.delete({ userId: 11 });
+      await friendRepository.delete({ userId: 12 });
+      await friendRepository.delete({ userId: 13 });
+      await friendRepository.delete({ userId: 14 });
+
+      await repository.delete({ id: 11 });
+      await repository.delete({ id: 12 });
+      await repository.delete({ id: 13 });
+      await repository.delete({ id: 14 });
+    });
+
+    it('success', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/user/me/friends/11')
+        .send({
+          friendId: user12.id,
+        })
+        .expect(201);
+
+      const res2 = await request(app.getHttpServer())
+        .post('/user/me/friends/11')
+        .send({
+          friendId: user13.id,
+        })
+        .expect(201);
+
+      const res3 = await request(app.getHttpServer())
+        .post('/user/me/friends/11')
+        .send({
+          friendId: user14.id,
         });
-        expect(friends.length).toEqual(3);
+
+      const friends = await friendRepository.find({
+        where: {
+          userId: 11,
+        },
       });
+      expect(friends.length).toEqual(3);
     });
   });
 
@@ -585,11 +559,84 @@ describe('User -/user (e2e)', () => {
    * @todo
    * */
   describe('GET /alarms', () => {
-    describe('친구요청 알람', () => {});
+    let user40;
+    let user41;
+    let user42;
+    let user43;
 
-    describe('채팅방 초대 알람', () => {});
+    beforeAll(async () => {
+      user40 = await repository.save(factory.createUser(40));
+      user41 = await repository.save(factory.createUser(41));
+      user42 = await repository.save(factory.createUser(42));
+      user43 = await repository.save(factory.createUser(43));
+    });
 
-    describe('게임 초대 알람', () => {});
+    afterAll(async () => {
+      await requestRepository.delete({
+        requestingUserId: user40.id,
+      });
+
+      await requestRepository.delete({
+        requestingUserId: user41.id,
+      });
+
+      await requestRepository.delete({
+        requestingUserId: user42.id,
+      });
+
+      await requestRepository.delete({
+        requestingUserId: user43.id,
+      });
+
+      await repository.delete({ id: 40 });
+      await repository.delete({ id: 41 });
+      await repository.delete({ id: 42 });
+      await repository.delete({ id: 43 });
+    });
+
+    describe('알람', () => {
+      const createRequestFriend: CreateRequestFriendDto =
+        new CreateRequestFriendDto();
+
+      it('40 => 41에게 보낸 친구요청 알람이 있음', async () => {
+        createRequestFriend.requestedUserId = user41.id;
+
+        // 40 => 41 친구요청
+        await request(app.getHttpServer())
+          .post('/user/me/friend/request/40')
+          .send(createRequestFriend)
+          .expect(201);
+
+        //41번 유저에게 알람이 있음
+        const res = await request(app.getHttpServer()).get(`/user/alarms/41`);
+        expect(res.body).toBeDefined();
+        expect(res.body[0].requestingUser.id).toEqual(40);
+      });
+
+      it('여러개의 알람. 41,42,43 => 40,', async () => {
+        createRequestFriend.requestedUserId = user40.id;
+        await request(app.getHttpServer())
+          .post('/user/me/friend/request/41')
+          .send(createRequestFriend)
+          .expect(201);
+
+        createRequestFriend.requestedUserId = user40.id;
+        await request(app.getHttpServer())
+          .post('/user/me/friend/request/42')
+          .send(createRequestFriend)
+          .expect(201);
+
+        createRequestFriend.requestedUserId = user40.id;
+        await request(app.getHttpServer())
+          .post('/user/me/friend/request/43')
+          .send(createRequestFriend)
+          .expect(201);
+
+        const res = await request(app.getHttpServer()).get(`/user/alarms/40`);
+
+        expect(res.body.length).toEqual(3);
+      });
+    });
   });
 
   afterAll(async () => {

@@ -57,7 +57,6 @@ describe('Auth', () => {
       const res = await request(app.getHttpServer())
         .get('/auth/42/login')
         .expect(302);
-      console.log(res.headers);
     });
   });
 
