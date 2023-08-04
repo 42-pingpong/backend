@@ -6,6 +6,7 @@ import { InvitationStatus } from 'src/enum/invitation.enum';
 /**
  * @todo api property
  * */
+
 export class GetUserResponseDto {
   @ApiProperty({
     description: '요청 번호',
@@ -26,7 +27,6 @@ export class GetUserResponseDto {
     description: '요청 타입',
     enum: RequestType,
     enumName: '요청타입',
-    example: 0,
   })
   requestType: RequestType;
 

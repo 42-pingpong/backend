@@ -10,9 +10,9 @@ import {
 import { User } from './user.entity';
 
 export enum RequestType {
-  FRIEND = 0,
-  GAME = 1,
-  CHAT = 2,
+  FRIEND = 'F',
+  GAME = 'G',
+  CHAT = 'C',
 }
 
 @Entity()

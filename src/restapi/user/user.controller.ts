@@ -144,9 +144,6 @@ export class UserController {
   @ApiOkResponse({
     type: GetUserResponseDto,
   })
-  /**
-   * @Todo API response
-   * */
   // @UseGuards(AccessTokenGuard)
   @Get('/alarms/:id')
   async getAlarms(@Req() req: Request, @Param('id') id: string) {
