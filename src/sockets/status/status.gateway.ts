@@ -121,7 +121,7 @@ export class StatusGateway
    * client: socket.emit으로 시작.
    * */
   @SubscribeMessage('request-friend')
-  handleRequestFriend(
+  async handleRequestFriend(
     @ConnectedSocket() client: any,
     @MessageBody() body: string,
   ) {
@@ -134,7 +134,14 @@ export class StatusGateway
       bearerToken: client.handshake.auth.token,
       friendRequestBody: JSON.parse(body),
     };
-    this.statusService.requestFriend(requestFriendJobData);
+    const rtn = await this.statusService.postRequestFriend(
+      requestFriendJobData,
+    );
+    if (rtn && rtn.requestedUser.status === 'online') {
+      const socketId = rtn.requestedUser.statusSocketId;
+      delete rtn.requestedUser;
+      this.server.to(socketId).emit('request-friend-from-user', rtn);
+    }
   }
 
   @SubscribeMessage('send-request-friend-to-user')

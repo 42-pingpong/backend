@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
+import { IsNumber } from 'class-validator';
 
 export class CreateRequestFriendDto {
   @ApiProperty({
@@ -7,5 +8,6 @@ export class CreateRequestFriendDto {
     example: 2,
   })
   @Type(() => Number)
+  @IsNumber()
   requestedUserId: number;
 }

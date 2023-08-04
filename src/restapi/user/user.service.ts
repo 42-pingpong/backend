@@ -33,6 +33,20 @@ export class UserService {
     @InjectRepository(Request)
     private requestRepository: Repository<Request>,
   ) {}
+  private addPastTime(alarm: GetUserResponseDto) {
+    const curTime = new Date();
+    const diff = curTime.getTime() - alarm.createdAt.getTime();
+    const diffSec = Math.floor(diff / 1000);
+    if (diffSec < 60) {
+      alarm.pastTime = `${diffSec}초 전`;
+    } else if (diffSec < 3600) {
+      alarm.pastTime = `${Math.floor(diffSec / 60)}분 전`;
+    } else if (diffSec < 86400) {
+      alarm.pastTime = `${Math.floor(diffSec / 3600)}시간 전`;
+    } else {
+      alarm.pastTime = `${Math.floor(diffSec / 86400)}일 전`;
+    }
+  }
 
   async create(createUserDto: CreateUserDto): Promise<User> {
     return await this.userRepository.save(createUserDto);
@@ -124,11 +138,11 @@ export class UserService {
     );
   }
 
-  async saveRequestFriend(id: number, friendId: number): Promise<void> {
+  async saveRequestFriend(id: number, friendId: number) {
     //친구 요청 대상자가 자기자신.
     if (id === friendId) throw new BadRequestException();
 
-    await this.requestRepository.manager.transaction(
+    return await this.requestRepository.manager.transaction(
       async (manager: EntityManager) => {
         //친구 요청 중복 체크
         const isRequested = await manager.findOne(Request, {
@@ -168,12 +182,36 @@ export class UserService {
         if (isFriend) throw new ConflictException();
 
         //친구 요청 저장
-        await manager.save(Request, {
+        const { requestId } = await manager.save(Request, {
           requestingUserId: id,
           requestedUserId: friendId,
           isAccepted: InvitationStatus.NOTALARMED,
           requestType: RequestType.FRIEND,
         });
+        const res = await manager.getRepository(Request).findOne({
+          relations: { requestingUser: true },
+          where: {
+            requestId,
+          },
+          order: {
+            createdAt: 'DESC',
+          },
+          select: {
+            requestId: true,
+            requestedUser: {
+              statusSocketId: true,
+            },
+            requestingUser: {
+              id: true,
+              nickName: true,
+            },
+            requestType: true,
+            isAccepted: true,
+            createdAt: true,
+          },
+        });
+        this.addPastTime(res);
+        return res;
       },
     );
   }
@@ -187,9 +225,6 @@ export class UserService {
     }
   }
 
-  /**
-   * @Todo test
-   * */
   async getAlarms(id: number) {
     const res: GetUserResponseDto[] = await this.requestRepository.find({
       relations: { requestingUser: true },
@@ -212,20 +247,7 @@ export class UserService {
     });
 
     //알람 시간 계산
-    const curTime = new Date();
-    res.forEach((alarm) => {
-      const diff = curTime.getTime() - alarm.createdAt.getTime();
-      const diffSec = Math.floor(diff / 1000);
-      if (diffSec < 60) {
-        alarm.pastTime = `${diffSec}초 전`;
-      } else if (diffSec < 3600) {
-        alarm.pastTime = `${Math.floor(diffSec / 60)}분 전`;
-      } else if (diffSec < 86400) {
-        alarm.pastTime = `${Math.floor(diffSec / 3600)}시간 전`;
-      } else {
-        alarm.pastTime = `${Math.floor(diffSec / 86400)}일 전`;
-      }
-    });
+    res.map(this.addPastTime);
     return res;
   }
 }
