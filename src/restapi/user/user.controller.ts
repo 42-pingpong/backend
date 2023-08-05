@@ -163,7 +163,7 @@ export class UserController {
    * */
   @ApiExcludeEndpoint()
   @Patch('/alarms/:userId')
-  async updateAlarm(@Param('userId') userId: string) {
+  async checkAlarms(@Param('userId') userId: string) {
     return await this.userService.checkAlarmsOfUser(+userId);
   }
 }
