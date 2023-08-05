@@ -129,14 +129,16 @@ describe('Status-Socket', () => {
   });
 
   describe('checked-alarm', () => {
-    it.todo('checked-alarm');
+    it.todo('데이터베이스 변경 확인');
   });
 
   describe('accept-friend', () => {
-    it.todo('accept-friend');
+    it.todo('database 변경확인');
+    it.todo('requesting user에게 accept 알람 확인')
   });
 
   describe('reject-friend', () => {
-    it.todo('reject-friend');
+    it.todo('database 변경확인');
+    it.todo('requesting user에게 reject 알람 확인');
   });
 });
