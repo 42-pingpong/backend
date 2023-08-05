@@ -10,6 +10,8 @@ import { StatusModule } from 'src/sockets/status/status.module';
 import * as cookieParser from 'cookie-parser';
 import * as request from 'supertest';
 import { RestapiModule } from 'src/restapi/restapi.module';
+import { User } from 'src/entities/user/user.entity';
+import { Token } from 'src/entities/auth/token.entity';
 
 /**
  * @link https://medium.com/@tozwierz/testing-socket-io-with-jest-on-backend-node-js-f71f7ec7010f
@@ -20,13 +22,12 @@ describe('Status-Socket', () => {
   let restApp: INestApplication;
   let datasource: DataSource;
   let socket;
+  let accToken;
 
   beforeAll(async () => {
     const moduleFixture = await Test.createTestingModule({
       imports: [StatusModule],
     })
-      .overrideModule(appDatabase)
-      .useModule(testDatabase)
       .overrideModule(AppConfigModule)
       .useModule(TestConfigModule)
       .compile();
@@ -68,42 +69,74 @@ describe('Status-Socket', () => {
     datasource = moduleFixture2.get<DataSource>(DataSource);
   });
 
-  beforeEach(() => {
+  beforeEach(async () => {
     // Setup
+    //10000번 유저로 로그인
+    const res = await request(restApp.getHttpServer())
+      .get('/api/fakeauth/login')
+      .query({
+        id: 10000,
+      });
+
+    accToken = res.headers['location'].split('accessToken=')[1];
+
+    //login
+    await request(restApp.getHttpServer())
+      .get('/api/user/me')
+      .set('Authorization', 'Bearer ' + accToken)
+      .expect(200);
+
     // Do not hardcode server port and address, square brackets are used for IPv6
-    socket = io(`ws://localhost:10051/status`, {
-      transports: ['websocket'],
-      forceNew: true,
-    });
+    socket = io(
+      `ws://[${restApp.getHttpServer().address().address}]:10051/status`,
+      {
+        transports: ['websocket'],
+        forceNew: true,
+        autoConnect: false,
+        auth: (cb) => {
+          const token = 'Bearer ' + accToken;
+          cb({ token });
+        },
+      },
+    );
     socket.on('connect', () => {
       console.log('connect');
     });
-
-    socket.emit('checked-alarm', { requestId: 5 });
   });
 
-  afterEach(() => {
-    // Cleanup
-    if (socket.connected) {
-      socket.disconnect();
-    }
+  afterEach(async () => {
+    socket.removeAllListeners();
+    socket.disconnect();
+    await datasource.getRepository(Token).delete({ ownerId: 10000 });
+    await datasource.getRepository(User).delete({ id: 10000 });
   });
 
   afterAll(async () => {
-    await socket.disconnect();
     await socketApp.close();
     await restApp.close();
   });
 
-  it('checked-alarms', async () => {
-    //https://github.com/ladjs/supertest
+  describe('connect', () => {
+    it.todo('connect');
+  });
 
-    const res = await request(restApp.getHttpServer())
-      .get('/api/fakeauth/login')
-      .query({
-        id: 5,
-      });
+  describe('disconnect', () => {
+    it.todo('disconnect');
+  });
 
-    console.log(res);
+  describe('request-friend', () => {
+    it.todo('request-friend');
+  });
+
+  describe('checked-alarm', () => {
+    it.todo('checked-alarm');
+  });
+
+  describe('accept-friend', () => {
+    it.todo('accept-friend');
+  });
+
+  describe('reject-friend', () => {
+    it.todo('reject-friend');
   });
 });
