@@ -1,10 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { WebSocketServer, WsException } from '@nestjs/websockets';
+import { WebSocketServer } from '@nestjs/websockets';
 import axios from 'axios';
-import { FriendRequestJobData, UserJobData } from 'src/interface/user.jobdata';
-import { GetUserResponseDto } from 'src/restapi/user/response/get-alarm.response';
+import { FriendRequestJobData } from 'src/interface/user.jobdata';
 import { PostRequestResponseDto } from 'src/restapi/user/response/post-request-response';
 
 @Injectable()
@@ -48,7 +47,6 @@ export class StatusService {
       );
     } catch (error) {
       console.log(error);
-      console.log(error.response.data.message);
     }
     //접속중인 친구목록 가져오기
     //GET /user/friends/:id
@@ -76,7 +74,6 @@ export class StatusService {
       //접속중인 친구목록을 줌.
     } catch (error) {
       console.log(error);
-      console.log(error.response.data.message);
     }
   }
 
@@ -97,7 +94,6 @@ export class StatusService {
       );
     } catch (error) {
       console.log(error);
-      console.log(error.response.data.message);
     }
 
     //2. 친구목록에서, 로그인 상태 유저 소켓들에게 상태 업데이트 이벤트를 보낸다.
@@ -122,7 +118,6 @@ export class StatusService {
       };
     } catch (error) {
       console.log(error);
-      console.log(error.response.data.message);
     }
   }
 
@@ -134,6 +129,11 @@ export class StatusService {
       const request = await axios.post(
         `${this.restApiUrl}/user/me/friend/request/${requestFriendJobData.userId}`,
         requestFriendJobData.friendRequestBody,
+        {
+          headers: {
+            Authorization: requestFriendJobData.bearerToken,
+          },
+        },
       );
       return request.data;
     } catch (error) {
@@ -141,11 +141,19 @@ export class StatusService {
     }
   }
 
-  async sendRequestFriendToUser(
-    sub: number,
-    clientId: string,
-    bearerToken: string,
-  ) {}
+  async checkAlarm(sub: number, clientId: string, bearerToken: string) {
+    //sub의 모든 alarm을 PENDING으로 변경
+
+    try {
+      await axios.patch(`${this.restApiUrl}/user/alarms/${sub}`, {
+        headers: {
+          Authorization: bearerToken,
+        },
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
 
   async acceptFriend(sub: number, clientId: string, bearerToken: string) {}
 }

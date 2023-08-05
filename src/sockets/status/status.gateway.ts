@@ -89,6 +89,7 @@ export class StatusGateway
 
   @SubscribeMessage('disconnect')
   async handleDisconnect(client: any) {
+    console.log('disconnect');
     const sub = this.statusService.getSub(client.handshake.auth.token);
     if (!sub) return;
     const changeStatusData: ChangeStatusData =
@@ -145,15 +146,16 @@ export class StatusGateway
     }
   }
 
-  @SubscribeMessage('send-request-friend-to-user')
+  @SubscribeMessage('checked-alarm')
   handleSendRequestFriend(
     @ConnectedSocket() client: any,
     @MessageBody() body: string,
   ) {
-    console.log('send-request-friend-to-user');
+    console.log('checked-alarm');
+    console.log(body);
     const requestUser = this.statusService.getSub(client.handshake.auth.token);
     if (!requestUser) return;
-    this.statusService.sendRequestFriendToUser(
+    this.statusService.checkAlarm(
       requestUser,
       client.id,
       client.handshake.auth.token,
