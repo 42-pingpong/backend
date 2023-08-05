@@ -662,6 +662,10 @@ describe('User -/user (e2e)', () => {
     });
   });
 
+  describe('PATCH /alarms/:userId', () => {
+    it('모든 알람 PENDDING으로 변경', async () => {});
+  });
+
   afterAll(async () => {
     await dataSource.destroy();
     await app.close();

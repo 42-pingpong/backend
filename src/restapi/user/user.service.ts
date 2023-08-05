@@ -251,4 +251,13 @@ export class UserService {
     res.map(this.addPastTime);
     return res;
   }
+
+  async checkAlarmsOfUser(id: number) {
+    return await this.requestRepository.update(
+      {
+        requestedUserId: id,
+      },
+      { isAccepted: InvitationStatus.PENDING },
+    );
+  }
 }

@@ -158,7 +158,12 @@ export class UserController {
     return await this.userService.getAlarms(+id);
   }
 
+  /**
+   * @description userId의 모든 알람 상태 PENDING으로 변경
+   * */
   @ApiExcludeEndpoint()
-  @Patch('/alarms/:id')
-  async updateAlarm(@Param('id') id: string) {}
+  @Patch('/alarms/:userId')
+  async updateAlarm(@Param('userId') userId: string) {
+    return await this.userService.checkAlarmsOfUser(+userId);
+  }
 }
