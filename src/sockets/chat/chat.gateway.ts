@@ -5,6 +5,27 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 
+export interface IChat {
+  id?: number;
+  nickname: string;
+  text: string;
+}
+
+export interface IChatRoom {
+  log?: IChat[];
+  chatName: string;
+  password?: string;
+  levelOfPublicity: string;
+  currentParticipants: number;
+  maxParticipants: number;
+  ownerId?: number;
+  roomId: number;
+}
+
+let roomId = 1;
+
+const ChatRoomList: IChatRoom[] = [];
+
 /**
  * @brief chat gateway
  *
@@ -73,9 +94,33 @@ export class ChatGateway
     return 'Goodbye world!';
   }
 
+  @SubscribeMessage('connect')
+  updateChatRoom(client: any, ...payload: IChatRoom[]): any {
+    client.broadcast.emit('group-chat-update', payload);
+    return payload;
+  }
+
   @SubscribeMessage('chat-message')
-  handleMessage(client: any, ...payload: any[]): string {
-    console.log('chat-message', payload);
-    return 'Message received!';
+  handleMessage(client: any, ...payload: IChat[]): any {
+    client.broadcast.emit('chat-message', payload[0]);
+    return payload[0];
+  }
+
+  @SubscribeMessage('group-chat-create')
+  createChatRoom(client: any, ...payload: IChatRoom[]): any {
+    payload[0].roomId = roomId;
+    ChatRoomList.push(payload[0]);
+    client.broadcast.emit('group-chat-update', payload[0]);
+    roomId++;
+    return payload[0];
+  }
+
+  @SubscribeMessage('group-chat-join')
+  enterChatRoom(client: any, ...payload: any[]): any {
+    client.join(payload[0].roomId);
+  }
+  @SubscribeMessage('group-chat-list')
+  getChatRoomList(client: any): IChatRoom[] {
+    return ChatRoomList;
   }
 }
