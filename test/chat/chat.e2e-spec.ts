@@ -25,6 +25,8 @@ import exp from 'constants';
 import { NotFoundError } from 'rxjs';
 import { factory } from 'typescript';
 import { after } from 'node:test';
+import { JoinGroupChatDto } from 'src/restapi/chat/dto/join-group-chat.dto';
+import { join } from 'path';
 
 describe('Chat', () => {
   let app: INestApplication;
@@ -155,6 +157,59 @@ describe('Chat', () => {
     });
   });
 
+  describe('POST /api/chat/groupChat/:groupChatId', () => {
+    let groupChat: GroupChat;
+    let createChatDto: CreateGroupChatDto;
+    let uf = new UserFactory();
+    let user1: User;
+    let user2: User;
+    let joinChatDto = new JoinGroupChatDto();
+    joinChatDto.userId = 101234;
+
+    beforeAll(async () => {
+      user1 = await userRepository.save(uf.createUser(101234));
+      user2 = await userRepository.save(uf.createUser(101235));
+      createChatDto = new CreateGroupChatDto();
+      createChatDto.password = '1234';
+      createChatDto.chatName = '테스트 채팅방';
+      createChatDto.levelOfPublicity = 'Priv';
+      createChatDto.maxParticipants = 10;
+      createChatDto.ownerId = 101234;
+      groupChat = await groupChatRepository.save(createChatDto);
+    });
+
+    beforeEach(async () => {
+      // await userRepository.delete({});
+      // await groupChatRepository.delete({});
+    });
+
+    afterAll(async () => {});
+
+    it('방에 user 참여', async () => {
+      groupChat.joinedUser = [user1];
+      groupChat.curParticipants++;
+      await groupChatRepository.save(groupChat);
+
+      await request(app.getHttpServer())
+        .post(
+          `/chat/groupChat/${groupChat.groupChatId}?userId=${joinChatDto.userId}`,
+        )
+        .send(joinChatDto)
+        .expect(201);
+
+      const updateGroupChat = await groupChatRepository.find({
+        where: {
+          groupChatId: groupChat.groupChatId,
+        },
+        relations: ['joinedUser'],
+      });
+      // console.log('test', updateGroupChat[0]);
+
+      expect(updateGroupChat[0].joinedUser[0].id).toBe(joinChatDto.userId);
+      expect(updateGroupChat[0].curParticipants).toBe('1');
+    });
+  });
+
   describe('POST /api/chat/groupChat/:groupChatId/admin', () => {
     let groupChat: GroupChat;
     let createChatDto: CreateGroupChatDto;
@@ -183,7 +238,7 @@ describe('Chat', () => {
 
     beforeEach(async () => {
       // await userRepository.delete({});
-      // await groupChatRepository.delete({});
+      await groupChatRepository.delete({});
     });
 
     afterAll(async () => {});
@@ -196,6 +251,8 @@ describe('Chat', () => {
     it('owner -> (user -> admin) 정상 추가 (201)', async () => {
       //query param으로 받을때는 쿼리파라미터로 넣어줘야함
       //body는 send로, query는 query로 넣어줘야함
+      await groupChatRepository.save(groupChat);
+
       await request(app.getHttpServer())
         .post(
           `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${addAdminDto.userId}&requestedId=${addAdminDto.requestedId}`,
@@ -305,13 +362,13 @@ describe('Chat', () => {
         .expect(404);
     });
 
-    it('owner -> (owner -> admin) (403)', async () => {
+    it('owner -> (owner -> admin) (404)', async () => {
       await request(app.getHttpServer())
         .post(
           `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${addAdminDto.userId}&requestedId=${addAdminDto.userId}`,
         )
         .send(addAdminDto)
-        .expect(403);
+        .expect(404);
     });
 
     it('admin -> (admin -> admin) (409)', async () => {

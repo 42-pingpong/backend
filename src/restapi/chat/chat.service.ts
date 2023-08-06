@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { GroupChat } from 'src/entities/chat/groupChat.entity';
-import { EntityManager, Repository } from 'typeorm';
+import { EntityManager, Join, Repository } from 'typeorm';
 import { CreateGroupChatDto } from './dto/create-group-chat.dto';
 import { UpdateGroupChatDto } from './dto/update-group-chat.dto';
 import { ExceptionsHandler } from '@nestjs/core/exceptions/exceptions-handler';
@@ -15,6 +15,7 @@ import { User } from 'src/entities/user/user.entity';
 import { AddAdminDto } from './dto/add-admin.dto';
 import { DeleteAdminDto } from './dto/delete-admin.dto';
 import { request } from 'http';
+import { JoinGroupChatDto } from './dto/join-group-chat.dto';
 
 @Injectable()
 export class ChatService {
@@ -22,6 +23,11 @@ export class ChatService {
     @InjectRepository(GroupChat)
     private readonly groupChatRepository: Repository<GroupChat>,
   ) {}
+
+  async createGroupChat(createChatDto: CreateGroupChatDto) {
+    // 그룹 채팅방을 생성하고 저장하는 로직
+    await this.groupChatRepository.save(createChatDto);
+  }
 
   async getGroupChat(groupChatId: number) {
     return await this.groupChatRepository.findOne({
@@ -33,11 +39,6 @@ export class ChatService {
         'curParticipants',
       ],
     });
-  }
-
-  async createGroupChat(createChatDto: CreateGroupChatDto) {
-    // 그룹 채팅방을 생성하고 저장하는 로직
-    await this.groupChatRepository.save(createChatDto);
   }
 
   async updateGroupChat(
@@ -63,6 +64,47 @@ export class ChatService {
         }
 
         await manager.update(GroupChat, groupChatId, updateGroupChatDto);
+      },
+    );
+  }
+
+  async joinGroupChat(groupChatId: number, dto: JoinGroupChatDto) {
+    // 그룹 채팅방에 참여하는 로직
+    await this.groupChatRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        // 그룹 채팅방의 현재 참여 인원 조회
+        const groupChat: GroupChat[] = await manager
+          .getRepository(GroupChat)
+          .find({
+            where: { groupChatId },
+            relations: {
+              joinedUser: true,
+            },
+          });
+
+        // 그룹 채팅방의 최대 참여 인원 조회
+        const maxGroupChat = await manager.findOne(GroupChat, {
+          where: { groupChatId },
+          select: ['maxParticipants'],
+        });
+
+        if (groupChat[0].curParticipants >= maxGroupChat.maxParticipants) {
+          throw new ForbiddenException();
+        }
+
+        const user = await manager.getRepository(User).findOne({
+          where: { id: dto.userId },
+        });
+        if (!user) {
+          throw new NotFoundException('user가 존재하지 않습니다.');
+        }
+
+        groupChat[0].curParticipants++;
+        groupChat[0].joinedUser.push(user);
+
+        console.log('service', groupChat[0]);
+
+        await manager.save(GroupChat, groupChat[0]);
       },
     );
   }
@@ -93,18 +135,12 @@ export class ChatService {
             relations: {
               admin: true,
               owner: true,
-              joinedUser: true,
             },
           });
 
         if (groupChat.length === 0) {
           throw new NotFoundException();
         }
-        // for (let i = 0; i < groupChat[0].admin.length; i++) {
-        //   if (groupChat[0].admin[i].id === dto.requestedId) {
-        //     throw new ConflictException('이미 admin 권한이 있습니다.');
-        //   }
-        // }
         const isalreadyAdmin = groupChat[0].admin.find(
           (admin) => admin.id === dto.requestedId,
         );
