@@ -182,13 +182,11 @@ describe('Chat', () => {
     });
 
     beforeEach(async () => {
-      // await groupChatRepository.delete({});
-    });
-
-    afterAll(async () => {
       // await userRepository.delete({});
       // await groupChatRepository.delete({});
     });
+
+    afterAll(async () => {});
 
     it('존재하지 않는 채팅방 (404)', async () => {
       await request(app.getHttpServer())
@@ -284,7 +282,7 @@ describe('Chat', () => {
         .expect(404);
     });
 
-    it('admin 권한 없는 user가 admin 추가 (404)', async () => {
+    it('admin 권한 없는 user가 admin 권한 추가 (404)', async () => {
       await request(app.getHttpServer())
         .post(
           `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${user3.id}&requestedId=${user4.id}`,
@@ -294,58 +292,188 @@ describe('Chat', () => {
     });
   });
 
-  // describe('DELETE /api/chat/groupChat/:groupChatId/admin', () => {
-  //   it('should return 200', async () => {
-  //     const uf = new UserFactory();
-  //     const user1 = uf.createUser(101234);
-  //     const user2 = uf.createUser(101235);
-  //     await userRepository.save([user1, user2]);
-  //     const createChatDto = new CreateGroupChatDto();
-  //     createChatDto.password = '1234';
-  //     createChatDto.chatName = '테스트 채팅방';
-  //     createChatDto.levelOfPublicity = 'Priv';
-  //     createChatDto.maxParticipants = 10;
-  //     createChatDto.ownerId = 101234;
+  describe('DELETE /api/chat/groupChat/:groupChatId/admin', () => {
+    let groupChat: GroupChat;
+    let createChatDto: CreateGroupChatDto;
+    let uf = new UserFactory();
+    let user1: User;
+    let user2: User;
+    let user3: User;
+    let user4: User;
+    let deleteAdminDto = new DeleteAdminDto();
+    deleteAdminDto.userId = 101234; // owner(user1)
+    deleteAdminDto.requestedId = 101235; // user(user2)
 
-  //     const groupChat = await groupChatRepository.save(createChatDto);
+    beforeAll(async () => {
+      user1 = await userRepository.save(uf.createUser(101234));
+      user2 = await userRepository.save(uf.createUser(101235));
+      user3 = await userRepository.save(uf.createUser(101236));
+      user4 = await userRepository.save(uf.createUser(101237));
+      createChatDto = new CreateGroupChatDto();
+      createChatDto.password = '1234';
+      createChatDto.chatName = '테스트 채팅방';
+      createChatDto.levelOfPublicity = 'Priv';
+      createChatDto.maxParticipants = 10;
+      createChatDto.ownerId = 101234;
+      groupChat = await groupChatRepository.save(createChatDto);
+    });
 
-  //     const addAdminDto = new AddAdminDto();
-  //     addAdminDto.userId = 101234;
-  //     addAdminDto.requestedId = 101235;
+    beforeEach(async () => {
+      // await userRepository.delete({});
+      await groupChatRepository.delete({});
+    });
 
-  //     await request(app.getHttpServer())
-  //       .post(
-  //         `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${addAdminDto.userId}&requestedId=${addAdminDto.requestedId}`,
-  //       )
-  //       .expect(201);
+    afterEach(async () => {});
 
-  //     const dataBeforeDelete = await groupChatRepository.find({
-  //       where: {
-  //         groupChatId: groupChat.groupChatId,
-  //       },
-  //       relations: ['admin'],
-  //     });
-  //     expect(dataBeforeDelete[0].admin[0].id).toBe(addAdminDto.requestedId);
+    it('존재하지 않는 채팅방 (404)', async () => {
+      await request(app.getHttpServer())
+        .post(
+          `/chat/groupChat/9999999/admin?userId=${deleteAdminDto.userId}&requestedId=${deleteAdminDto.requestedId}`,
+        )
+        .expect(404);
+    });
 
-  //     const deleteAdminDto = new DeleteAdminDto();
-  //     deleteAdminDto.userId = 101234;
-  //     deleteAdminDto.requestedId = 101235;
+    it('owner -> admin 권한 정상 삭제 (200)', async () => {
+      groupChat.admin = [user2];
+      await groupChatRepository.save(groupChat);
 
-  //     await request(app.getHttpServer())
-  //       .delete(
-  //         `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${deleteAdminDto.userId}&requestedId=${deleteAdminDto.requestedId}`,
-  //       )
-  //       .expect(200);
+      await request(app.getHttpServer())
+        .delete(
+          `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${deleteAdminDto.userId}&requestedId=${deleteAdminDto.requestedId}`,
+        )
+        .expect(200);
 
-  //     const dataAfterDelete = await groupChatRepository.find({
-  //       where: {
-  //         groupChatId: groupChat.groupChatId,
-  //       },
-  //       relations: ['admin'],
-  //     });
-  //     expect(dataAfterDelete[0].admin[0]).toBe(undefined);
-  //   });
-  // });
+      const updatedGroupChat = await groupChatRepository.find({
+        where: {
+          groupChatId: groupChat.groupChatId,
+        },
+        relations: ['admin'],
+      });
+      expect(updatedGroupChat[0].admin.length).toBe(0);
+    });
+
+    it('admin -> admin 권한 정상 삭제 (200)', async () => {
+      groupChat.admin = [user2, user3];
+      await groupChatRepository.save(groupChat);
+
+      await request(app.getHttpServer())
+        .delete(
+          `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${user2.id}&requestedId=${user3.id}`,
+        )
+        .expect(200);
+
+      const updatedGroupChat = await groupChatRepository.find({
+        where: {
+          groupChatId: groupChat.groupChatId,
+        },
+        relations: ['admin'],
+      });
+      expect(updatedGroupChat[0].admin.length).toBe(1);
+    });
+
+    it('owner -> admin 권한 삭제 (admin 권한 X) (404)', async () => {
+      await request(app.getHttpServer())
+        .delete(
+          `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${deleteAdminDto.userId}&requestedId=${user3.id}`,
+        )
+        .expect(404);
+    });
+
+    it('admin -> admin 권한 삭제 (admin 권한 X) (404)', async () => {
+      groupChat.admin = [user2];
+      await groupChatRepository.save(groupChat);
+
+      await request(app.getHttpServer())
+        .delete(
+          `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${user2.id}&requestedId=${user3.id}`,
+        )
+        .expect(404);
+    });
+
+    it('admin -> admin(owner) 권한 삭제 (404)', async () => {
+      groupChat.admin = [user2];
+      await groupChatRepository.save(groupChat);
+
+      await request(app.getHttpServer())
+        .delete(
+          `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${deleteAdminDto.requestedId}&requestedId=${deleteAdminDto.userId}`,
+        )
+        .expect(404);
+    });
+
+    it('admin권한 삭제하려는 유저가 채팅방에 없는경우 (404)', async () => {
+      groupChat.admin = [user2];
+      await groupChatRepository.save(groupChat);
+
+      await request(app.getHttpServer())
+        .delete(
+          `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${deleteAdminDto.userId}&requestedId=99999`,
+        )
+        .expect(404);
+    });
+
+    it('admin 권한 없는 user가 admin 권한 삭제 (404)', async () => {
+      groupChat.admin = [user2];
+      await groupChatRepository.save(groupChat);
+
+      await request(app.getHttpServer())
+        .delete(
+          `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${user3.id}&requestedId=${user4.id}`,
+        )
+        .expect(404);
+    });
+
+    // it('should return 200', async () => {
+    //   const uf = new UserFactory();
+    //   const user1 = uf.createUser(101234);
+    //   const user2 = uf.createUser(101235);
+    //   await userRepository.save([user1, user2]);
+    //   const createChatDto = new CreateGroupChatDto();
+    //   createChatDto.password = '1234';
+    //   createChatDto.chatName = '테스트 채팅방';
+    //   createChatDto.levelOfPublicity = 'Priv';
+    //   createChatDto.maxParticipants = 10;
+    //   createChatDto.ownerId = 101234;
+
+    //   const groupChat = await groupChatRepository.save(createChatDto);
+
+    //   const addAdminDto = new AddAdminDto();
+    //   addAdminDto.userId = 101234;
+    //   addAdminDto.requestedId = 101235;
+
+    //   await request(app.getHttpServer())
+    //     .post(
+    //       `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${addAdminDto.userId}&requestedId=${addAdminDto.requestedId}`,
+    //     )
+    //     .expect(201);
+
+    //   const dataBeforeDelete = await groupChatRepository.find({
+    //     where: {
+    //       groupChatId: groupChat.groupChatId,
+    //     },
+    //     relations: ['admin'],
+    //   });
+    //   expect(dataBeforeDelete[0].admin[0].id).toBe(addAdminDto.requestedId);
+
+    //   const deleteAdminDto = new DeleteAdminDto();
+    //   deleteAdminDto.userId = 101234;
+    //   deleteAdminDto.requestedId = 101235;
+
+    //   await request(app.getHttpServer())
+    //     .delete(
+    //       `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${deleteAdminDto.userId}&requestedId=${deleteAdminDto.requestedId}`,
+    //     )
+    //     .expect(200);
+
+    //   const dataAfterDelete = await groupChatRepository.find({
+    //     where: {
+    //       groupChatId: groupChat.groupChatId,
+    //     },
+    //     relations: ['admin'],
+    //   });
+    //   expect(dataAfterDelete[0].admin[0]).toBe(undefined);
+    // });
+  });
 
   afterAll(async () => {
     await dataSource.destroy();

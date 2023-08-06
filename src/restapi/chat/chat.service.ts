@@ -14,6 +14,7 @@ import { NotFoundError } from 'rxjs';
 import { User } from 'src/entities/user/user.entity';
 import { AddAdminDto } from './dto/add-admin.dto';
 import { DeleteAdminDto } from './dto/delete-admin.dto';
+import { request } from 'http';
 
 @Injectable()
 export class ChatService {
@@ -134,55 +135,47 @@ export class ChatService {
 
   async deleteAdmin(groupChatId: number, dto: DeleteAdminDto) {
     // 그룹 채팅방에서 admin을 제거하는 로직
-    try {
-      await this.groupChatRepository.manager.transaction(
-        async (manager: EntityManager) => {
-          const groupChat: GroupChat[] = await manager
-            .getRepository(GroupChat)
-            .find({
-              where: [
-                {
-                  groupChatId: groupChatId,
-                  admin: {
-                    id: dto.userId,
-                  },
-                },
-                {
-                  groupChatId: groupChatId,
-                  owner: {
-                    id: dto.userId,
-                  },
-                },
-              ],
-              relations: {
-                admin: true,
-                owner: true,
+    await this.groupChatRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        const groupChat: GroupChat[] = await manager
+          .getRepository(GroupChat)
+          .find({
+            where: [
+              {
+                groupChatId: groupChatId,
+                // admin: {
+                //   id: dto.userId,
+                // },
               },
-            });
+              {
+                groupChatId: groupChatId,
+                owner: {
+                  id: dto.userId,
+                },
+              },
+            ],
+            relations: {
+              admin: true,
+              owner: true,
+            },
+          });
 
-          if (groupChat.length === 0) {
-            throw new ForbiddenException();
-          }
-
-          // 요청한 유저의 id로 해당하는 admin을 찾아서 제거
-          const adminToRemove = groupChat[0].admin.find(
-            (admin) => admin.id === dto.requestedId,
-          );
-          if (!adminToRemove) {
-            throw new NotFoundException('Admin not found in the group');
-          }
-          groupChat[0].admin = groupChat[0].admin.filter(
-            (admin) => admin.id !== dto.requestedId,
-          );
-          // await manager.remove(adminToRemove);
-          await manager.save(GroupChat, groupChat[0]);
-          // 이거 넣어야할까요?
-        },
-      );
-    } catch (e) {
-      console.log(e);
-      // 예외 처리 로직 추가
-    }
+        if (groupChat.length === 0) {
+          throw new NotFoundException();
+        }
+        // 요청한 유저의 id로 해당하는 admin을 찾아서 제거
+        const adminToRemove = groupChat[0].admin.find(
+          (admin) => admin.id === dto.requestedId,
+        );
+        if (!adminToRemove) {
+          throw new NotFoundException('Admin not found in the group');
+        }
+        groupChat[0].admin = groupChat[0].admin.filter(
+          (admin) => admin.id !== dto.requestedId,
+        );
+        await manager.save(GroupChat, groupChat[0]);
+      },
+    );
   }
 
   async ban(groupChatId: number, userId: number) {
