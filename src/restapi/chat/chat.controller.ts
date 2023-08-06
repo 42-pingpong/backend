@@ -76,25 +76,6 @@ export class ChatController {
     this.chatService.ban(+groupChatId, userId);
   }
 
-  // @Post('groupChat/:groupChatId/setpriv')
-  // async setPriv(
-  //   @Param('groupChatId') groupChatId: number,
-  //   @Query() query: SetPrivDto,
-  // ) {
-  //   // 그룹 채팅방을 비공개로 설정하는 메서드
-  //   this.chatService.setPriv(+groupChatId, levelOfPublicity);
-  // }
-
-  // @Post('groupChat/:groupChatId/setpub')
-  // async setPub(
-  //   @Param('groupChatId') groupChatId: number,
-  //   @Query() levelOfPublicity: number,
-  // ) {
-  //   // 그룹 채팅방을 공개로 설정하는 메서드
-  //   this.chatService.setPub(+groupChatId, levelOfPublicity);
-  // }
-
-  // mute table 존재 x
   // @Post('groupChat/:groupChatId/mute')
   // async mute(
   //   @Param('groupChatId') groupChatId: number,

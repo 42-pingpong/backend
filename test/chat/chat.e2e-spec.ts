@@ -325,15 +325,6 @@ describe('Chat', () => {
         .send(addAdminDto)
         .expect(409);
     });
-
-    // it('admin 권한 없는 user가 admin 권한 추가 (404)', async () => {
-    //   await request(app.getHttpServer())
-    //     .post(
-    //       `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${user3.id}&requestedId=${user4.id}`,
-    //     )
-    //     .send(addAdminDto)
-    //     .expect(404);
-    // });
   });
 
   describe('DELETE /api/chat/groupChat/:groupChatId/admin', () => {

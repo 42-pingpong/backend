@@ -189,20 +189,6 @@ export class ChatService {
     // 그룹 채팅방에서 유저를 밴하는 로직
   }
 
-  // async setPriv(groupChatId: number, levelOfPublicity: number) {
-  //   // 그룹 채팅방의 priv를 설정하는 로직
-  //   // await this.groupChatRepository.save(groupChatId, {
-  //   //   levelOfPublicity: levelOfPublicity,
-  //   // });
-  // }
-
-  // async setPub(groupChatId: number, levelOfPublicity: number) {
-  //   // 그룹 채팅방의 pub를 설정하는 로직
-  //   // await this.groupChatRepository.save(groupChatId, {
-  //   //   levelOfPublicity: levelOfPublicity,
-  //   // });
-  // }
-
   // mute 테이블 아직 존재 X
   // async mute(groupChatId: number, userId: number) {
   //   // 그룹 채팅방에서 유저를 뮤트하는 로직
