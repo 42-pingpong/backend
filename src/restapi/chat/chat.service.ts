@@ -79,15 +79,15 @@ export class ChatService {
             where: [
               {
                 groupChatId: groupChatId,
-                admin: {
-                  id: dto.userId,
-                },
+                // admin: {
+                //   id: dto.userId,
+                // },
               },
               {
                 groupChatId: groupChatId,
-                owner: {
-                  id: dto.userId,
-                },
+                // owner: {
+                //   id: dto.userId,
+                // },
               },
             ],
             relations: {
@@ -163,10 +163,17 @@ export class ChatService {
         if (groupChat.length === 0) {
           throw new NotFoundException();
         }
-        // 요청한 유저의 id로 해당하는 admin을 찾아서 제거
+        const isAdminUser = groupChat[0].admin.find(
+          (admin) => admin.id === dto.userId,
+        );
         const adminToRemove = groupChat[0].admin.find(
           (admin) => admin.id === dto.requestedId,
         );
+        if (isAdminUser) {
+          if (adminToRemove)
+            throw new ForbiddenException('admin 끼리는 삭제가 불가능합니다.');
+        }
+
         if (!adminToRemove) {
           throw new NotFoundException('Admin not found in the group');
         }
