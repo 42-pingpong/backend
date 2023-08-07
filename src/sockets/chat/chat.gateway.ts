@@ -127,7 +127,6 @@ export class ChatGateway
 
   @SubscribeMessage('join-room')
   enterChatRoom(client: any, roomId: string): any {
-    console.log('join-room', roomId);
     client.join(roomId);
     // const room = ChatRoomList.find((data) => data.roomId === roomId);
     // client.emit('group-chat-info', room);
@@ -140,7 +139,6 @@ export class ChatGateway
 
   @SubscribeMessage('leave-room')
   leaveChatRoom(client: any, roomId: string): any {
-    console.log('leave-room', roomId);
     client.leave(roomId);
   }
 
