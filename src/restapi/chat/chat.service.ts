@@ -109,9 +109,6 @@ export class ChatService {
   }
 
   async addAdmin(groupChatId: number, dto: AddAdminDto) {
-    // 그룹 채팅방에 admin을 추가하는 로직
-    //1. 그룹 안의 admin과 owner 정보를 뽑아내는 로직
-
     await this.groupChatRepository.manager.transaction(
       async (manager: EntityManager) => {
         const groupChat: GroupChat = await manager
@@ -131,27 +128,20 @@ export class ChatService {
           throw new NotFoundException();
         }
 
-        //유저 참여 검증
-        const isJoinedUser = groupChat.joinedUser.find(
-          (user) => user.id === dto.requestedId,
-        );
-        if (!isJoinedUser) {
-          throw new ForbiddenException('참여하지 않은 유저입니다.');
-        }
-
-        groupChat.joinedUser = groupChat.joinedUser.filter(
-          (joinedUser) => joinedUser.id !== dto.requestedId,
-        );
-
+        // admin에 이미 requestedId가 있는지 검증
         const isalreadyAdmin = groupChat.admin.find(
           (admin) => admin.id === dto.requestedId,
         );
         if (isalreadyAdmin) {
           throw new ConflictException('이미 admin 권한이 있습니다.');
         }
+
+        // ownerId requestedId 인지 검증
         if (groupChat.ownerId === dto.requestedId) {
           throw new ForbiddenException('onwer를 admin으로 등록할 수 없습니다.');
         }
+
+        // userId가 admin인지 검증, owner인지 검증
         const isAdminUser = groupChat.admin.find(
           (admin) => admin.id === dto.userId,
         );
@@ -159,12 +149,28 @@ export class ChatService {
         if (!isAdminUser && !isOwnerUser) {
           throw new ForbiddenException('admin 권한이 없습니다.');
         }
+
+        //유저 참여 검증
+        const isJoinedUser = groupChat.joinedUser.find(
+          (user) => user.id === dto.requestedId,
+        );
+        if (!isJoinedUser) {
+          throw new NotFoundException('참여하지 않은 유저입니다.');
+        }
+
+        // joinUser에서 requestedId를 제거
+        groupChat.joinedUser = groupChat.joinedUser.filter(
+          (joinedUser) => joinedUser.id !== dto.requestedId,
+        );
+
+        // groupChat에 requestedId를 admin으로 추가
         const user = await manager.getRepository(User).findOne({
           where: { id: dto.requestedId },
         });
         if (!user) {
           throw new NotFoundException('user가 존재하지 않습니다.');
         }
+        // db에 저장
         groupChat.admin.push(user);
         await manager.save(GroupChat, groupChat);
       },
@@ -173,6 +179,7 @@ export class ChatService {
 
   /**
    * @TODO 삭제 후 joinUser에 추가
+   * 했어요
    * */
   async deleteAdmin(groupChatId: number, dto: DeleteAdminDto) {
     // 그룹 채팅방에서 admin을 제거하는 로직
@@ -187,12 +194,15 @@ export class ChatService {
             relations: {
               admin: true,
               owner: true,
+              joinedUser: true,
             },
           });
 
         if (!groupChat) {
           throw new NotFoundException();
         }
+
+        // userId와 requestedId가 admin인지 검증
         const isAdminUser = groupChat.admin.find(
           (admin) => admin.id === dto.userId,
         );
@@ -203,13 +213,22 @@ export class ChatService {
           if (adminToRemove)
             throw new ForbiddenException('admin 끼리는 삭제가 불가능합니다.');
         }
-
         if (!adminToRemove) {
-          throw new NotFoundException('Admin not found in the group');
+          throw new NotFoundException(
+            'admin이 그룹 채팅방에 존재하지 않습니다.',
+          );
         }
+
+        // joinUser로 requestedId를 추가
+        groupChat.joinedUser.push(
+          groupChat.admin.find((admin) => admin.id === dto.requestedId),
+        );
+
+        // admin에서 requestedId를 제거
         groupChat.admin = groupChat.admin.filter(
           (admin) => admin.id !== dto.requestedId,
         );
+
         await manager.save(GroupChat, groupChat);
       },
     );

@@ -255,6 +255,7 @@ describe('Chat', () => {
     it('owner -> (user -> admin) 정상 추가 (201)', async () => {
       //query param으로 받을때는 쿼리파라미터로 넣어줘야함
       //body는 send로, query는 query로 넣어줘야함
+      groupChat.joinedUser = [user2];
       await groupChatRepository.save(groupChat);
 
       await request(app.getHttpServer())
@@ -275,6 +276,7 @@ describe('Chat', () => {
 
     it('admin -> (user -> admin) 권한 추가 (201)', async () => {
       groupChat.admin = [user2];
+      groupChat.joinedUser = [user2, user3];
       await groupChatRepository.save(groupChat);
 
       await request(app.getHttpServer())

@@ -26,7 +26,7 @@ import { TestConfigModule } from 'src/config/test.config';
         database: configService.get<string>('database.database'),
         entities: configService.get<any[]>('database.entities'),
         dropSchema: true,
-        logging: 'all',
+        // logging: 'all',
         synchronize: true,
       }),
       dataSourceFactory: async (options) => {
