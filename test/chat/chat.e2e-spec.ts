@@ -178,20 +178,14 @@ describe('Chat', () => {
       groupChat = await groupChatRepository.save(createChatDto);
     });
 
-    beforeEach(async () => {
-      // await userRepository.delete({});
-      await groupChatRepository.delete({});
-    });
-
     afterAll(async () => {
       // await groupChatRepository.delete({});
+      await groupChatRepository.delete({
+        groupChatId: groupChat.groupChatId,
+      });
     });
 
     it('방에 user 참여', async () => {
-      groupChat.joinedUser = [user1];
-      groupChat.curParticipants++;
-      await groupChatRepository.save(groupChat);
-
       await request(app.getHttpServer())
         .post(
           `/chat/groupChat/${groupChat.groupChatId}?userId=${joinChatDto.userId}`,
