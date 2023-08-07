@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -11,6 +12,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Token } from 'src/entities/auth/token.entity';
 import { FriendsWith } from 'src/entities/user/friendsWith.entity';
 import { GetFriendQueryDto } from './dto/get-friend-query.dto';
+import { InvitationStatus } from 'src/enum/invitation.enum';
+import { SearchUserDto } from './dto/search-user.dto';
+import { Like } from 'typeorm';
+import { Request, RequestType } from 'src/entities/user/request.entity';
+import { GetUserResponseDto } from './response/get-alarm.response';
 
 @Injectable()
 export class UserService {
@@ -23,7 +29,24 @@ export class UserService {
 
     @InjectRepository(FriendsWith)
     private friendsWithRepository: Repository<FriendsWith>,
+
+    @InjectRepository(Request)
+    private requestRepository: Repository<Request>,
   ) {}
+  private addPastTime(alarm: GetUserResponseDto) {
+    const curTime = new Date();
+    const diff = curTime.getTime() - alarm.createdAt.getTime();
+    const diffSec = Math.floor(diff / 1000);
+    if (diffSec < 60) {
+      alarm.pastTime = `${diffSec}초 전`;
+    } else if (diffSec < 3600) {
+      alarm.pastTime = `${Math.floor(diffSec / 60)}분 전`;
+    } else if (diffSec < 86400) {
+      alarm.pastTime = `${Math.floor(diffSec / 3600)}시간 전`;
+    } else {
+      alarm.pastTime = `${Math.floor(diffSec / 86400)}일 전`;
+    }
+  }
 
   async create(createUserDto: CreateUserDto): Promise<User> {
     return await this.userRepository.save(createUserDto);
@@ -71,20 +94,19 @@ export class UserService {
   }
 
   async getFriends(id: number, query: GetFriendQueryDto) {
-    const friendQuery = {
+    const quer = {
+      relation: ['friendsWith'],
       where: {
-        userId: id,
+        friendsWith: {
+          userId: id,
+        },
       },
-      relations: ['friend'],
     };
-    // dynamic query
+
     if (query.status && query.status !== 'all') {
-      friendQuery.where['friend'] = { status: query.status };
+      quer.where['status'] = query.status;
     }
-    if (query.includeMe) {
-      friendQuery.relations.push('user');
-    }
-    return await this.friendsWithRepository.find(friendQuery);
+    return await this.userRepository.find(quer);
   }
 
   async addFriend(id: number, friendId: number): Promise<void> {
@@ -114,5 +136,119 @@ export class UserService {
         });
       },
     );
+  }
+
+  async saveRequestFriend(id: number, friendId: number) {
+    //친구 요청 대상자가 자기자신.
+    if (id === friendId) throw new BadRequestException();
+
+    return await this.requestRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        //친구 요청 중복 체크
+        const isRequested = await manager.findOne(Request, {
+          where: [
+            {
+              requestingUserId: id,
+              requestedUserId: friendId,
+              requestType: RequestType.FRIEND,
+              isAccepted: InvitationStatus.PENDING,
+            },
+            {
+              requestingUserId: id,
+              requestedUserId: friendId,
+              requestType: RequestType.FRIEND,
+              isAccepted: InvitationStatus.NOTALARMED,
+            },
+          ],
+        });
+        if (isRequested) throw new ConflictException();
+
+        //유저 조회
+        const user = await manager.findOne(User, {
+          where: { id: id },
+        });
+        if (!user) throw new NotFoundException();
+
+        //친구 조회
+        const friend = await manager.findOne(User, {
+          where: { id: friendId },
+        });
+        if (!friend) throw new NotFoundException();
+
+        //이미 친구인가
+        const isFriend = await manager.findOne(FriendsWith, {
+          where: { userId: id, friendId: friendId },
+        });
+        if (isFriend) throw new ConflictException();
+
+        //친구 요청 저장
+        const { requestId } = await manager.save(Request, {
+          requestingUserId: id,
+          requestedUserId: friendId,
+          isAccepted: InvitationStatus.NOTALARMED,
+          requestType: RequestType.FRIEND,
+        });
+        const res = await manager.getRepository(Request).findOne({
+          relations: { requestingUser: true, requestedUser: true },
+          where: {
+            requestId,
+          },
+          order: {
+            createdAt: 'DESC',
+          },
+          select: {
+            requestId: true,
+            requestedUser: {
+              statusSocketId: true,
+              status: true,
+            },
+            requestingUser: {
+              id: true,
+              nickName: true,
+            },
+            requestType: true,
+            isAccepted: true,
+            createdAt: true,
+          },
+        });
+        this.addPastTime(res);
+        return res;
+      },
+    );
+  }
+
+  async searchUser(query: SearchUserDto): Promise<User[]> {
+    const { nickName } = query;
+    const where = {};
+    if (nickName) {
+      where['nickName'] = Like(`%${nickName}%`);
+      return await this.userRepository.findBy(where);
+    }
+  }
+
+  async getAlarms(id: number) {
+    const res: GetUserResponseDto[] = await this.requestRepository.find({
+      relations: { requestingUser: true },
+      where: {
+        requestedUserId: id,
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+      select: {
+        requestId: true,
+        requestingUser: {
+          id: true,
+          nickName: true,
+        },
+        requestType: true,
+        isAccepted: true,
+        createdAt: true,
+      },
+    });
+
+    //알람 시간 계산
+    res.map(this.addPastTime);
+    return res;
   }
 }

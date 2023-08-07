@@ -10,11 +10,16 @@ import {
 } from '@nestjs/websockets';
 import { UseGuards } from '@nestjs/common';
 import { AccessTokenGuard } from 'src/restapi/auth/Guards/accessToken.guard';
-import { StatusProducer } from './status.producer';
-import { Redis } from 'ioredis';
 import { ApiTags } from '@nestjs/swagger';
 import { StatusService } from './status.service';
-import { GetFriendResponseDto } from 'src/restapi/user/dto/get-friend-response.dto';
+import { FriendRequestJobData } from 'src/interface/user.jobdata';
+import { GetFriendResponse } from 'src/restapi/user/response/get-friend.response';
+import { CreateUserDto } from 'src/restapi/user/dto/create-user.dto';
+
+export interface ChangeStatusData {
+  friendList: GetFriendResponse[];
+  me: CreateUserDto;
+}
 
 /**
  * @brief status gateway
@@ -38,14 +43,9 @@ export class StatusGateway
   @WebSocketServer()
   server: any;
 
-  constructor(
-    private readonly statusProducer: StatusProducer,
-    private readonly statusService: StatusService,
-  ) {}
+  constructor(private readonly statusService: StatusService) {}
 
-  async afterInit() {
-    console.log('status gateway init');
-  }
+  async afterInit() {}
 
   /**
    * @brief handleConnection
@@ -57,42 +57,121 @@ export class StatusGateway
   @SubscribeMessage('connect')
   @UseGuards(AccessTokenGuard)
   async handleConnection(@ConnectedSocket() client: any) {
-    console.log('status gateway connection');
-    if (client.handshake.auth.server) {
-      console.log('consumer connected');
-      return;
-    }
-    if (!client.handshake.auth.token) {
-      return;
-    }
     const sub = this.statusService.getSub(client.handshake.auth.token);
     if (sub == null) {
       return;
     }
-    this.statusProducer.login(sub, client.id, client.handshake.auth.token);
-  }
+    const changeStatusData: ChangeStatusData = await this.statusService.login(
+      sub,
+      client.id,
+      client.handshake.auth.token,
+    );
 
-  @SubscribeMessage('change-status')
-  async handleStatusSync(
-    @ConnectedSocket() client: any,
-    @MessageBody() message: string,
-  ) {
-    console.log('status gateway change-status');
-    console.log(client.id);
-    const data: GetFriendResponseDto[] = JSON.parse(message);
-    for (const user of data) {
-      //친구에게 로그인/로그아웃한 유저의 상태정보를 전송한다.
+    if (
+      changeStatusData === undefined ||
+      !changeStatusData.friendList ||
+      !changeStatusData.me
+    ) {
+      return false;
+    }
+
+    if (changeStatusData.friendList.length == 0) {
+      return false;
+    }
+
+    for (const friend of changeStatusData.friendList) {
+      // 온라인 친구에게 로그인/로그아웃한 유저의 상태정보를 전송한다.
       this.server
-        .to(user.friend.statusSocketId)
-        .emit('change-status', user.user);
+        .to(friend.statusSocketId)
+        .emit('change-status', changeStatusData.me);
     }
   }
 
   @SubscribeMessage('disconnect')
-  handleDisconnect(client: any) {
-    console.log('status gateway disconnect');
+  async handleDisconnect(client: any) {
     const sub = this.statusService.getSub(client.handshake.auth.token);
     if (!sub) return;
-    this.statusProducer.logout(sub, client.id, client.handshake.auth.token);
+    const changeStatusData: ChangeStatusData =
+      await this.statusService.disconnect(
+        sub,
+        client.id,
+        client.handshake.auth.token,
+      );
+    if (
+      changeStatusData === undefined ||
+      !changeStatusData.friendList ||
+      !changeStatusData.me
+    ) {
+      return false;
+    }
+
+    if (changeStatusData.friendList.length == 0) {
+      return false;
+    }
+
+    for (const friend of changeStatusData.friendList) {
+      // 온라인 친구에게 로그인/로그아웃한 유저의 상태정보를 전송한다.
+      this.server
+        .to(friend.statusSocketId)
+        .emit('change-status', changeStatusData.me);
+    }
+  }
+
+  /** [친구요청 프로세스]
+   * client: socket.emit으로 시작.
+   * */
+  @SubscribeMessage('request-friend')
+  async handleRequestFriend(
+    @ConnectedSocket() client: any,
+    @MessageBody() body: string,
+  ) {
+    console.log('friend-request');
+    const requestUser = this.statusService.getSub(client.handshake.auth.token);
+    if (!requestUser) return;
+    const requestFriendJobData: FriendRequestJobData = {
+      userId: requestUser,
+      clientId: client.id,
+      bearerToken: client.handshake.auth.token,
+      friendRequestBody: JSON.parse(body),
+    };
+    const rtn = await this.statusService.postRequestFriend(
+      requestFriendJobData,
+    );
+    console.log('rtn', rtn);
+    if (rtn?.requestedUser?.status === 'online') {
+      const socketId = rtn.requestedUser.statusSocketId;
+      delete rtn.requestedUser;
+      this.server.to(socketId).emit('request-friend-from-user', rtn);
+    }
+  }
+
+  @SubscribeMessage('send-request-friend-to-user')
+  handleSendRequestFriend(
+    @ConnectedSocket() client: any,
+    @MessageBody() body: string,
+  ) {
+    console.log('send-request-friend-to-user');
+    const requestUser = this.statusService.getSub(client.handshake.auth.token);
+    if (!requestUser) return;
+    this.statusService.sendRequestFriendToUser(
+      requestUser,
+      client.id,
+      client.handshake.auth.token,
+    );
+  }
+
+  @SubscribeMessage('accept-friend')
+  handleAcceptFriend(
+    @ConnectedSocket() client: any,
+    @MessageBody() body: string,
+  ) {
+    console.log('accept friend');
+    const requestUser = this.statusService.getSub(client.handshake.auth.token);
+    if (!requestUser) return;
+    this.statusService.acceptFriend(
+      requestUser,
+      client.id,
+      client.handshake.auth.token,
+    );
   }
 }

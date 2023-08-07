@@ -5,12 +5,11 @@ import { GroupChatMessage } from 'src/entities/chat/groupChatMessage.entity';
 import { DirectMessage } from 'src/entities/chat/directMessage.entity';
 import { MessageInfo } from 'src/entities/chat/messageInfo.entity';
 import { GameInfo } from 'src/entities/game/gameInfo.entity';
-import { GameInvitation } from 'src/entities/game/gameInvitation.entity';
 import { GameScore } from 'src/entities/game/gameScore.entity';
 import { BlockUserList } from 'src/entities/user/blockUserList.entity';
-import { FriendRequest } from 'src/entities/user/friendRequest.entity';
 import { Token } from 'src/entities/auth/token.entity';
 import { FriendsWith } from 'src/entities/user/friendsWith.entity';
+import { Request } from 'src/entities/user/request.entity';
 
 export default registerAs('database', () => ({
   host:
@@ -26,10 +25,9 @@ export default registerAs('database', () => ({
     DirectMessage,
     MessageInfo,
     GameInfo,
-    GameInvitation,
     GameScore,
     BlockUserList,
-    FriendRequest,
+    Request,
     Token,
     FriendsWith,
   ],

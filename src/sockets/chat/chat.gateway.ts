@@ -1,9 +1,36 @@
-import { SubscribeMessage, WebSocketGateway } from '@nestjs/websockets';
+import {
+  SubscribeMessage,
+  WebSocketGateway,
+  WebSocketServer,
+} from '@nestjs/websockets';
 import {
   OnGatewayInit,
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
+import { Socket } from 'socket.io';
+
+export interface ChatDTO {
+  roomId: string;
+  id?: number;
+  nickname: string;
+  text: string;
+}
+
+export interface ChatRoomDTO {
+  log?: ChatDTO[];
+  chatName: string;
+  password?: string;
+  levelOfPublicity: string;
+  currentParticipants: number;
+  maxParticipants: number;
+  ownerId?: number;
+  roomId: string;
+}
+
+let roomId = 1;
+
+const ChatRoomList: ChatRoomDTO[] = [];
 
 /**
  * @brief chat gateway
@@ -28,6 +55,8 @@ import {
 export class ChatGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
 {
+  @WebSocketServer()
+  server: any;
   /**
    * @brief lifecycle hook
    * @param any server(서버)
@@ -73,9 +102,48 @@ export class ChatGateway
     return 'Goodbye world!';
   }
 
+  @SubscribeMessage('connect')
+  updateChatRoom(client: any, ...payload: ChatRoomDTO[]): any {
+    client.broadcast.emit('group-chat-update', payload);
+    return payload;
+  }
+
   @SubscribeMessage('chat-message')
-  handleMessage(client: any, ...payload: any[]): string {
-    console.log('chat-message', payload);
-    return 'Message received!';
+  handleMessage(client: Socket, ...payload: ChatDTO[]): any {
+    client.broadcast.to(payload[0].roomId).emit('chat-message', payload[0]);
+    // const room = ChatRoomList.find((data) => data.roomId === payload[0].roomId);
+    // room.log.push(payload[0]);
+    return payload[0];
+  }
+
+  @SubscribeMessage('create-room')
+  createChatRoom(client: any, ...payload: ChatRoomDTO[]): any {
+    payload[0].roomId = roomId.toString();
+    ChatRoomList.push(payload[0]);
+    client.broadcast.emit('group-chat-update', payload[0]);
+    roomId++;
+    return payload[0];
+  }
+
+  @SubscribeMessage('join-room')
+  enterChatRoom(client: any, roomId: string): any {
+    client.join(roomId);
+    // const room = ChatRoomList.find((data) => data.roomId === roomId);
+    // client.emit('group-chat-info', room);
+    // console.log(room.log);
+  }
+
+  // @SubscribeMessage('group-chat-info')
+  // getChatRoomInfo(client: any, roomId: string): any {
+  // }
+
+  @SubscribeMessage('leave-room')
+  leaveChatRoom(client: any, roomId: string): any {
+    client.leave(roomId);
+  }
+
+  @SubscribeMessage('group-chat-list')
+  getChatRoomList(client: any): ChatRoomDTO[] {
+    return ChatRoomList;
   }
 }

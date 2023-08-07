@@ -5,6 +5,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { IJwtPayload } from './interface/IUser.types';
 import { ValidationPipe } from '@nestjs/common';
 import { logger } from './logger/logger.middleware';
+import { RedisIoAdapter } from './adaptor/redis-socket.adaptor';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -43,6 +44,11 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  const redisIoAdapter = new RedisIoAdapter(app);
+  await redisIoAdapter.connectToRedis();
+
+  app.useWebSocketAdapter(redisIoAdapter);
 
   //Swagger
   const config = new DocumentBuilder()

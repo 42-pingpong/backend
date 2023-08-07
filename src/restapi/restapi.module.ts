@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
-import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { ChatModule } from './chat/chat.module';
+import { DynamicAuthModule } from './auth.dynamic.module';
+import { UploadModule } from './upload/upload.module';
 
 @Module({
-  imports: [AuthModule, UserModule, ChatModule],
+  imports: [UserModule, ChatModule, UploadModule, DynamicAuthModule.forRoot()],
 })
 export class RestapiModule {}
