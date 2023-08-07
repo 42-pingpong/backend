@@ -98,6 +98,10 @@ export class UserController {
   }
 
   @UseGuards(AccessTokenGuard)
+  @ApiOperation({
+    summary: '친구 요청 수락',
+    description: '친구 요청 수락',
+  })
   @Patch('/me/friend/request/accept')
   async acceptRequest(@Body() body: RequestAcceptDto, @Req() req: Request) {
     return await this.userService.acceptFriendRequest(+req.user.sub, body);

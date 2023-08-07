@@ -192,18 +192,13 @@ export class StatusService {
     }
   }
 
-  async rejectFriend(bearerToken: string, dto: RequestAcceptDto) {
+  rejectFriend(bearerToken: string, dto: RequestAcceptDto) {
     try {
-      const res = await axios.patch(
-        `${this.restApiUrl}/user/me/friend/request/reject`,
-        dto,
-        {
-          headers: {
-            Authorization: bearerToken,
-          },
+      axios.patch(`${this.restApiUrl}/user/me/friend/request/reject`, dto, {
+        headers: {
+          Authorization: bearerToken,
         },
-      );
-      return res.data;
+      });
     } catch (error) {
       throw new WsException(error.response.data);
     }

@@ -18,6 +18,7 @@ import { CreateUserDto } from 'src/restapi/user/dto/create-user.dto';
 import { RequestAcceptDto } from './dto/request-accept.dto';
 import { RequestRejectDto } from './dto/request-reject.dto';
 import { Request } from 'src/entities/user/request.entity';
+import { User } from 'src/entities/user/user.entity';
 
 export interface ChangeStatusData {
   friendList: GetFriendResponse[];
@@ -171,21 +172,24 @@ export class StatusGateway
   ) {
     console.log('accept friend');
     console.log(body);
-    const requestedUser = this.statusService.getSub(
+    const requestedUserId = this.statusService.getSub(
       client.handshake.auth.token,
     );
-    if (!requestedUser) return;
-    const data: Request = await this.statusService.acceptFriend(
+    if (!requestedUserId) return;
+    const [requester, requestedUser] = await this.statusService.acceptFriend(
       client.handshake.auth.token,
       body,
     );
-    const sock = data.requestingUser.statusSocketId;
-    delete data.requestingUser.statusSocketId;
-    this.server.to(sock).emit('accept-friend', data);
+    this.server
+      .to(requester.statusSocketId)
+      .emit('accept-friend', requestedUser);
+    this.server
+      .to(requestedUser.statusSocketId)
+      .emit('accept-friend', requester);
   }
 
   @SubscribeMessage('reject-friend')
-  async handleRejectFriend(
+  handleRejectFriend(
     @ConnectedSocket() client: any,
     @MessageBody() body: RequestRejectDto,
   ) {
@@ -195,12 +199,6 @@ export class StatusGateway
       client.handshake.auth.token,
     );
     if (!requestedUser) return;
-    const data: Request = await this.statusService.rejectFriend(
-      client.handshake.auth.token,
-      body,
-    );
-    const sock = data.requestingUser.statusSocketId;
-    delete data.requestingUser.statusSocketId;
-    this.server.to(sock).emit('reject-friend', data);
+    this.statusService.rejectFriend(client.handshake.auth.token, body);
   }
 }

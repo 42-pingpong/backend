@@ -148,60 +148,52 @@ export class UserService {
    * @description 친구 요청 수락
    * @param id: 유저 ID
    * @param body: 요청 수락 DTO, requestId를 담고있음.
+   *
+   * @return [requester, requestedUser]
    * */
-  async acceptFriendRequest(id: number, body: RequestAcceptDto) {
+  async acceptFriendRequest(
+    id: number,
+    body: RequestAcceptDto,
+  ): Promise<User[]> {
     // validation, 요청 수락 대상자가 자기자신이어야함.
-    const req = await this.requestRepository.findOne({
-      where: {
-        requestId: body.requestId,
-      },
-    });
-    if (req.requestedUserId != id) throw new BadRequestException();
-
-    //요청 수락
-    await this.requestRepository.save({
-      requestedUserId: id,
-      requestingUserId: req.requestingUserId,
-      requestType: RequestType.FRIEND,
-      isAccepted: InvitationStatus.YES,
-    });
-
-    //친구 추가
-    await this.friendsWithRepository.manager.transaction(
+    return await this.requestRepository.manager.transaction(
       async (manager: EntityManager) => {
-        await manager.getRepository(FriendsWith).save({
-          userId: id,
-          friendId: req.requestingUserId,
+        const req = await manager.getRepository(Request).findOne({
+          where: {
+            requestId: body.requestId,
+          },
         });
+        if (req.requestedUserId != id) throw new BadRequestException();
 
-        await manager.getRepository(FriendsWith).save({
-          userId: req.requestingUserId,
-          friendId: id,
+        await manager.getRepository(Request).update(
+          {
+            requestId: body.requestId,
+          },
+          {
+            isAccepted: InvitationStatus.YES,
+          },
+        );
+
+        await manager.getRepository(FriendsWith).save([
+          {
+            userId: id,
+            friendId: req.requestingUserId,
+          },
+          {
+            userId: req.requestingUserId,
+            friendId: id,
+          },
+        ]);
+        //요청자와 요청받은자 정보 가져오기
+        const requester = await manager.getRepository(User).findOne({
+          where: { id: req.requestingUserId },
         });
+        const requestedUser = await manager.getRepository(User).findOne({
+          where: { id: req.requestedUserId },
+        });
+        return [requester, requestedUser];
       },
     );
-
-    //요청자에게 알림
-    return await this.requestRepository.findOne({
-      where: {
-        requestId: body.requestId,
-      },
-      relations: {
-        requestingUser: true,
-      },
-      select: {
-        requestId: true,
-        requestingUser: {
-          id: true,
-          nickName: true,
-          statusSocketId: true,
-        },
-        requestType: true,
-        isAccepted: true,
-        createdAt: true,
-        isAlarmed: true,
-      },
-    });
   }
 
   /**
