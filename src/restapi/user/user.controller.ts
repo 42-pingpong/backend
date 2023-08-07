@@ -34,6 +34,8 @@ import { SearchUserDto } from './dto/search-user.dto';
 import { SearchUserResponseDto } from './dto/search-user-response.dto';
 import { GetUserResponseDto } from './response/get-alarm.response';
 import { PostRequestResponseDto } from './response/post-request-response';
+import { RequestAcceptDto } from './dto/request-accept.dto';
+import { RequestRejectDto } from './dto/request-reject.dto';
 
 @ApiTags('user')
 @Controller('user')
@@ -95,6 +97,14 @@ export class UserController {
   async addFriend(@Param('id') id: string, @Body() friend: AddFriendDto) {
     return await this.userService.addFriend(+id, friend.friendId);
   }
+
+  @Post('/me/friend/request/accept')
+  //need auth guard
+  async acceptRequest(@Body() body: RequestAcceptDto) {}
+
+  @Post('/me/friend/request/reject')
+  //need auth guard
+  async rejectRequest(@Body() body: RequestRejectDto) {}
 
   /**
    * @description 친구 요청 생성

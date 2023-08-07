@@ -4,7 +4,10 @@ import { JwtService } from '@nestjs/jwt';
 import { WebSocketServer } from '@nestjs/websockets';
 import axios from 'axios';
 import { FriendRequestJobData } from 'src/interface/user.jobdata';
+import { AddFriendDto } from 'src/restapi/user/dto/add-friend.dto';
+import { GetUserResponseDto } from 'src/restapi/user/response/get-alarm.response';
 import { PostRequestResponseDto } from 'src/restapi/user/response/post-request-response';
+import { RequestAcceptDto } from './dto/request-accept.dto';
 
 @Injectable()
 export class StatusService {
@@ -74,6 +77,22 @@ export class StatusService {
       //접속중인 친구목록을 줌.
     } catch (error) {
       console.log(error);
+    }
+  }
+
+  async getAlarms(
+    sub: number,
+    bearerToken: string,
+  ): Promise<GetUserResponseDto[]> {
+    try {
+      const res = await axios.get(`${this.restApiUrl}/user/alarms/${sub}`, {
+        headers: {
+          Authorization: bearerToken,
+        },
+      });
+      return res.data;
+    } catch (error) {
+      return [];
     }
   }
 
@@ -155,5 +174,17 @@ export class StatusService {
     }
   }
 
-  async acceptFriend(sub: number, clientId: string, bearerToken: string) {}
+  async acceptFriend(
+    requestedUser: number,
+    clientId: string,
+    bearerToken: string,
+    dto: RequestAcceptDto,
+  ) {}
+
+  async rejectFriend(
+    requestedUser: number,
+    clientId: string,
+    bearerToken: string,
+    dto: RequestAcceptDto,
+  ) {}
 }

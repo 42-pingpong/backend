@@ -18,8 +18,6 @@ declare global {
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  app.use(logger);
-
   /**
    * http only cookie 사용위함.
    * */
