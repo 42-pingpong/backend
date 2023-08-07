@@ -37,7 +37,7 @@ export class ChatController {
   @ApiCreatedResponse({ description: '그룹 채팅방 생성' })
   @Post('groupChat')
   async createGroupChat(@Body() createChatDto: CreateGroupChatDto) {
-    return this.chatService.createGroupChat(createChatDto);
+    return await this.chatService.createGroupChat(createChatDto);
   }
 
   /**
@@ -49,7 +49,12 @@ export class ChatController {
   @Get('groupChat/:groupChatId')
   async getGroupChat(@Param('groupChatId') groupChatId: string) {
     // 그룹 채팅방의 정보를 반환하는 메서드
-    return this.chatService.getGroupChat(+groupChatId);
+    return await this.chatService.getGroupChat(+groupChatId);
+  }
+
+  @Get('groupChat/:groupChatId/userList')
+  async getGroupChatUsers(@Param('groupChatId') groupChatId: string) {
+    return await this.chatService.getJoinedUserList(+groupChatId);
   }
 
   /**
@@ -66,7 +71,7 @@ export class ChatController {
     @Body() updateGroupChatDto: UpdateGroupChatDto,
   ) {
     // 그룹 채팅방의 정보를 수정하는 메서드
-    this.chatService.updateGroupChat(updateGroupChatDto, +groupChatId);
+    await this.chatService.updateGroupChat(updateGroupChatDto, +groupChatId);
   }
 
   /**
@@ -80,7 +85,7 @@ export class ChatController {
     @Param('groupChatId') groupChatId: string,
     @Query() query: JoinGroupChatDto,
   ) {
-    this.chatService.joinGroupChat(+groupChatId, query);
+    await this.chatService.joinGroupChat(+groupChatId, query);
   }
 
   /**
@@ -121,7 +126,7 @@ export class ChatController {
   @Post('groupChat/:groupChatId/ban')
   async ban(@Param('groupChatId') groupChatId: string, @Query() query: BanDto) {
     // 그룹 채팅방에서 유저를 차단하는 메서드
-    this.chatService.ban(+groupChatId, query);
+    await this.chatService.ban(+groupChatId, query);
   }
 
   // @Post('groupChat/:groupChatId/mute')
