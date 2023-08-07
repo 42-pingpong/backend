@@ -9,12 +9,9 @@ import { GroupChat } from 'src/entities/chat/groupChat.entity';
 import { EntityManager, Join, Repository } from 'typeorm';
 import { CreateGroupChatDto } from './dto/create-group-chat.dto';
 import { UpdateGroupChatDto } from './dto/update-group-chat.dto';
-import { ExceptionsHandler } from '@nestjs/core/exceptions/exceptions-handler';
-import { NotFoundError } from 'rxjs';
 import { User } from 'src/entities/user/user.entity';
 import { AddAdminDto } from './dto/add-admin.dto';
 import { DeleteAdminDto } from './dto/delete-admin.dto';
-import { request } from 'http';
 import { JoinGroupChatDto } from './dto/join-group-chat.dto';
 import { BanDto } from './dto/ban.dto';
 
@@ -24,6 +21,22 @@ export class ChatService {
     @InjectRepository(GroupChat)
     private readonly groupChatRepository: Repository<GroupChat>,
   ) {}
+
+  async getGroupChatList() {
+    return await this.groupChatRepository.find({
+      select: {
+        groupChatId: true,
+        chatName: true,
+        levelOfPublicity: true,
+        maxParticipants: true,
+        curParticipants: true,
+        owner: {
+          id: true,
+          nickName: true,
+        },
+      },
+    });
+  }
 
   async createGroupChat(createChatDto: CreateGroupChatDto) {
     // 그룹 채팅방을 생성하고 저장하는 로직
