@@ -15,6 +15,11 @@ export enum RequestType {
   CHAT = 'C',
 }
 
+export enum AlarmStatus {
+  NOTALARMED = 'N',
+  ALARMED = 'A',
+}
+
 @Entity()
 export class Request {
   @PrimaryGeneratedColumn()
@@ -46,7 +51,14 @@ export class Request {
   @Column({
     type: 'enum',
     enum: InvitationStatus,
-    default: InvitationStatus.NOTALARMED,
+    default: InvitationStatus.PENDING,
   })
   isAccepted: InvitationStatus;
+
+  @Column({
+    type: 'enum',
+    enum: AlarmStatus,
+    default: AlarmStatus.NOTALARMED,
+  })
+  isAlarmed: AlarmStatus;
 }

@@ -15,8 +15,14 @@ import { GetFriendQueryDto } from './dto/get-friend-query.dto';
 import { InvitationStatus } from 'src/enum/invitation.enum';
 import { SearchUserDto } from './dto/search-user.dto';
 import { Like } from 'typeorm';
-import { Request, RequestType } from 'src/entities/user/request.entity';
+import {
+  AlarmStatus,
+  Request,
+  RequestType,
+} from 'src/entities/user/request.entity';
 import { GetUserResponseDto } from './response/get-alarm.response';
+import { RequestAcceptDto } from './dto/request-accept.dto';
+import { RequestRejectDto } from './dto/request-reject.dto';
 
 @Injectable()
 export class UserService {
@@ -138,6 +144,103 @@ export class UserService {
     );
   }
 
+  /**
+   * @description 친구 요청 수락
+   * @param id: 유저 ID
+   * @param body: 요청 수락 DTO, requestId를 담고있음.
+   *
+   * @return [requester, requestedUser]
+   * */
+  async acceptFriendRequest(
+    id: number,
+    body: RequestAcceptDto,
+  ): Promise<User[]> {
+    // validation, 요청 수락 대상자가 자기자신이어야함.
+    return await this.requestRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        const req = await manager.getRepository(Request).findOne({
+          where: {
+            requestId: body.requestId,
+          },
+        });
+        if (req.requestedUserId != id) throw new BadRequestException();
+
+        await manager.getRepository(Request).update(
+          {
+            requestId: body.requestId,
+          },
+          {
+            isAccepted: InvitationStatus.YES,
+          },
+        );
+
+        await manager.getRepository(FriendsWith).save([
+          {
+            userId: id,
+            friendId: req.requestingUserId,
+          },
+          {
+            userId: req.requestingUserId,
+            friendId: id,
+          },
+        ]);
+        //요청자와 요청받은자 정보 가져오기
+        const requester = await manager.getRepository(User).findOne({
+          where: { id: req.requestingUserId },
+        });
+        const requestedUser = await manager.getRepository(User).findOne({
+          where: { id: req.requestedUserId },
+        });
+        return [requester, requestedUser];
+      },
+    );
+  }
+
+  /**
+   * @description 친구 요청 거절
+   * @param id: 유저 ID
+   * @param body: 요청 거절 DTO, requestId를 담고있음.
+   * */
+  async rejectFriendRequest(id: number, body: RequestRejectDto) {
+    // validation, 요청 수락 대상자가 자기자신이어야함.
+    const req = await this.requestRepository.findOne({
+      where: {
+        requestId: body.requestId,
+      },
+    });
+    if (req.requestedUserId != id) throw new BadRequestException();
+
+    //요청 거절
+    await this.requestRepository.save({
+      requestedUserId: id,
+      requestingUserId: req.requestingUserId,
+      requestType: RequestType.FRIEND,
+      isAccepted: InvitationStatus.NO,
+    });
+
+    //요청자에게 알림
+    return await this.requestRepository.findOne({
+      where: {
+        requestId: body.requestId,
+      },
+      relations: {
+        requestingUser: true,
+      },
+      select: {
+        requestId: true,
+        requestingUser: {
+          id: true,
+          nickName: true,
+          statusSocketId: true,
+        },
+        requestType: true,
+        isAccepted: true,
+        createdAt: true,
+        isAlarmed: true,
+      },
+    });
+  }
+
   async saveRequestFriend(id: number, friendId: number) {
     //친구 요청 대상자가 자기자신.
     if (id === friendId) throw new BadRequestException();
@@ -152,12 +255,6 @@ export class UserService {
               requestedUserId: friendId,
               requestType: RequestType.FRIEND,
               isAccepted: InvitationStatus.PENDING,
-            },
-            {
-              requestingUserId: id,
-              requestedUserId: friendId,
-              requestType: RequestType.FRIEND,
-              isAccepted: InvitationStatus.NOTALARMED,
             },
           ],
         });
@@ -185,8 +282,9 @@ export class UserService {
         const { requestId } = await manager.save(Request, {
           requestingUserId: id,
           requestedUserId: friendId,
-          isAccepted: InvitationStatus.NOTALARMED,
+          isAccepted: InvitationStatus.PENDING,
           requestType: RequestType.FRIEND,
+          isAlarmed: AlarmStatus.NOTALARMED,
         });
         const res = await manager.getRepository(Request).findOne({
           relations: { requestingUser: true, requestedUser: true },
@@ -209,6 +307,7 @@ export class UserService {
             requestType: true,
             isAccepted: true,
             createdAt: true,
+            isAlarmed: true,
           },
         });
         this.addPastTime(res);
@@ -244,11 +343,21 @@ export class UserService {
         requestType: true,
         isAccepted: true,
         createdAt: true,
+        isAlarmed: true,
       },
     });
 
     //알람 시간 계산
     res.map(this.addPastTime);
     return res;
+  }
+
+  async checkAlarmsOfUser(id: number) {
+    return await this.requestRepository.update(
+      {
+        requestedUserId: id,
+      },
+      { isAlarmed: AlarmStatus.ALARMED },
+    );
   }
 }
