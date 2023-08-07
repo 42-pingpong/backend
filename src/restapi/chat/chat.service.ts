@@ -74,22 +74,20 @@ export class ChatService {
     await this.groupChatRepository.manager.transaction(
       async (manager: EntityManager) => {
         // 그룹 채팅방의 현재 참여 인원 조회
-        const groupChat: GroupChat[] = await manager
+        const groupChat: GroupChat = await manager
           .getRepository(GroupChat)
-          .find({
+          .findOne({
             where: { groupChatId },
             relations: {
               joinedUser: true,
             },
           });
+        if (!groupChat) {
+          throw new NotFoundException('그룹 채팅방이 존재하지 않습니다.');
+        }
 
         // 그룹 채팅방의 최대 참여 인원 조회
-        const maxGroupChat = await manager.findOne(GroupChat, {
-          where: { groupChatId },
-          select: ['maxParticipants'],
-        });
-
-        if (groupChat[0].curParticipants >= maxGroupChat.maxParticipants) {
+        if (groupChat.curParticipants >= groupChat.maxParticipants) {
           throw new ForbiddenException();
         }
 
@@ -100,12 +98,12 @@ export class ChatService {
           throw new NotFoundException('user가 존재하지 않습니다.');
         }
 
-        groupChat[0].curParticipants++;
-        groupChat[0].joinedUser.push(user);
+        groupChat.curParticipants++;
+        groupChat.joinedUser.push(user);
 
-        console.log('service:   ', groupChat[0]);
+        console.log('service:   ', groupChat);
 
-        await manager.save(GroupChat, groupChat[0]);
+        await manager.save(GroupChat, groupChat);
       },
     );
   }
@@ -223,6 +221,24 @@ export class ChatService {
   }
 
   async ban(groupChatId: number, dto: BanDto) {}
+
+  async getJoinedUser(groupChatId: number) {
+    await this.groupChatRepository.findOne({
+      where: { groupChatId },
+      relations: {
+        joinedUser: true,
+        admin: true,
+        owner: true,
+      },
+      select: {
+        joinedUser: {
+          id: true,
+          nickName: true,
+          profile: true,
+        },
+      },
+    });
+  }
 
   // mute 테이블 아직 존재 X
   // async mute(groupChatId: number, userId: number) {
