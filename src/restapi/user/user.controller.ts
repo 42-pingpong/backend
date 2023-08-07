@@ -98,10 +98,16 @@ export class UserController {
     return await this.userService.addFriend(+id, friend.friendId);
   }
 
+  @UseGuards(AccessTokenGuard)
   @Post('/me/friend/request/accept')
-  //need auth guard
-  async acceptRequest(@Body() body: RequestAcceptDto) {}
+  async acceptRequest(@Body() body: RequestAcceptDto) {
+    await this.userService.acceptFriendRequest(
+      req.user
+      body.requesterUserId,
+    );
+  }
 
+  @UseGuards(AccessTokenGuard)
   @Post('/me/friend/request/reject')
   //need auth guard
   async rejectRequest(@Body() body: RequestRejectDto) {}

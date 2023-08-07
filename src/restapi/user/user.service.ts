@@ -17,6 +17,8 @@ import { SearchUserDto } from './dto/search-user.dto';
 import { Like } from 'typeorm';
 import { Request, RequestType } from 'src/entities/user/request.entity';
 import { GetUserResponseDto } from './response/get-alarm.response';
+import { RequestAcceptDto } from './dto/request-accept.dto';
+import { RequestRejectDto } from './dto/request-reject.dto';
 
 @Injectable()
 export class UserService {
@@ -137,6 +139,9 @@ export class UserService {
       },
     );
   }
+
+  async acceptFriendRequest(id: number, body: RequestAcceptDto) {}
+  async rejectFriendRequest(id: number, body: RequestRejectDto) {}
 
   async saveRequestFriend(id: number, friendId: number) {
     //친구 요청 대상자가 자기자신.
