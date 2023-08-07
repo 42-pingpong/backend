@@ -140,8 +140,45 @@ export class UserService {
     );
   }
 
-  async acceptFriendRequest(id: number, body: RequestAcceptDto) {}
-  async rejectFriendRequest(id: number, body: RequestRejectDto) {}
+  /**
+   * @description 친구 요청 수락
+   * @param id: 유저 ID
+   * @param body: 요청 수락 DTO, requestId를 담고있음.
+   * */
+  async acceptFriendRequest(id: number, body: RequestAcceptDto) {
+    // validation, 요청 수락 대상자가 자기자신이어야함.
+    const req = await this.requestRepository.findOne({
+      where: {
+        requestId: body.requestId,
+      },
+    });
+    if (req.requestedUserId != id) throw new BadRequestException();
+
+    //요청 수락
+    await this.requestRepository.update(body.requestId, {
+      isAccepted: InvitationStatus.YES,
+    });
+  }
+
+  /**
+   * @description 친구 요청 거절
+   * @param id: 유저 ID
+   * @param body: 요청 거절 DTO, requestId를 담고있음.
+   * */
+  async rejectFriendRequest(id: number, body: RequestRejectDto) {
+    // validation, 요청 수락 대상자가 자기자신이어야함.
+    const req = await this.requestRepository.findOne({
+      where: {
+        requestId: body.requestId,
+      },
+    });
+    if (req.requestedUserId != id) throw new BadRequestException();
+
+    //요청 거절
+    await this.requestRepository.update(body.requestId, {
+      isAccepted: InvitationStatus.NO,
+    });
+  }
 
   async saveRequestFriend(id: number, friendId: number) {
     //친구 요청 대상자가 자기자신.
