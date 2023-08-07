@@ -249,8 +249,8 @@ describe('Chat', () => {
 
     /**
      * 정상 실행 (201)
-     * 1. owner -> (user -> admin) 정상 추가
-     * 2. admin -> (user -> admin) 권한 추가
+     * 1. owner -> (user -> admin) 정상 추가 + joinedUser 삭제
+     * 2. admin -> (user -> admin) 권한 추가 + joinedUser 삭제
      */
     it('owner -> (user -> admin) 정상 추가 (201)', async () => {
       //query param으로 받을때는 쿼리파라미터로 넣어줘야함
@@ -265,18 +265,20 @@ describe('Chat', () => {
         .send(addAdminDto)
         .expect(201);
 
-      const updatedGroupChat = await groupChatRepository.find({
+      const updatedGroupChat = await groupChatRepository.findOne({
         where: {
           groupChatId: groupChat.groupChatId,
         },
-        relations: ['admin'],
+        relations: ['admin', 'joinedUser'],
       });
-      expect(updatedGroupChat[0].admin[0].id).toBe(addAdminDto.requestedId);
+      expect(updatedGroupChat.admin[0].id).toBe(addAdminDto.requestedId);
+      console.log('test:  ', updatedGroupChat.joinedUser);
+      expect(updatedGroupChat.joinedUser[0]).toBe(undefined);
     });
 
     it('admin -> (user -> admin) 권한 추가 (201)', async () => {
       groupChat.admin = [user2];
-      groupChat.joinedUser = [user2, user3];
+      groupChat.joinedUser = [user3];
       await groupChatRepository.save(groupChat);
 
       await request(app.getHttpServer())
@@ -290,9 +292,10 @@ describe('Chat', () => {
         where: {
           groupChatId: groupChat.groupChatId,
         },
-        relations: ['admin'],
+        relations: ['admin', 'joinedUser'],
       });
       expect(updatedGroupChat[0].admin[1].id).toBe(user3.id);
+      expect(updatedGroupChat[0].joinedUser[0]).toBe(undefined);
     });
 
     /**
@@ -427,7 +430,7 @@ describe('Chat', () => {
 
     /**
      * 정상 실행 (200)
-     * 1. owner -> (admin -> user) 정상 삭제
+     * 1. owner -> (admin -> user) 정상 삭제 + joinedUser 추가
      */
 
     it('owner -> admin 권한 삭제 (200)', async () => {
@@ -444,9 +447,12 @@ describe('Chat', () => {
         where: {
           groupChatId: groupChat.groupChatId,
         },
-        relations: ['admin'],
+        relations: ['admin', 'joinedUser'],
       });
       expect(updatedGroupChat[0].admin.length).toBe(0);
+      expect(updatedGroupChat[0].joinedUser[0].id).toBe(
+        deleteAdminDto.requestedId,
+      );
     });
 
     /**

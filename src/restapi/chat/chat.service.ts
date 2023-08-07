@@ -101,7 +101,7 @@ export class ChatService {
         groupChat.curParticipants++;
         groupChat.joinedUser.push(user);
 
-        console.log('service:   ', groupChat);
+        // console.log('service:   ', groupChat);
 
         await manager.save(GroupChat, groupChat);
       },
