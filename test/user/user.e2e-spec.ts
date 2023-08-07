@@ -666,6 +666,18 @@ describe('User -/user (e2e)', () => {
     it('모든 알람 PENDDING으로 변경', async () => {});
   });
 
+  describe('PATCH /me/friend/request/accept', () => {
+    it.todo('친구 요청 수락 성공');
+    it.todo('해당 요청이 없음');
+    it.todo('해당 요청이 내 것이 아님');
+  });
+
+  describe('PATCH /me/friend/request/reject', () => {
+    it.todo('친구 요청 거절 성공');
+    it.todo('해당 요청이 없음');
+    it.todo('해당 요청이 내 것이 아님');
+  });
+
   afterAll(async () => {
     await dataSource.destroy();
     await app.close();
