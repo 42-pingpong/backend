@@ -37,7 +37,7 @@ export class ChatController {
   @ApiCreatedResponse({ description: '그룹 채팅방 생성' })
   @Post('groupChat')
   async createGroupChat(@Body() createChatDto: CreateGroupChatDto) {
-    this.chatService.createGroupChat(createChatDto);
+    return this.chatService.createGroupChat(createChatDto);
   }
 
   /**
