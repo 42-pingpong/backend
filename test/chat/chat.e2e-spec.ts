@@ -180,10 +180,12 @@ describe('Chat', () => {
 
     beforeEach(async () => {
       // await userRepository.delete({});
-      // await groupChatRepository.delete({});
+      await groupChatRepository.delete({});
     });
 
-    afterAll(async () => {});
+    afterAll(async () => {
+      // await groupChatRepository.delete({});
+    });
 
     it('방에 user 참여', async () => {
       groupChat.joinedUser = [user1];
@@ -203,7 +205,7 @@ describe('Chat', () => {
         },
         relations: ['joinedUser'],
       });
-      // console.log('test', updateGroupChat[0]);
+      console.log('test:  ', updateGroupChat[0]);
 
       expect(updateGroupChat[0].joinedUser[0].id).toBe(joinChatDto.userId);
       expect(updateGroupChat[0].curParticipants).toBe('1');
@@ -241,7 +243,9 @@ describe('Chat', () => {
       await groupChatRepository.delete({});
     });
 
-    afterAll(async () => {});
+    afterAll(async () => {
+      // await groupChatRepository.delete({});
+    });
 
     /**
      * 정상 실행 (201)
@@ -415,7 +419,9 @@ describe('Chat', () => {
       await groupChatRepository.delete({});
     });
 
-    afterAll(async () => {});
+    afterAll(async () => {
+      // await groupChatRepository.delete({});
+    });
 
     /**
      * 정상 실행 (200)

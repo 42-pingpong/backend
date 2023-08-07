@@ -16,6 +16,7 @@ import { UpdateGroupChatDto } from './dto/update-group-chat.dto';
 import { AddAdminDto } from './dto/add-admin.dto';
 import { DeleteAdminDto } from './dto/delete-admin.dto';
 import { JoinGroupChatDto } from './dto/join-group-chat.dto';
+import { BanDto } from './dto/ban.dto';
 
 @ApiTags('chat')
 @Controller('chat')
@@ -105,14 +106,17 @@ export class ChatController {
     await this.chatService.deleteAdmin(+groupChatId, query);
   }
 
-  ///////////////////////////////////////////////////////////////
+  /**
+   *
+   * @param groupChatId
+   * @param userId
+   * @description
+   * - 그룹 채팅방에서 유저를 차단하는 메서드
+   */
   @Post('groupChat/:groupChatId/ban')
-  async ban(
-    @Param('groupChatId') groupChatId: number,
-    @Query('userId') userId: number,
-  ) {
+  async ban(@Param('groupChatId') groupChatId: string, @Query() query: BanDto) {
     // 그룹 채팅방에서 유저를 차단하는 메서드
-    this.chatService.ban(+groupChatId, userId);
+    this.chatService.ban(+groupChatId, query);
   }
 
   // @Post('groupChat/:groupChatId/mute')

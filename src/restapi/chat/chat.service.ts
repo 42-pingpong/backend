@@ -16,6 +16,7 @@ import { AddAdminDto } from './dto/add-admin.dto';
 import { DeleteAdminDto } from './dto/delete-admin.dto';
 import { request } from 'http';
 import { JoinGroupChatDto } from './dto/join-group-chat.dto';
+import { BanDto } from './dto/ban.dto';
 
 @Injectable()
 export class ChatService {
@@ -102,7 +103,7 @@ export class ChatService {
         groupChat[0].curParticipants++;
         groupChat[0].joinedUser.push(user);
 
-        console.log('service', groupChat[0]);
+        console.log('service:   ', groupChat[0]);
 
         await manager.save(GroupChat, groupChat[0]);
       },
@@ -221,9 +222,7 @@ export class ChatService {
     );
   }
 
-  async ban(groupChatId: number, userId: number) {
-    // 그룹 채팅방에서 유저를 밴하는 로직
-  }
+  async ban(groupChatId: number, dto: BanDto) {}
 
   // mute 테이블 아직 존재 X
   // async mute(groupChatId: number, userId: number) {
