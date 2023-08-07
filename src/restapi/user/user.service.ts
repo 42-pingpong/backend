@@ -15,7 +15,11 @@ import { GetFriendQueryDto } from './dto/get-friend-query.dto';
 import { InvitationStatus } from 'src/enum/invitation.enum';
 import { SearchUserDto } from './dto/search-user.dto';
 import { Like } from 'typeorm';
-import { Request, RequestType } from 'src/entities/user/request.entity';
+import {
+  AlarmStatus,
+  Request,
+  RequestType,
+} from 'src/entities/user/request.entity';
 import { GetUserResponseDto } from './response/get-alarm.response';
 import { RequestAcceptDto } from './dto/request-accept.dto';
 import { RequestRejectDto } from './dto/request-reject.dto';
@@ -155,8 +159,48 @@ export class UserService {
     if (req.requestedUserId != id) throw new BadRequestException();
 
     //요청 수락
-    await this.requestRepository.update(body.requestId, {
+    await this.requestRepository.save({
+      requestedUserId: id,
+      requestingUserId: req.requestingUserId,
+      requestType: RequestType.FRIEND,
       isAccepted: InvitationStatus.YES,
+    });
+
+    //친구 추가
+    await this.friendsWithRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        await manager.getRepository(FriendsWith).save({
+          userId: id,
+          friendId: req.requestingUserId,
+        });
+
+        await manager.getRepository(FriendsWith).save({
+          userId: req.requestingUserId,
+          friendId: id,
+        });
+      },
+    );
+
+    //요청자에게 알림
+    return await this.requestRepository.findOne({
+      where: {
+        requestId: body.requestId,
+      },
+      relations: {
+        requestingUser: true,
+      },
+      select: {
+        requestId: true,
+        requestingUser: {
+          id: true,
+          nickName: true,
+          statusSocketId: true,
+        },
+        requestType: true,
+        isAccepted: true,
+        createdAt: true,
+        isAlarmed: true,
+      },
     });
   }
 
@@ -175,8 +219,33 @@ export class UserService {
     if (req.requestedUserId != id) throw new BadRequestException();
 
     //요청 거절
-    await this.requestRepository.update(body.requestId, {
+    await this.requestRepository.save({
+      requestedUserId: id,
+      requestingUserId: req.requestingUserId,
+      requestType: RequestType.FRIEND,
       isAccepted: InvitationStatus.NO,
+    });
+
+    //요청자에게 알림
+    return await this.requestRepository.findOne({
+      where: {
+        requestId: body.requestId,
+      },
+      relations: {
+        requestingUser: true,
+      },
+      select: {
+        requestId: true,
+        requestingUser: {
+          id: true,
+          nickName: true,
+          statusSocketId: true,
+        },
+        requestType: true,
+        isAccepted: true,
+        createdAt: true,
+        isAlarmed: true,
+      },
     });
   }
 
@@ -194,12 +263,6 @@ export class UserService {
               requestedUserId: friendId,
               requestType: RequestType.FRIEND,
               isAccepted: InvitationStatus.PENDING,
-            },
-            {
-              requestingUserId: id,
-              requestedUserId: friendId,
-              requestType: RequestType.FRIEND,
-              isAccepted: InvitationStatus.NOTALARMED,
             },
           ],
         });
@@ -227,8 +290,9 @@ export class UserService {
         const { requestId } = await manager.save(Request, {
           requestingUserId: id,
           requestedUserId: friendId,
-          isAccepted: InvitationStatus.NOTALARMED,
+          isAccepted: InvitationStatus.PENDING,
           requestType: RequestType.FRIEND,
+          isAlarmed: AlarmStatus.NOTALARMED,
         });
         const res = await manager.getRepository(Request).findOne({
           relations: { requestingUser: true, requestedUser: true },
@@ -251,6 +315,7 @@ export class UserService {
             requestType: true,
             isAccepted: true,
             createdAt: true,
+            isAlarmed: true,
           },
         });
         this.addPastTime(res);
@@ -286,6 +351,7 @@ export class UserService {
         requestType: true,
         isAccepted: true,
         createdAt: true,
+        isAlarmed: true,
       },
     });
 
@@ -299,7 +365,7 @@ export class UserService {
       {
         requestedUserId: id,
       },
-      { isAccepted: InvitationStatus.PENDING },
+      { isAlarmed: AlarmStatus.ALARMED },
     );
   }
 }

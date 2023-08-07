@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { WebSocketServer } from '@nestjs/websockets';
+import { WebSocketServer, WsException } from '@nestjs/websockets';
 import axios from 'axios';
+import { User } from 'src/entities/user/user.entity';
 import { FriendRequestJobData } from 'src/interface/user.jobdata';
 import { AddFriendDto } from 'src/restapi/user/dto/add-friend.dto';
 import { GetUserResponseDto } from 'src/restapi/user/response/get-alarm.response';
@@ -174,17 +175,41 @@ export class StatusService {
     }
   }
 
-  async acceptFriend(
-    requestedUser: number,
-    clientId: string,
-    bearerToken: string,
-    dto: RequestAcceptDto,
-  ) {}
+  async acceptFriend(bearerToken: string, dto: RequestAcceptDto) {
+    try {
+      const res = await axios.patch(
+        `${this.restApiUrl}/user/me/friend/request/accept`,
+        dto,
+        {
+          headers: {
+            Authorization: bearerToken,
+          },
+        },
+      );
+      return res.data;
+    } catch (error) {
+      throw new WsException(error.response.data);
+    }
+  }
 
-  async rejectFriend(
-    requestedUser: number,
-    clientId: string,
-    bearerToken: string,
-    dto: RequestAcceptDto,
-  ) {}
+  async rejectFriend(bearerToken: string, dto: RequestAcceptDto) {
+    try {
+      const res = await axios.patch(
+        `${this.restApiUrl}/user/me/friend/request/reject`,
+        dto,
+        {
+          headers: {
+            Authorization: bearerToken,
+          },
+        },
+      );
+      return res.data;
+    } catch (error) {
+      throw new WsException(error.response.data);
+    }
+  }
+
+  async alarmAcception() {}
+
+  async alarmRejection() {}
 }

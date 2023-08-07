@@ -15,7 +15,6 @@ import {
   ApiBody,
   ApiConflictResponse,
   ApiCreatedResponse,
-  ApiExcludeController,
   ApiExcludeEndpoint,
   ApiOkResponse,
   ApiOperation,
@@ -101,14 +100,14 @@ export class UserController {
   @UseGuards(AccessTokenGuard)
   @Patch('/me/friend/request/accept')
   async acceptRequest(@Body() body: RequestAcceptDto, @Req() req: Request) {
-    await this.userService.acceptFriendRequest(+req.user.sub, body);
+    return await this.userService.acceptFriendRequest(+req.user.sub, body);
   }
 
   @UseGuards(AccessTokenGuard)
   @Patch('/me/friend/request/reject')
   //need auth guard
   async rejectRequest(@Body() body: RequestRejectDto, @Req() req: Request) {
-    await this.userService.rejectFriendRequest(+req.user.sub, body);
+    return await this.userService.rejectFriendRequest(+req.user.sub, body);
   }
 
   /**
