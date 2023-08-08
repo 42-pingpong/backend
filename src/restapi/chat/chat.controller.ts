@@ -52,6 +52,11 @@ export class ChatController {
     return await this.chatService.getGroupChat(+groupChatId);
   }
 
+  /**
+   * @param groupChatId
+   * @description
+   * - 그룹 채팅방에 참여한 유저들의 정보를 반환하는 메서드
+   */
   @Get('groupChat/:groupChatId/userList')
   async getGroupChatUsers(@Param('groupChatId') groupChatId: string) {
     return await this.chatService.getJoinedUserList(+groupChatId);
@@ -127,6 +132,16 @@ export class ChatController {
   async ban(@Param('groupChatId') groupChatId: string, @Query() query: BanDto) {
     // 그룹 채팅방에서 유저를 차단하는 메서드
     await this.chatService.ban(+groupChatId, query);
+  }
+
+  /**
+   * @param userId
+   * @description
+   * - 유저가 참여한 모든 그룹 채팅방의 정보를 반환하는 메서드
+   **/
+  @Get('groupChatList/:userId')
+  async getJoinedGroupChatList(@Param('userId') userId: string) {
+    return await this.chatService.getJoinedGroupChatList(+userId);
   }
 
   // @Post('groupChat/:groupChatId/mute')

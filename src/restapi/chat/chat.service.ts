@@ -300,6 +300,37 @@ export class ChatService {
     });
   }
 
+  async getJoinedGroupChatList(userId: number) {
+    return await this.groupChatRepository.find({
+      where: {
+        joinedUser: {
+          id: userId,
+        },
+      },
+      relations: {
+        owner: true,
+        joinedUser: true,
+      },
+      select: {
+        groupChatId: true,
+        chatName: true,
+        levelOfPublicity: true,
+        curParticipants: true,
+        maxParticipants: true,
+        owner: {
+          id: true,
+          nickName: true,
+          profile: true,
+        },
+        joinedUser: {
+          id: true,
+          nickName: true,
+          profile: true,
+        },
+      },
+    });
+  }
+
   // mute 테이블 아직 존재 X
   // async mute(groupChatId: number, userId: number) {
   //   // 그룹 채팅방에서 유저를 뮤트하는 로직
