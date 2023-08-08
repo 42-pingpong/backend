@@ -55,6 +55,14 @@ export class GroupChat {
   })
   ownerId: number;
 
+  @Column({
+    type: 'varchar',
+    length: 100,
+    nullable: true,
+    default: null,
+  })
+  chatSocketId: string;
+
   @ManyToMany(() => User, (user) => user.bannedGroupChats, { cascade: true })
   @JoinTable({
     name: 'BannedGroupChat_user_joinTable',
