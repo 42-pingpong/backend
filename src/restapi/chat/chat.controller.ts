@@ -9,7 +9,13 @@ import {
   Req,
   Query,
 } from '@nestjs/common';
-import { ApiBody, ApiCreatedResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { ChatService } from './chat.service';
 import { CreateGroupChatDto } from './dto/create-group-chat.dto';
 import { UpdateGroupChatDto } from './dto/update-group-chat.dto';
@@ -17,6 +23,7 @@ import { AddAdminDto } from './dto/add-admin.dto';
 import { DeleteAdminDto } from './dto/delete-admin.dto';
 import { JoinGroupChatDto } from './dto/join-group-chat.dto';
 import { BanDto } from './dto/ban.dto';
+import { GetGroupChatListDto } from './dto/get-groupchatlist.dto';
 
 @ApiTags('chat')
 @Controller('chat')
@@ -139,6 +146,12 @@ export class ChatController {
    * @description
    * - 유저가 참여한 모든 그룹 채팅방의 정보를 반환하는 메서드
    **/
+  @ApiOperation({ summary: '유저가 참여한 모든 그룹 채팅방의 정보를 반환' })
+  @ApiOkResponse({
+    description: '유저가 참여한 모든 그룹 채팅방의 정보를 반환',
+    type: GetGroupChatListDto,
+    isArray: true,
+  })
   @Get('groupChatList/:userId')
   async getJoinedGroupChatList(@Param('userId') userId: string) {
     return await this.chatService.getJoinedGroupChatList(+userId);
