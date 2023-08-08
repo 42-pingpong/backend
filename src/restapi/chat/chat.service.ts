@@ -227,10 +227,6 @@ export class ChatService {
     );
   }
 
-  /**
-   * @TODO 삭제 후 joinUser에 추가
-   * 했어요
-   * */
   async deleteAdmin(groupChatId: number, dto: DeleteAdminDto) {
     // 그룹 채팅방에서 admin을 제거하는 로직
     await this.groupChatRepository.manager.transaction(
