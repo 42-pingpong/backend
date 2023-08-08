@@ -302,14 +302,27 @@ export class ChatService {
 
   async getJoinedGroupChatList(userId: number) {
     return await this.groupChatRepository.find({
-      where: {
-        joinedUser: {
-          id: userId,
+      where: [
+        {
+          joinedUser: {
+            id: userId,
+          },
         },
-      },
+        {
+          admin: {
+            id: userId,
+          },
+        },
+        {
+          owner: {
+            id: userId,
+          },
+        },
+      ],
       relations: {
         owner: true,
         joinedUser: true,
+        admin: true,
       },
       select: {
         groupChatId: true,
@@ -323,6 +336,11 @@ export class ChatService {
           profile: true,
         },
         joinedUser: {
+          id: true,
+          nickName: true,
+          profile: true,
+        },
+        admin: {
           id: true,
           nickName: true,
           profile: true,
