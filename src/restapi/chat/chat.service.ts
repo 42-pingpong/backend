@@ -46,6 +46,18 @@ export class ChatService {
         const result = await manager.insert(GroupChat, createChatDto);
         return await manager.findOne(GroupChat, {
           where: { groupChatId: result.identifiers[0].groupChatId },
+          select: {
+            groupChatId: true,
+            chatName: true,
+            levelOfPublicity: true,
+            maxParticipants: true,
+            curParticipants: true,
+            ownerId: true,
+            owner: {
+              id: true,
+              nickName: true,
+            },
+          },
         });
       },
     );
