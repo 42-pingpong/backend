@@ -54,26 +54,11 @@ const ChatRoomList: ChatRoomDTO[] = [];
   connectTimeout: 5,
   transports: ['websocket'],
 })
-export class ChatGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
-{
+export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: any;
 
   constructor(private readonly chatGatewayService: ChatGatewayService) {}
-
-  /**
-   * @brief lifecycle hook
-   * @param any server(서버)
-   * @return void
-   * @description
-   * - 서버가 초기화 되었을 때 실행되는 함수
-   * - 즉, Nest Injector가 생성되고 ChatGateway 인스턴스가 만들어진 후에 실행된다.
-   */
-  async afterInit(server: any) {
-    console.log('afterInit');
-    //database의 groupchat을 가져와서 WebSocket서버와 동기화한다.
-  }
 
   /**
    * @brief lifecycle hook
@@ -86,9 +71,33 @@ export class ChatGateway
    */
   @SubscribeMessage('connect')
   async handleConnection(client: any, ...args: any[]) {
-    console.log('chat socket handleConnection', client.id);
-    const groupChatList = await this.chatGatewayService.getGroupChatList();
-    client.emit('group-chat-list', groupChatList);
+    if (client.handshake.headers.authorization !== undefined) {
+      console.log('chat socket handleConnection', client.id);
+      const userId = this.chatGatewayService.getSub(
+        client.handshake.headers.authorization,
+      );
+
+      //GroupChat을 위한 코드
+      //클라이언트 연결 시, 클라이언트가 속한 채팅방의 정보를 받아 room에 join한다.
+      const joinedGroupChatList =
+        await this.chatGatewayService.getJoinedGroupChatList(
+          userId,
+          client.handshake.headers.authorization,
+        );
+
+      for (const groupChat of joinedGroupChatList) {
+        client.join(groupChat.groupChatId);
+      }
+
+      //Direct Message를 위한 코드
+      //클라이언트의 chatSocketId를 저장한다.
+      //비동기로 처리해서 빠르게 처리.
+      this.chatGatewayService.login(
+        userId,
+        client.id,
+        client.handshake.headers.authorization,
+      );
+    }
   }
 
   /**
@@ -117,11 +126,12 @@ export class ChatGateway
   @SubscribeMessage('create-room')
   async createChatRoom(client: any, payload: CreateGroupChatDto) {
     const chat = await this.chatGatewayService.createGroupChat(payload);
-    client.broadcast.emit('group-chat-update', chat);
+    this.server.emit('group-chat-update', chat);
   }
 
   @SubscribeMessage('join-room')
   enterChatRoom(client: any, roomId: string): any {
+    console.log('join-room', roomId);
     client.join(roomId);
     // const room = ChatRoomList.find((data) => data.roomId === roomId);
     // client.emit('group-chat-info', room);
@@ -138,7 +148,7 @@ export class ChatGateway
   }
 
   @SubscribeMessage('group-chat-list')
-  getChatRoomList(client: any): ChatRoomDTO[] {
-    return ChatRoomList;
+  async getChatRoomList(client: any) {
+    return await this.chatGatewayService.getGroupChatList();
   }
 }
