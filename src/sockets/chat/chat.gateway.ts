@@ -9,6 +9,7 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
+import { ChatGatewayService } from './chat.gateway.service';
 
 export interface ChatDTO {
   roomId: string;
@@ -57,6 +58,9 @@ export class ChatGateway
 {
   @WebSocketServer()
   server: any;
+
+  constructor(private readonly chatGatewayService: ChatGatewayService) {}
+
   /**
    * @brief lifecycle hook
    * @param any server(서버)
@@ -64,10 +68,10 @@ export class ChatGateway
    * @description
    * - 서버가 초기화 되었을 때 실행되는 함수
    * - 즉, Nest Injector가 생성되고 ChatGateway 인스턴스가 만들어진 후에 실행된다.
-   * - Redis 서버에 연결하거나, 다른 서버에 연결하는 등의 작업을 할 수 있다.
    */
-  afterInit(server: any) {
+  async afterInit(server: any) {
     console.log('afterInit');
+    //database의 groupchat을 가져와서 WebSocket서버와 동기화한다.
   }
 
   /**
@@ -78,13 +82,12 @@ export class ChatGateway
    * - 클라이언트가 연결되었을 때 실행되는 함수
    * - 클라이언트가 연결되었을 때, 클라이언트의 정보를 받아올 수 있다.
    * - chat은 기본적으로 전역상태로 enable되어있으므로, 모든 클라이언트가 연결되었을 때 실행된다.
-   * @TODO
-   * 1. client가 접속한상태일때, 로그인 상태를 redis에 저장한다.
-   * 2. client 좁속시, redis에 저장된 채팅방 정보를 가져온다.
    */
-  @SubscribeMessage('chat-login-any')
-  handleConnection(client: any, ...args: any[]) {
-    console.log('handleConnection', args);
+  @SubscribeMessage('connect')
+  async handleConnection(client: any, ...args: any[]) {
+    console.log('chat socket handleConnection', client.id);
+    const groupChatList = await this.chatGatewayService.getGroupChatList();
+    client.emit('group-chat-list', groupChatList);
   }
 
   /**

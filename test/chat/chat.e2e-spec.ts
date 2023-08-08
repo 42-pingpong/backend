@@ -15,7 +15,7 @@ import { ChatModule } from 'src/restapi/chat/chat.module';
 import { CreateGroupChatDto } from 'src/restapi/chat/dto/create-group-chat.dto';
 import { DataSource, Repository } from 'typeorm';
 import * as request from 'supertest';
-import { UserFactory } from 'test/user/user.factory';
+import { UserFactory } from 'src/factory/user.factory';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { AddAdminDto } from 'src/restapi/chat/dto/add-admin.dto';

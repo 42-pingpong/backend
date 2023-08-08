@@ -23,6 +23,11 @@ import { BanDto } from './dto/ban.dto';
 export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
+  @Get('groupChatList')
+  async getGroupChatList() {
+    return await this.chatService.getGroupChatList();
+  }
+
   /**
    * @param createChatDto
    * @description
