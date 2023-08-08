@@ -115,6 +115,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return 'Goodbye world!';
   }
 
+  @SubscribeMessage('group-chat-list')
+  async getChatRoomList(client: any) {
+    return await this.chatGatewayService.getGroupChatList();
+  }
+
   @SubscribeMessage('chat-message')
   handleMessage(client: Socket, ...payload: ChatDTO[]): any {
     client.broadcast.to(payload[0].roomId).emit('chat-message', payload[0]);
@@ -145,10 +150,5 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('leave-room')
   leaveChatRoom(client: any, roomId: string): any {
     client.leave(roomId);
-  }
-
-  @SubscribeMessage('group-chat-list')
-  async getChatRoomList(client: any) {
-    return await this.chatGatewayService.getGroupChatList();
   }
 }
