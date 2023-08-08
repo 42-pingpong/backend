@@ -213,16 +213,16 @@ describe('Chat', () => {
   describe('POST /api/chat/groupChat/:groupChatId/admin', () => {
     let groupChat: GroupChat;
     let createChatDto: CreateGroupChatDto;
-    let uf = new UserFactory();
+    const uf = new UserFactory();
     let user1: User;
     let user2: User;
     let user3: User;
     let user4: User;
-    let addAdminDto = new AddAdminDto();
+    const addAdminDto = new AddAdminDto();
     addAdminDto.userId = 2005; // owner(user1)
     addAdminDto.requestedId = 2006; // user(user2)
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       user1 = await userRepository.save(uf.createUser(2005));
       user2 = await userRepository.save(uf.createUser(2006));
       user3 = await userRepository.save(uf.createUser(2007));
@@ -234,28 +234,69 @@ describe('Chat', () => {
       createChatDto.maxParticipants = 10;
       createChatDto.ownerId = 2005;
       groupChat = await groupChatRepository.save(createChatDto);
+      //user2가 방에 참여
+      await request(app.getHttpServer())
+        .post(`/chat/groupChat/${groupChat.groupChatId}`)
+        .query({ userId: 2006 });
+
+      //user3가 방에 참여
+      await request(app.getHttpServer())
+        .post(`/chat/groupChat/${groupChat.groupChatId}`)
+        .query({ userId: 2007 });
+
+      //user4가 방에 참여
+      await request(app.getHttpServer())
+        .post(`/chat/groupChat/${groupChat.groupChatId}`)
+        .query({ userId: 2008 });
     });
 
-    beforeEach(async () => {});
-
-    afterAll(async () => {});
+    afterEach(async () => {
+      await groupChatRepository.delete({
+        groupChatId: groupChat.groupChatId,
+      });
+      await userRepository.delete({ id: user1.id });
+      await userRepository.delete({ id: user2.id });
+      await userRepository.delete({ id: user3.id });
+      await userRepository.delete({ id: user4.id });
+    });
 
     /**
      * 정상 실행 (201)
      * 1. owner -> (user -> admin) 정상 추가 + joinedUser 삭제
      * 2. admin -> (user -> admin) 권한 추가 + joinedUser 삭제
      */
-    it('owner -> (user -> admin) 정상 추가 (201)', async () => {
-      //query param으로 받을때는 쿼리파라미터로 넣어줘야함
-      //body는 send로, query는 query로 넣어줘야함
-      groupChat.joinedUser = [user2];
-      await groupChatRepository.save(groupChat);
+    it('user1(owner)이 (user2 -> admin)으로 정상 추가 (201)', async () => {
+      addAdminDto.userId = 2005;
+      addAdminDto.requestedId = 2006;
+      const res = await request(app.getHttpServer())
+        .post(`/chat/groupChat/${groupChat.groupChatId}/admin`)
+        .query(addAdminDto);
 
+      const updatedGroupChat = await groupChatRepository.findOne({
+        where: {
+          groupChatId: groupChat.groupChatId,
+        },
+        relations: ['admin', 'joinedUser'],
+      });
+      console.log(updatedGroupChat);
+      expect(updatedGroupChat.admin[0].id).toBe(addAdminDto.requestedId);
+      expect(updatedGroupChat.joinedUser.length).toBe(2);
+    });
+
+    it('user2(admin)이 (user3 -> admin)으로 권한 추가 (201)', async () => {
+      //user1이 user2를 admin으로 추가
+      addAdminDto.userId = 2005;
+      addAdminDto.requestedId = 2006;
       await request(app.getHttpServer())
-        .post(
-          `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${addAdminDto.userId}&requestedId=${addAdminDto.requestedId}`,
-        )
-        .send(addAdminDto)
+        .post(`/chat/groupChat/${groupChat.groupChatId}/admin`)
+        .query(addAdminDto);
+
+      // user2가 user3를 admin으로 추가
+      addAdminDto.userId = 2006;
+      addAdminDto.requestedId = 2007;
+      await request(app.getHttpServer())
+        .post(`/chat/groupChat/${groupChat.groupChatId}/admin`)
+        .query(addAdminDto)
         .expect(201);
 
       const updatedGroupChat = await groupChatRepository.findOne({
@@ -264,30 +305,8 @@ describe('Chat', () => {
         },
         relations: ['admin', 'joinedUser'],
       });
-      expect(updatedGroupChat.admin[0].id).toBe(addAdminDto.requestedId);
-      expect(updatedGroupChat.joinedUser[0]).toBe(undefined);
-    });
-
-    it('admin -> (user -> admin) 권한 추가 (201)', async () => {
-      groupChat.admin = [user2];
-      groupChat.joinedUser = [user3];
-      await groupChatRepository.save(groupChat);
-
-      await request(app.getHttpServer())
-        .post(
-          `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${addAdminDto.requestedId}&requestedId=${user3.id}`,
-        )
-        .send(addAdminDto)
-        .expect(201);
-
-      const updatedGroupChat = await groupChatRepository.find({
-        where: {
-          groupChatId: groupChat.groupChatId,
-        },
-        relations: ['admin', 'joinedUser'],
-      });
-      expect(updatedGroupChat[0].admin[1].id).toBe(user3.id);
-      expect(updatedGroupChat[0].joinedUser[0]).toBe(undefined);
+      expect(updatedGroupChat.admin.length).toBe(2);
+      expect(updatedGroupChat.curParticipants).toBe(4);
     });
 
     /**
@@ -310,79 +329,102 @@ describe('Chat', () => {
         .expect(404);
     });
 
-    it('owner -> (admin -> admin) 권한 이미 보유 (409)', async () => {
-      groupChat.admin = [user2];
-      await groupChatRepository.save(groupChat);
+    it('user1(owner)이 admin user2를 admin으로 추가/ user2가 권한 이미 보유 (409)', async () => {
+      addAdminDto.userId = 2005;
+      addAdminDto.requestedId = 2006;
 
+      //user1이 user2를 admin으로 추가
       await request(app.getHttpServer())
-        .post(
-          `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${addAdminDto.userId}&requestedId=${addAdminDto.requestedId}`,
-        )
-        .send(addAdminDto)
-        .expect(409);
+        .post(`/chat/groupChat/${groupChat.groupChatId}/admin`)
+        .query(addAdminDto)
+        .expect(201);
 
-      const updatedGroupChat = await groupChatRepository.find({
+      //1번 더 추가
+      await request(app.getHttpServer())
+        .post(`/chat/groupChat/${groupChat.groupChatId}/admin`)
+        .query(addAdminDto)
+        .expect(409);
+      const updatedGroupChat = await groupChatRepository.findOne({
         where: {
           groupChatId: groupChat.groupChatId,
         },
-        relations: ['admin'],
+        relations: ['admin', 'joinedUser'],
       });
-      expect(updatedGroupChat[0].admin[0].id).toBe(user2.id);
+      expect(updatedGroupChat.admin.length).toBe(1);
+      expect(updatedGroupChat.curParticipants).toBe(4);
+      expect(updatedGroupChat.joinedUser.length).toBe(2);
     });
 
-    it('admin -> (owner -> admin) 권한 추가 (403)', async () => {
-      groupChat.admin = [user2];
-      await groupChatRepository.save(groupChat);
-
+    it('user2(admin)이 user1(owner)를 admin 권한 추가 (403)', async () => {
+      //user2를 admin으로 추가
+      addAdminDto.userId = 2005;
+      addAdminDto.requestedId = 2006;
       await request(app.getHttpServer())
-        .post(
-          `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${addAdminDto.requestedId}&requestedId=${addAdminDto.userId}`,
-        )
-        .send(addAdminDto)
+        .post(`/chat/groupChat/${groupChat.groupChatId}/admin`)
+        .query(addAdminDto)
+        .expect(201);
+
+      //user1(owner)를 admin으로 추가
+      addAdminDto.userId = 2006;
+      addAdminDto.requestedId = 2005;
+      await request(app.getHttpServer())
+        .post(`/chat/groupChat/${groupChat.groupChatId}/admin`)
+        .query(addAdminDto)
         .expect(403);
     });
 
-    it('owner -> (user 채팅방 X) (404)', async () => {
+    it('owner가 채팅방에 없는 유저를 admin으로 추가 (404)', async () => {
+      addAdminDto.userId = 2005;
+      addAdminDto.requestedId = 99999;
       await request(app.getHttpServer())
-        .post(
-          `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${addAdminDto.userId}&requestedId=99999`,
-        )
-        .send(addAdminDto)
+        .post(`/chat/groupChat/${groupChat.groupChatId}/admin`)
+        .query(addAdminDto)
         .expect(404);
     });
 
-    it('admin -> (user 채팅방 X) (404)', async () => {
-      groupChat.admin = [user2];
-      await groupChatRepository.save(groupChat);
-
+    it('admin이 채팅방에 없는 유저를 admin으로 추가 (404)', async () => {
+      addAdminDto.userId = 2005;
+      addAdminDto.requestedId = 2006;
       await request(app.getHttpServer())
-        .post(
-          `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${addAdminDto.requestedId}&requestedId=99999`,
-        )
-        .send(addAdminDto)
+        .post(`/chat/groupChat/${groupChat.groupChatId}/admin`)
+        .query(addAdminDto);
+
+      addAdminDto.userId = 2006;
+      addAdminDto.requestedId = 99999;
+      await request(app.getHttpServer())
+        .post(`/chat/groupChat/${groupChat.groupChatId}/admin`)
+        .query(addAdminDto)
         .expect(404);
     });
 
-    //뭔 의민지 모르겠음
-    it('owner -> (owner -> admin) (404)', async () => {
+    it('owner가 owner를 admin으로 추가 (404)', async () => {
+      addAdminDto.userId = 2005;
+      addAdminDto.requestedId = 2005;
       await request(app.getHttpServer())
-        .post(
-          `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${addAdminDto.userId}&requestedId=${addAdminDto.userId}`,
-        )
-        .send(addAdminDto)
-        .expect(404);
+        .post(`/chat/groupChat/${groupChat.groupChatId}/admin`)
+        .query(addAdminDto)
+        .expect(403); // Forbidden
     });
 
-    //뭔 의민지 모르겠음
-    it('admin -> (admin -> admin) (409)', async () => {
-      groupChat.admin = [user2, user3];
-      await groupChatRepository.save(groupChat);
-
+    it('user2(admin)이 user3(admin)을 admin으로 추가 (409)', async () => {
+      addAdminDto.userId = 2005;
+      addAdminDto.requestedId = 2006;
       await request(app.getHttpServer())
-        .post(
-          `/chat/groupChat/${groupChat.groupChatId}/admin?userId=${addAdminDto.requestedId}&requestedId=${user3.id}`,
-        )
-        .send(addAdminDto)
+        .post(`/chat/groupChat/${groupChat.groupChatId}/admin`)
+        .query(addAdminDto);
+
+      addAdminDto.userId = 2006;
+      addAdminDto.requestedId = 2007;
+      await request(app.getHttpServer())
+        .post(`/chat/groupChat/${groupChat.groupChatId}/admin`)
+        .query(addAdminDto);
+
+      //admin이 admin을 admin으로 추가
+      addAdminDto.userId = 2006;
+      addAdminDto.requestedId = 2007;
+      await request(app.getHttpServer())
+        .post(`/chat/groupChat/${groupChat.groupChatId}/admin`)
+        .query(addAdminDto)
         .expect(409);
     });
   });
@@ -390,12 +432,12 @@ describe('Chat', () => {
   describe('DELETE /api/chat/groupChat/:groupChatId/admin', () => {
     let groupChat: GroupChat;
     let createChatDto: CreateGroupChatDto;
-    let uf = new UserFactory();
+    const uf = new UserFactory();
     let user1: User;
     let user2: User;
     let user3: User;
     let user4: User;
-    let deleteAdminDto = new DeleteAdminDto();
+    const deleteAdminDto = new DeleteAdminDto();
     deleteAdminDto.userId = 2100; // owner(user1)
     deleteAdminDto.requestedId = 2101; // user(user2)
 

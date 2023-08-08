@@ -112,7 +112,6 @@ export class ChatService {
 
   async joinGroupChat(groupChatId: number, dto: JoinGroupChatDto) {
     // 그룹 채팅방에 참여하는 로직
-    console.log('joinGroupChat');
     return await this.groupChatRepository.manager.transaction(
       async (manager: EntityManager) => {
         // 그룹 채팅방의 현재 참여 인원 조회
