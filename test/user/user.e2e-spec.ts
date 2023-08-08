@@ -483,7 +483,7 @@ describe('User -/user (e2e)', () => {
       await requestRepository.save({
         requestingUserId: user22.id,
         requestedUserId: user23.id,
-        isAccepted: InvitationStatus.NOTALARMED,
+        isAccepted: InvitationStatus.PENDING,
         requestType: RequestType.FRIEND,
       });
 

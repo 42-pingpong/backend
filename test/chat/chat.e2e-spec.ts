@@ -67,7 +67,7 @@ describe('Chat', () => {
     it('should return 201', async () => {
       const uf = new UserFactory();
 
-      const user = uf.createUser(101234);
+      const user = uf.createUser(2000);
       await userRepository.save(user);
 
       const createChatDto = new CreateGroupChatDto();
@@ -75,18 +75,23 @@ describe('Chat', () => {
       createChatDto.chatName = '테스트 채팅방';
       createChatDto.levelOfPublicity = 'Priv';
       createChatDto.maxParticipants = 10;
-      createChatDto.ownerId = 101234;
+      createChatDto.ownerId = user.id;
 
       const response = await request(app.getHttpServer())
         .post('/chat/groupChat')
         .send(createChatDto);
 
       const result = await groupChatRepository.findOne({
-        where: { chatName: createChatDto.chatName },
+        where: { groupChatId: response.body.groupChatId },
       });
 
       expect(result).toBeDefined();
       expect(response.status).toBe(201);
+
+      await groupChatRepository.delete({
+        groupChatId: response.body.groupChatId,
+      });
+      await userRepository.delete({ id: user.id });
     });
   });
 
@@ -94,29 +99,32 @@ describe('Chat', () => {
     // it.todo('GET /api/chat/groupChat/:groupChatId');
     it('should return 200', async () => {
       const uf = new UserFactory();
-      const user = uf.createUser(101234);
+      const user = uf.createUser(2001);
       await userRepository.save(user);
       const createChatDto = new CreateGroupChatDto();
       createChatDto.password = '1234';
       createChatDto.chatName = '테스트 채팅방';
       createChatDto.levelOfPublicity = 'Priv';
       createChatDto.maxParticipants = 10;
-      createChatDto.ownerId = 101234;
+      createChatDto.ownerId = user.id;
 
       const response = await request(app.getHttpServer())
         .post('/chat/groupChat')
         .send(createChatDto);
 
-      const groupChat = await groupChatRepository.save(createChatDto);
-
-      expect(groupChat).toBeDefined();
+      expect(response.body).toBeDefined();
       expect(response.status).toBe(201);
 
       const response2 = await request(app.getHttpServer()).get(
-        `/chat/groupChat/${groupChat.groupChatId}`,
+        `/chat/groupChat/${response.body.groupChatId}`,
       );
 
       expect(response2.status).toBe(200);
+
+      await groupChatRepository.delete({
+        groupChatId: response.body.groupChatId,
+      });
+      await userRepository.delete({ id: user.id });
     });
   });
 
@@ -124,91 +132,81 @@ describe('Chat', () => {
     // it.todo('PATCH /api/chat/groupChat/:groupChatId');
     it('should return 200', async () => {
       const uf = new UserFactory();
-      const user = uf.createUser(101234);
+      const user = uf.createUser(2002);
       await userRepository.save(user);
       const createChatDto = new CreateGroupChatDto();
       createChatDto.password = '1234';
       createChatDto.chatName = '테스트 채팅방';
       createChatDto.levelOfPublicity = 'Priv';
       createChatDto.maxParticipants = 10;
-      createChatDto.ownerId = 101234;
+      createChatDto.ownerId = 2002;
 
       const response = await request(app.getHttpServer())
         .post('/chat/groupChat')
         .send(createChatDto);
 
-      const groupChat = await groupChatRepository.save(createChatDto);
-
-      expect(groupChat).toBeDefined();
-      expect(response.status).toBe(201);
-
       const updateChatDto = new UpdateGroupChatDto();
-      // updateChatDto.chatName = '테스트 채팅방2';
-      // 형 채팅방 이름도 수정 가능해야하지 않나요?
       updateChatDto.password = '4321';
       updateChatDto.levelOfPublicity = 'Pub';
       updateChatDto.maxParticipants = 20;
 
       const response2 = await request(app.getHttpServer())
-        .patch(`/chat/groupChat/${groupChat.groupChatId}`)
+        .patch(`/chat/groupChat/${response.body.groupChatId}`)
         .send(updateChatDto);
 
       expect(response2.status).toBe(200);
+
+      await groupChatRepository.delete({
+        groupChatId: response.body.groupChatId,
+      });
+      await userRepository.delete({ id: user.id });
     });
   });
 
   describe('POST /api/chat/groupChat/:groupChatId', () => {
     let groupChat: GroupChat;
     let createChatDto: CreateGroupChatDto;
-    let uf = new UserFactory();
+    const uf = new UserFactory();
     let user1: User;
     let user2: User;
-    let joinChatDto = new JoinGroupChatDto();
-    joinChatDto.userId = 101234;
+    const joinChatDto = new JoinGroupChatDto();
 
     beforeAll(async () => {
-      user1 = await userRepository.save(uf.createUser(101234));
-      user2 = await userRepository.save(uf.createUser(101235));
+      user1 = await userRepository.save(uf.createUser(2003));
+      user2 = await userRepository.save(uf.createUser(2004));
       createChatDto = new CreateGroupChatDto();
       createChatDto.password = '1234';
       createChatDto.chatName = '테스트 채팅방';
       createChatDto.levelOfPublicity = 'Priv';
       createChatDto.maxParticipants = 10;
-      createChatDto.ownerId = 101234;
+      createChatDto.ownerId = user1.id;
       groupChat = await groupChatRepository.save(createChatDto);
+      joinChatDto.userId = user2.id;
     });
 
-    beforeEach(async () => {
-      // await userRepository.delete({});
-      await groupChatRepository.delete({});
-    });
+    it('user1의 방에 user2가 참여', async () => {
+      //user2가 방에 참여
 
-    afterAll(async () => {
-      // await groupChatRepository.delete({});
-    });
+      const res = await request(app.getHttpServer())
+        .post(`/chat/groupChat/${groupChat.groupChatId}`)
+        .query(joinChatDto);
+      expect(res.status).toBe(201);
 
-    it('방에 user 참여', async () => {
-      groupChat.joinedUser = [user1];
-      groupChat.curParticipants++;
-      await groupChatRepository.save(groupChat);
+      const updateGroupChat = await request(app.getHttpServer()).get(
+        `/chat/groupChat/${groupChat.groupChatId}`,
+      ); // 방 정보 가져오기
+      expect(updateGroupChat.body.curParticipants).toBe(2);
 
-      await request(app.getHttpServer())
-        .post(
-          `/chat/groupChat/${groupChat.groupChatId}?userId=${joinChatDto.userId}`,
-        )
-        .send(joinChatDto)
-        .expect(201);
+      const joinedUserList = await request(app.getHttpServer()).get(
+        `/chat/groupChat/${groupChat.groupChatId}/userList`,
+      );
+      expect(joinedUserList.body.joinedUser[0].id).toBe(user2.id);
 
-      const updateGroupChat = await groupChatRepository.find({
-        where: {
-          groupChatId: groupChat.groupChatId,
-        },
-        relations: ['joinedUser'],
+      await groupChatRepository.delete({
+        groupChatId: groupChat.groupChatId,
       });
-      console.log('test:  ', updateGroupChat[0]);
-
-      expect(updateGroupChat[0].joinedUser[0].id).toBe(joinChatDto.userId);
-      expect(updateGroupChat[0].curParticipants).toBe('1');
+      await userRepository.delete({ id: user1.id });
+      await userRepository.delete({ id: user2.id });
     });
   });
 
@@ -221,31 +219,26 @@ describe('Chat', () => {
     let user3: User;
     let user4: User;
     let addAdminDto = new AddAdminDto();
-    addAdminDto.userId = 101234; // owner(user1)
-    addAdminDto.requestedId = 101235; // user(user2)
+    addAdminDto.userId = 2005; // owner(user1)
+    addAdminDto.requestedId = 2006; // user(user2)
 
     beforeAll(async () => {
-      user1 = await userRepository.save(uf.createUser(101234));
-      user2 = await userRepository.save(uf.createUser(101235));
-      user3 = await userRepository.save(uf.createUser(101236));
-      user4 = await userRepository.save(uf.createUser(101237));
+      user1 = await userRepository.save(uf.createUser(2005));
+      user2 = await userRepository.save(uf.createUser(2006));
+      user3 = await userRepository.save(uf.createUser(2007));
+      user4 = await userRepository.save(uf.createUser(2008));
       createChatDto = new CreateGroupChatDto();
       createChatDto.password = '1234';
       createChatDto.chatName = '테스트 채팅방';
       createChatDto.levelOfPublicity = 'Priv';
       createChatDto.maxParticipants = 10;
-      createChatDto.ownerId = 101234;
+      createChatDto.ownerId = 2005;
       groupChat = await groupChatRepository.save(createChatDto);
     });
 
-    beforeEach(async () => {
-      // await userRepository.delete({});
-      await groupChatRepository.delete({});
-    });
+    beforeEach(async () => {});
 
-    afterAll(async () => {
-      // await groupChatRepository.delete({});
-    });
+    afterAll(async () => {});
 
     /**
      * 정상 실행 (201)
@@ -272,7 +265,6 @@ describe('Chat', () => {
         relations: ['admin', 'joinedUser'],
       });
       expect(updatedGroupChat.admin[0].id).toBe(addAdminDto.requestedId);
-      console.log('test:  ', updatedGroupChat.joinedUser);
       expect(updatedGroupChat.joinedUser[0]).toBe(undefined);
     });
 
@@ -371,6 +363,7 @@ describe('Chat', () => {
         .expect(404);
     });
 
+    //뭔 의민지 모르겠음
     it('owner -> (owner -> admin) (404)', async () => {
       await request(app.getHttpServer())
         .post(
@@ -380,6 +373,7 @@ describe('Chat', () => {
         .expect(404);
     });
 
+    //뭔 의민지 모르겠음
     it('admin -> (admin -> admin) (409)', async () => {
       groupChat.admin = [user2, user3];
       await groupChatRepository.save(groupChat);
@@ -402,26 +396,26 @@ describe('Chat', () => {
     let user3: User;
     let user4: User;
     let deleteAdminDto = new DeleteAdminDto();
-    deleteAdminDto.userId = 101234; // owner(user1)
-    deleteAdminDto.requestedId = 101235; // user(user2)
+    deleteAdminDto.userId = 2100; // owner(user1)
+    deleteAdminDto.requestedId = 2101; // user(user2)
 
     beforeAll(async () => {
-      user1 = await userRepository.save(uf.createUser(101234));
-      user2 = await userRepository.save(uf.createUser(101235));
-      user3 = await userRepository.save(uf.createUser(101236));
-      user4 = await userRepository.save(uf.createUser(101237));
+      user1 = await userRepository.save(uf.createUser(2100));
+      user2 = await userRepository.save(uf.createUser(2101));
+      user3 = await userRepository.save(uf.createUser(2102));
+      user4 = await userRepository.save(uf.createUser(2103));
       createChatDto = new CreateGroupChatDto();
       createChatDto.password = '1234';
       createChatDto.chatName = '테스트 채팅방';
       createChatDto.levelOfPublicity = 'Priv';
       createChatDto.maxParticipants = 10;
-      createChatDto.ownerId = 101234;
+      createChatDto.ownerId = 2100;
       groupChat = await groupChatRepository.save(createChatDto);
     });
 
     beforeEach(async () => {
       // await userRepository.delete({});
-      await groupChatRepository.delete({});
+      // await groupChatRepository.delete({});
     });
 
     afterAll(async () => {
@@ -455,17 +449,17 @@ describe('Chat', () => {
       );
     });
 
-    /**
-     * 에러 발생
-     * 1. 존재하지 않는 채팅방 (404) : Not Found
-     * 2. owner -> (owner -> user) 삭제 (404) : Not Found
-     * 3. admin -> (owner -> user) 삭제 (404) : Not Found
-     * 4. admin -> (admin -> user) 삭제 (403) : Forbidden
-     * 5. owner -> (user -> user) 삭제 (404) : Not Found
-     * 6. admin -> (user -> user) 삭제 (404) : Not Found
-     * 7. onwer -> (user 채팅방 X) (404) : Not Found
-     * 8. admin -> (user 채팅방 X) (404) : Not Found
-     */
+    // /**
+    //  * 에러 발생
+    //  * 1. 존재하지 않는 채팅방 (404) : Not Found
+    //  * 2. owner -> (owner -> user) 삭제 (404) : Not Found
+    //  * 3. admin -> (owner -> user) 삭제 (404) : Not Found
+    //  * 4. admin -> (admin -> user) 삭제 (403) : Forbidden
+    //  * 5. owner -> (user -> user) 삭제 (404) : Not Found
+    //  * 6. admin -> (user -> user) 삭제 (404) : Not Found
+    //  * 7. onwer -> (user 채팅방 X) (404) : Not Found
+    //  * 8. admin -> (user 채팅방 X) (404) : Not Found
+    //  */
 
     it('존재하지 않는 채팅방 (404)', async () => {
       await request(app.getHttpServer())
