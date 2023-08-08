@@ -36,12 +36,12 @@ export class GroupChat {
   password: string;
 
   @Column({
-    type: 'bigint',
+    type: 'smallint',
   })
   maxParticipants: number;
 
   @Column({
-    type: 'bigint',
+    type: 'smallint',
     default: 1,
   })
   curParticipants: number;
@@ -55,19 +55,19 @@ export class GroupChat {
   })
   ownerId: number;
 
-  @ManyToMany(() => User, (user) => user.bannedGroupChats)
+  @ManyToMany(() => User, (user) => user.bannedGroupChats, { cascade: true })
   @JoinTable({
     name: 'BannedGroupChat_user_joinTable',
   })
   bannedUser: User[];
 
-  @ManyToMany(() => User, (user) => user.adminingGroupChats)
+  @ManyToMany(() => User, (user) => user.adminingGroupChats, { cascade: true })
   @JoinTable({
     name: 'GroupChatAdmin_user_joinTable',
   })
   admin: User[];
 
-  @ManyToMany(() => User, (user) => user.joinedGroupChats)
+  @ManyToMany(() => User, (user) => user.joinedGroupChats, { cascade: true })
   @JoinTable({
     name: 'GroupChat_user_joinTable',
   })

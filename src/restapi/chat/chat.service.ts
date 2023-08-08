@@ -40,7 +40,27 @@ export class ChatService {
 
   async createGroupChat(createChatDto: CreateGroupChatDto) {
     // 그룹 채팅방을 생성하고 저장하는 로직
-    await this.groupChatRepository.save(createChatDto);
+
+    return await this.groupChatRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        const result = await manager.insert(GroupChat, createChatDto);
+        return await manager.findOne(GroupChat, {
+          where: { groupChatId: result.identifiers[0].groupChatId },
+          select: {
+            groupChatId: true,
+            chatName: true,
+            levelOfPublicity: true,
+            maxParticipants: true,
+            curParticipants: true,
+            ownerId: true,
+            owner: {
+              id: true,
+              nickName: true,
+            },
+          },
+        });
+      },
+    );
   }
 
   async getGroupChat(groupChatId: number) {
@@ -52,6 +72,14 @@ export class ChatService {
         'maxParticipants',
         'curParticipants',
       ],
+    });
+  }
+
+  async getJoinedUserList(groupChatId: number) {
+    return await this.groupChatRepository.findOne({
+      where: { groupChatId: groupChatId },
+      relations: ['joinedUser'],
+      select: ['joinedUser'],
     });
   }
 
@@ -84,7 +112,8 @@ export class ChatService {
 
   async joinGroupChat(groupChatId: number, dto: JoinGroupChatDto) {
     // 그룹 채팅방에 참여하는 로직
-    await this.groupChatRepository.manager.transaction(
+    console.log('joinGroupChat');
+    return await this.groupChatRepository.manager.transaction(
       async (manager: EntityManager) => {
         // 그룹 채팅방의 현재 참여 인원 조회
         const groupChat: GroupChat = await manager
@@ -111,12 +140,21 @@ export class ChatService {
           throw new NotFoundException('user가 존재하지 않습니다.');
         }
 
-        groupChat.curParticipants++;
-        groupChat.joinedUser.push(user);
+        // 그룹 채팅방에 참여한 유저 추가
+        // save보다 update가 더 빠르다.
+        await manager
+          .getRepository(GroupChat)
+          .createQueryBuilder()
+          .relation(GroupChat, 'joinedUser')
+          .of(groupChat)
+          .add(user);
 
-        // console.log('service:   ', groupChat);
-
-        await manager.save(GroupChat, groupChat);
+        await manager
+          .getRepository(GroupChat)
+          .createQueryBuilder()
+          .update()
+          .set({ curParticipants: groupChat.curParticipants + 1 })
+          .execute();
       },
     );
   }

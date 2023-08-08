@@ -10,6 +10,7 @@ import {
 } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 import { ChatGatewayService } from './chat.gateway.service';
+import { CreateGroupChatDto } from './dto/create-chat.dto';
 
 export interface ChatDTO {
   roomId: string;
@@ -105,12 +106,6 @@ export class ChatGateway
     return 'Goodbye world!';
   }
 
-  @SubscribeMessage('connect')
-  updateChatRoom(client: any, ...payload: ChatRoomDTO[]): any {
-    client.broadcast.emit('group-chat-update', payload);
-    return payload;
-  }
-
   @SubscribeMessage('chat-message')
   handleMessage(client: Socket, ...payload: ChatDTO[]): any {
     client.broadcast.to(payload[0].roomId).emit('chat-message', payload[0]);
@@ -120,12 +115,9 @@ export class ChatGateway
   }
 
   @SubscribeMessage('create-room')
-  createChatRoom(client: any, ...payload: ChatRoomDTO[]): any {
-    payload[0].roomId = roomId.toString();
-    ChatRoomList.push(payload[0]);
-    client.broadcast.emit('group-chat-update', payload[0]);
-    roomId++;
-    return payload[0];
+  async createChatRoom(client: any, payload: CreateGroupChatDto) {
+    const chat = await this.chatGatewayService.createGroupChat(payload);
+    client.broadcast.emit('group-chat-update', chat);
   }
 
   @SubscribeMessage('join-room')
