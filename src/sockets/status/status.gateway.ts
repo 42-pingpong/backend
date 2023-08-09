@@ -17,8 +17,6 @@ import { GetFriendResponse } from 'src/restapi/user/response/get-friend.response
 import { CreateUserDto } from 'src/restapi/user/dto/create-user.dto';
 import { RequestAcceptDto } from './dto/request-accept.dto';
 import { RequestRejectDto } from './dto/request-reject.dto';
-import { Request } from 'src/entities/user/request.entity';
-import { User } from 'src/entities/user/user.entity';
 
 export interface ChangeStatusData {
   friendList: GetFriendResponse[];

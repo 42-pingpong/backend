@@ -112,7 +112,6 @@ export class ChatService {
 
   async joinGroupChat(groupChatId: number, dto: JoinGroupChatDto) {
     // 그룹 채팅방에 참여하는 로직
-    console.log('joinGroupChat');
     return await this.groupChatRepository.manager.transaction(
       async (manager: EntityManager) => {
         // 그룹 채팅방의 현재 참여 인원 조회
@@ -228,10 +227,6 @@ export class ChatService {
     );
   }
 
-  /**
-   * @TODO 삭제 후 joinUser에 추가
-   * 했어요
-   * */
   async deleteAdmin(groupChatId: number, dto: DeleteAdminDto) {
     // 그룹 채팅방에서 admin을 제거하는 로직
     await this.groupChatRepository.manager.transaction(
@@ -297,6 +292,55 @@ export class ChatService {
       },
       select: {
         joinedUser: {
+          id: true,
+          nickName: true,
+          profile: true,
+        },
+      },
+    });
+  }
+
+  async getJoinedGroupChatList(userId: number) {
+    return await this.groupChatRepository.find({
+      where: [
+        {
+          joinedUser: {
+            id: userId,
+          },
+        },
+        {
+          admin: {
+            id: userId,
+          },
+        },
+        {
+          owner: {
+            id: userId,
+          },
+        },
+      ],
+      relations: {
+        owner: true,
+        joinedUser: true,
+        admin: true,
+      },
+      select: {
+        groupChatId: true,
+        chatName: true,
+        levelOfPublicity: true,
+        curParticipants: true,
+        maxParticipants: true,
+        owner: {
+          id: true,
+          nickName: true,
+          profile: true,
+        },
+        joinedUser: {
+          id: true,
+          nickName: true,
+          profile: true,
+        },
+        admin: {
           id: true,
           nickName: true,
           profile: true,
