@@ -57,7 +57,6 @@ export class StatusGateway
    * 로그인시 유저의 상태정보를 업데이트한다.
    */
   @SubscribeMessage('connect')
-  @UseGuards(AccessTokenGuard)
   async handleConnection(@ConnectedSocket() client: any) {
     console.log(client.handshake.auth.token);
     const sub = this.statusService.getSub(client.handshake.auth.token);

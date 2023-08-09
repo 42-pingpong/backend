@@ -90,7 +90,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     //Direct Message를 위한 코드
     //클라이언트의 chatSocketId를 저장한다.
     //비동기로 처리해서 빠르게 처리.
-    this.chatGatewayService.login(
+    await this.chatGatewayService.login(
       userId,
       client.id,
       client.handshake.auth.token,
@@ -138,13 +138,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('join-room')
-  async joinChatRoom(client: any, roomId: string) {
-    console.log('join-room', roomId);
+  async joinChatRoom(client: any, groupChatId: string) {
+    console.log('join-room', groupChatId);
     const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
     if (userId === null) return;
 
     await this.chatGatewayService.joinGroupChat(
-      +roomId,
+      +groupChatId,
       userId,
       client.handshake.auth.token,
     );

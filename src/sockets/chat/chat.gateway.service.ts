@@ -27,19 +27,21 @@ export class ChatGatewayService {
     } else return payload.sub;
   }
 
-  login(userId: number, clientId: string, bearerToken: string) {
-    axios.patch(
-      `${this.restApiUrl}/user/${userId}`,
-      {
-        status: 'online',
-        chatSocketId: clientId,
-      },
-      {
-        headers: {
-          Authorization: bearerToken,
+  async login(userId: number, clientId: string, bearerToken: string) {
+    try {
+      await axios.patch(
+        `${this.restApiUrl}/user/${userId}`,
+        {
+          status: 'online',
+          chatSocketId: clientId,
         },
-      },
-    );
+        {
+          headers: {
+            Authorization: bearerToken,
+          },
+        },
+      );
+    } catch (error) {}
   }
 
   async getJoinedGroupChatList(
@@ -51,7 +53,7 @@ export class ChatGatewayService {
       {
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${bearerToken}`,
+          Authorization: bearerToken,
         },
       },
     );
@@ -89,7 +91,7 @@ export class ChatGatewayService {
     joinGroupChat.userId = userId;
     await axios.post(`${this.restApiUrl}/chat/groupChat/${groupChatId}`, {
       headers: {
-        Authorization: `Bearer ${bearerToken}`,
+        Authorization: bearerToken,
       },
       params: joinGroupChat,
     });
