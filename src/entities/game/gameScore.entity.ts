@@ -1,4 +1,10 @@
-import { Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { User } from '../user/user.entity';
 import { GameInfo } from './gameInfo.entity';
 
@@ -7,6 +13,12 @@ export class GameScore {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column({
+    type: 'int',
+    default: 0,
+  })
+  score: number;
+
   @ManyToOne(() => User, (user) => user.gameScores)
   @JoinColumn()
   userId: number;
@@ -14,6 +26,4 @@ export class GameScore {
   @ManyToOne(() => GameInfo, (gameInfo) => gameInfo.gameScores)
   @JoinColumn()
   gameId: number;
-
-  score: number;
 }

@@ -16,8 +16,8 @@ export class UpdateGroupChatDto extends PartialType(CreateGroupChatDto) {
   @ApiProperty({
     type: String,
     description: '채팅방 공개 여부',
-    example: 'Priv',
-    enum: ['Pub', 'Priv'],
+    example: 'Prot',
+    enum: ['Pub', 'Prot'],
   })
   @IsString()
   levelOfPublicity?: string;

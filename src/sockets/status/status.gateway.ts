@@ -59,7 +59,6 @@ export class StatusGateway
   @SubscribeMessage('connect')
   @UseGuards(AccessTokenGuard)
   async handleConnection(@ConnectedSocket() client: any) {
-    console.log('connect');
     const sub = this.statusService.getSub(client.handshake.auth.token);
     if (sub == null) {
       return;
@@ -73,7 +72,6 @@ export class StatusGateway
     if (changeStatusData?.friendList) {
       for (const friend of changeStatusData.friendList) {
         // 온라인 친구에게 로그인/로그아웃한 유저의 상태정보를 전송한다.
-        console.log('change-status emit');
         this.server
           .to(friend.statusSocketId)
           .emit('change-status', changeStatusData.me);
@@ -85,13 +83,11 @@ export class StatusGateway
       sub,
       client.handshake.auth.token,
     );
-    console.log('alarms emit', client.id, alarms);
     this.server.to(client.id).emit('alarms', alarms);
   }
 
   @SubscribeMessage('disconnect')
   async handleDisconnect(client: any) {
-    console.log('disconnect');
     const sub = this.statusService.getSub(client.handshake.auth.token);
     if (!sub) return;
     const changeStatusData: ChangeStatusData =
@@ -128,7 +124,6 @@ export class StatusGateway
     @ConnectedSocket() client: any,
     @MessageBody() body: string,
   ) {
-    console.log('friend-request');
     const requestUser = this.statusService.getSub(client.handshake.auth.token);
     if (!requestUser) return;
     const requestFriendJobData: FriendRequestJobData = {
@@ -140,7 +135,6 @@ export class StatusGateway
     const rtn = await this.statusService.postRequestFriend(
       requestFriendJobData,
     );
-    console.log('rtn', rtn);
     if (rtn?.requestedUser?.status === 'online') {
       const socketId = rtn.requestedUser.statusSocketId;
       delete rtn.requestedUser;
@@ -153,7 +147,6 @@ export class StatusGateway
     @ConnectedSocket() client: any,
     @MessageBody() body: string,
   ) {
-    console.log('checked-alarm');
     const requestUser = this.statusService.getSub(client.handshake.auth.token);
     if (!requestUser) return;
     this.statusService.checkAlarm(
@@ -168,8 +161,6 @@ export class StatusGateway
     @ConnectedSocket() client: any,
     @MessageBody() body: RequestAcceptDto,
   ) {
-    console.log('accept friend');
-    console.log(body);
     const requestedUserId = this.statusService.getSub(
       client.handshake.auth.token,
     );
@@ -191,8 +182,6 @@ export class StatusGateway
     @ConnectedSocket() client: any,
     @MessageBody() body: RequestRejectDto,
   ) {
-    console.log('reject friend');
-    console.log(body);
     const requestedUser = this.statusService.getSub(
       client.handshake.auth.token,
     );

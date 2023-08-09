@@ -49,9 +49,7 @@ export class StatusService {
           },
         },
       );
-    } catch (error) {
-      console.log(error);
-    }
+    } catch (error) {}
     //접속중인 친구목록 가져오기
     //GET /user/friends/:id
     try {
@@ -76,9 +74,7 @@ export class StatusService {
       };
       //소켓 서버에게 상태 업데이트 이벤트 보내기
       //접속중인 친구목록을 줌.
-    } catch (error) {
-      console.log(error);
-    }
+    } catch (error) {}
   }
 
   async getAlarms(
@@ -112,9 +108,7 @@ export class StatusService {
           },
         },
       );
-    } catch (error) {
-      console.log(error);
-    }
+    } catch (error) {}
 
     //2. 친구목록에서, 로그인 상태 유저 소켓들에게 상태 업데이트 이벤트를 보낸다.
     try {
@@ -136,9 +130,7 @@ export class StatusService {
         friendList: response.data,
         me: me.data,
       };
-    } catch (error) {
-      console.log(error);
-    }
+    } catch (error) {}
   }
 
   async postRequestFriend(
@@ -170,9 +162,7 @@ export class StatusService {
           Authorization: bearerToken,
         },
       });
-    } catch (error) {
-      console.log(error);
-    }
+    } catch (error) {}
   }
 
   async acceptFriend(bearerToken: string, dto: RequestAcceptDto) {

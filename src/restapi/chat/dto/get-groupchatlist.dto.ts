@@ -17,7 +17,7 @@ export class GetGroupChatListDto {
   @ApiProperty({
     description: '그룹 채팅방 공개 여부',
     example: 'Pub',
-    enum: ['Pub', 'Priv'],
+    enum: ['Pub', 'Prot'],
   })
   levelOfPublicity: string;
 
