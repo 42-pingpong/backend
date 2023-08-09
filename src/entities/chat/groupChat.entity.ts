@@ -24,7 +24,7 @@ export class GroupChat {
 
   @Column({
     type: 'enum',
-    enum: ['Pub', 'Priv'],
+    enum: ['Pub', 'Prot'],
   })
   levelOfPublicity: string;
 

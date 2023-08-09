@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsNumber, IsString } from 'class-validator';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateGroupChatDto {
   @ApiProperty({
@@ -15,15 +15,17 @@ export class CreateGroupChatDto {
     type: String,
     description: '채팅방 비밀번호',
     example: '1234',
+    required: false,
   })
+  @IsOptional()
   @IsString()
-  password: string;
+  password?: string;
 
   @ApiProperty({
     type: String,
     description: '채팅방 공개 여부',
-    example: 'Priv',
-    enum: ['Pub', 'Priv'],
+    example: 'Prot',
+    enum: ['Pub', 'Prot'],
   })
   @IsString()
   levelOfPublicity: string;
