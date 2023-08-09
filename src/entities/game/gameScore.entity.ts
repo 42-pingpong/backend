@@ -1,6 +1,7 @@
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -9,6 +10,7 @@ import { User } from '../user/user.entity';
 import { GameInfo } from './gameInfo.entity';
 
 @Entity()
+@Index(['userId'])
 export class GameScore {
   @PrimaryGeneratedColumn()
   id: number;
