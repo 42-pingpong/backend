@@ -18,6 +18,7 @@ export class GameInfo {
   @Column({
     type: 'varchar',
     length: 100,
+    default: 'default',
   })
   gameMap: string;
 
