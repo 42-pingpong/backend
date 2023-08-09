@@ -10,10 +10,11 @@ import { GameScore } from 'src/entities/game/gameScore.entity';
 import { User } from 'src/entities/user/user.entity';
 import { UserFactory } from 'src/factory/user.factory';
 import { AccessTokenGuard } from 'src/restapi/auth/Guards/accessToken.guard';
-import { CreateGameDto } from 'src/restapi/game/dto/create-game.dto';
 import { GameModule } from 'src/restapi/game/game.module';
 import { DataSource, Repository } from 'typeorm';
+import { CreateGameDto } from 'src/restapi/game/request/create-game.dto';
 import * as request from 'supertest';
+import { CreateGameScoreRequestDto } from 'src/restapi/game/request/create-game-score.dto';
 
 describe('Game -/game (e2e)', () => {
   let app: INestApplication;
@@ -22,6 +23,7 @@ describe('Game -/game (e2e)', () => {
   let accGuard: AccessTokenGuard;
   let gameInfoRepository: Repository<GameInfo>;
   let gameScoreRepository: Repository<GameScore>;
+  let userRepository: Repository<User>;
   const factory: UserFactory = new UserFactory();
 
   beforeAll(async () => {
@@ -41,7 +43,7 @@ describe('Game -/game (e2e)', () => {
       .overrideModule(AppConfigModule)
       .useModule(TestConfigModule)
       .overrideModule(TypeOrmModule)
-      .useModule(TypeOrmModule.forFeature([GameInfo, GameScore]))
+      .useModule(TypeOrmModule.forFeature([GameInfo, GameScore, User]))
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -60,10 +62,16 @@ describe('Game -/game (e2e)', () => {
     accGuard = moduleFixture.get<AccessTokenGuard>(AccessTokenGuard);
     gameInfoRepository = dataSource.getRepository(GameInfo);
     gameScoreRepository = dataSource.getRepository(GameScore);
+    userRepository = dataSource.getRepository(User);
+  });
+
+  afterAll(async () => {
+    await dataSource.destroy();
+    await app.close();
   });
 
   /**
-   * user 3000번대 사용
+   * user 3000 ~ 3009
    * */
   describe('POST /game', () => {
     let createGameDto: CreateGameDto;
@@ -102,11 +110,69 @@ describe('Game -/game (e2e)', () => {
     });
   });
 
-  describe('POST /game/history', () => {
-    it.todo('');
-    it.todo('');
-    it.todo('');
-    it.todo('');
+  /**
+   * user 3010 ~ 3019
+   * */
+  describe('POST /game/score', () => {
+    let user3010: User;
+    let user3011: User;
+    let gameInfo: GameInfo;
+    const createGameScoreDto = new CreateGameScoreRequestDto();
+
+    beforeAll(async () => {
+      user3010 = await userRepository.save(factory.createUser(3010));
+      user3011 = await userRepository.save(factory.createUser(3011));
+      const gameInfoDto = new GameInfo();
+      gameInfo = await gameInfoRepository.save(gameInfoDto);
+    });
+
+    afterAll(async () => {
+      await gameScoreRepository.delete({});
+      await gameInfoRepository.delete({
+        gameId: gameInfo.gameId,
+      });
+      await userRepository.delete({
+        id: user3010.id,
+      });
+      await userRepository.delete({
+        id: user3011.id,
+      });
+    });
+
+    it('유저가 없음', async () => {
+      createGameScoreDto.gameId = gameInfo.gameId;
+      createGameScoreDto.score = 3;
+      createGameScoreDto.userId = 9999;
+
+      const res = await request(app.getHttpServer())
+        .post('/game/score')
+        .send(createGameScoreDto);
+      expect(res.status).toEqual(404);
+    });
+
+    it('게임이 없음', async () => {
+      createGameScoreDto.gameId = 9999;
+      createGameScoreDto.score = 3;
+      createGameScoreDto.userId = user3010.id;
+
+      const res = await request(app.getHttpServer())
+        .post('/game/score')
+        .send(createGameScoreDto);
+
+      expect(res.status).toEqual(404);
+    });
+
+    it('정상 생성', async () => {
+      createGameScoreDto.gameId = gameInfo.gameId;
+      createGameScoreDto.score = 3;
+      createGameScoreDto.userId = user3010.id;
+
+      const res = await request(app.getHttpServer())
+        .post('/game/score')
+        .send(createGameScoreDto);
+
+      expect(res.status).toEqual(201);
+    });
   });
 
   describe('GET /game/history/:userId', () => {
