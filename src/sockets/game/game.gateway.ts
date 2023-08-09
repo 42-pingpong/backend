@@ -63,8 +63,8 @@ export class GameGateway
   }
 
   @SubscribeMessage('join')
-  handleJoin(client: any, id: number) {
-    const userNickName = this.gameGatewayService.getNickName(id);
+  async handleJoin(client: any, id: number) {
+    const userNickName = await this.gameGatewayService.getNickName(id);
 
     playerList[0].emit('user-name', userNickName, 'nickName2');
     playerList[1].emit('user-name', 'nickName2', 'nickName1');
