@@ -7,6 +7,6 @@ export class GameGatewayService {
 
   async getNickName(nick: string): Promise<string> {
     const payload = this.jwtService.decode(nick);
-    return payload['nickName'];
+    return payload[nick];
   }
 }

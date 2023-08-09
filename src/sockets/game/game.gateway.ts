@@ -47,6 +47,7 @@ export class GameGateway
     console.log(waitList.length);
 
     if (waitList.length === 2) {
+      console.log('length 2');
       const roomName = waitList[0].id + '/' + waitList[1].id;
 
       // client.join(roomName);
@@ -66,13 +67,16 @@ export class GameGateway
   handleJoin(client: any, id: number) {
     playerList[0].emit(
       'user-name',
-      this.gameGatewayService.getNickName('1'),
+      // this.gameGatewayService.getNickname(),
       'nickName2',
+      '1',
     );
-    playerList[1].emit('user-name', 'nickName2', 'nickName1');
-
-    // waitList[0].emit('join', roomName);
-    // waitList[1].emit('join', roomName);
+    playerList[1].emit(
+      'user-name',
+      // this.gameGatewayService.getNickname(),
+      '2',
+      'nickName1',
+    );
   }
 
   @SubscribeMessage('disconnect')
