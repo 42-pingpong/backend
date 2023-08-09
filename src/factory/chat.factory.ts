@@ -22,7 +22,7 @@ export class ChatFactory {
     const newChat = new CreateGroupChatDto();
 
     newChat.chatName = 'Test Chat' + id;
-    newChat.levelOfPublicity = 'Priv';
+    newChat.levelOfPublicity = 'Prot';
     newChat.maxParticipants = 4;
     newChat.ownerId = ownerId;
 
