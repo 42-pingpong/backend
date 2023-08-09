@@ -5,7 +5,8 @@ import { JwtService } from '@nestjs/jwt';
 export class GameGatewayService {
   constructor(private readonly jwtService: JwtService) {}
 
-  async getNickname(): Promise<string> {
-    return 'nickname';
+  async getNickName(nick: string): Promise<string> {
+    const payload = this.jwtService.decode(nick);
+    return payload['nickName'];
   }
 }

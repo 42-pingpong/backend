@@ -66,7 +66,7 @@ export class GameGateway
   handleJoin(client: any, id: number) {
     playerList[0].emit(
       'user-name',
-      gameGatewayService.getNickname(),
+      this.gameGatewayService.getNickName('1'),
       'nickName2',
     );
     playerList[1].emit('user-name', 'nickName2', 'nickName1');
