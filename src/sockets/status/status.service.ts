@@ -49,10 +49,13 @@ export class StatusService {
           },
         },
       );
-    } catch (error) {}
-    //접속중인 친구목록 가져오기
-    //GET /user/friends/:id
+    } catch (error) {
+      console.log(error);
+    }
+
     try {
+      //접속중인 친구목록 가져오기
+      //GET /user/friends/:id
       const response = await axios.get(
         `${this.restApiUrl}/user/me/friends/${sub}?status=online`,
         {
@@ -74,7 +77,10 @@ export class StatusService {
       };
       //소켓 서버에게 상태 업데이트 이벤트 보내기
       //접속중인 친구목록을 줌.
-    } catch (error) {}
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
   }
 
   async getAlarms(
@@ -108,10 +114,8 @@ export class StatusService {
           },
         },
       );
-    } catch (error) {}
 
-    //2. 친구목록에서, 로그인 상태 유저 소켓들에게 상태 업데이트 이벤트를 보낸다.
-    try {
+      //2. 친구목록에서, 로그인 상태 유저 소켓들에게 상태 업데이트 이벤트를 보낸다.
       const response = await axios.get(
         `${this.restApiUrl}/user/me/friends/${sub}?status=online`,
         {
