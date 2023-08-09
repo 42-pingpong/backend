@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { GameInfo } from 'src/entities/game/gameInfo.entity';
 import { GameScore } from 'src/entities/game/gameScore.entity';
 import { EntityManager, Repository } from 'typeorm';
-import { CreateGameDto } from './dto/create-game.dto';
+import { CreateGameDto } from './request/create-game.dto';
 
 @Injectable()
 export class GameService {

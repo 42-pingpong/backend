@@ -1,9 +1,9 @@
 import { Controller, Post, Body, Param, Get } from '@nestjs/common';
 import { GameService } from './game.service';
-import { CreateGameDto } from './dto/create-game.dto';
 import { ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { CreateGameHistoryDto } from './dto/create-game-history.dto';
-import { CreateGameResponseDto } from './response/create-game-reponse.dto';
+import { CreateGameResponseDto } from './response/create-game.dto';
+import { CreateGameDto } from './request/create-game.dto';
+import { CreateGameHistoryDto } from './request/create-game-history.dto';
 
 @ApiTags('game')
 @Controller('game')
