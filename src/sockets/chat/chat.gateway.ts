@@ -71,33 +71,30 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
    */
   @SubscribeMessage('connect')
   async handleConnection(client: any, ...args: any[]) {
-    if (client.handshake.auth.token !== undefined) {
-      console.log('chat socket handleConnection', client.id);
-      const userId = this.chatGatewayService.getSub(
-        client.handshake.auth.token,
-      );
+    console.log('chat socket handleConnection', client.id);
+    const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
+    if (userId === null) return;
 
-      //GroupChat을 위한 코드
-      //클라이언트 연결 시, 클라이언트가 속한 채팅방의 정보를 받아 room에 join한다.
-      const joinedGroupChatList =
-        await this.chatGatewayService.getJoinedGroupChatList(
-          userId,
-          client.handshake.auth.token,
-        );
-
-      for (const groupChat of joinedGroupChatList) {
-        client.join(groupChat.groupChatId.toString());
-      }
-
-      //Direct Message를 위한 코드
-      //클라이언트의 chatSocketId를 저장한다.
-      //비동기로 처리해서 빠르게 처리.
-      this.chatGatewayService.login(
+    //GroupChat을 위한 코드
+    //클라이언트 연결 시, 클라이언트가 속한 채팅방의 정보를 받아 room에 join한다.
+    const joinedGroupChatList =
+      await this.chatGatewayService.getJoinedGroupChatList(
         userId,
-        client.id,
         client.handshake.auth.token,
       );
+
+    for (const groupChat of joinedGroupChatList) {
+      client.join(groupChat.groupChatId.toString());
     }
+
+    //Direct Message를 위한 코드
+    //클라이언트의 chatSocketId를 저장한다.
+    //비동기로 처리해서 빠르게 처리.
+    this.chatGatewayService.login(
+      userId,
+      client.id,
+      client.handshake.auth.token,
+    );
   }
 
   /**
@@ -121,6 +118,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
    * */
   @SubscribeMessage('group-chat-list')
   async getChatRoomList(client: any) {
+    const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
+    if (userId === null) return;
     return await this.chatGatewayService.getGroupChatList();
   }
 
@@ -132,6 +131,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('create-room')
   async createChatRoom(client: any, payload: CreateGroupChatDto) {
     console.log('create-room', payload);
+    const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
+    if (userId === null) return;
     const chat = await this.chatGatewayService.createGroupChat(payload);
     this.server.emit('group-chat-update', chat);
   }
@@ -140,6 +141,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async joinChatRoom(client: any, roomId: string) {
     console.log('join-room', roomId);
     const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
+    if (userId === null) return;
 
     await this.chatGatewayService.joinGroupChat(
       +roomId,

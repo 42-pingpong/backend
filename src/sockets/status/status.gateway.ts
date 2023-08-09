@@ -59,7 +59,9 @@ export class StatusGateway
   @SubscribeMessage('connect')
   @UseGuards(AccessTokenGuard)
   async handleConnection(@ConnectedSocket() client: any) {
+    console.log(client.handshake.auth.token);
     const sub = this.statusService.getSub(client.handshake.auth.token);
+    console.log('sub: ??', sub);
     if (sub == null) {
       return;
     }
