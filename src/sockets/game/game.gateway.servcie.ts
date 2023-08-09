@@ -11,7 +11,7 @@ export class GameGatewayService {
     this.restApiUrl = configService.get('url.restApiUrl');
   }
   async getNickName(userId: number): Promise<string> {
-    const response = await axios.get(`${this.restApiUrl}/user/${userId}`, {
+    const response = await axios.get(`${this.restApiUrl}/user/nick/${userId}`, {
       headers: {
         'Content-Type': 'application/json',
       },

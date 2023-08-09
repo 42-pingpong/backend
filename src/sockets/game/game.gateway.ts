@@ -12,6 +12,7 @@ import { Socket } from 'socket.io';
 
 const waitList: Socket[] = [];
 const playerList: Socket[] = [];
+const playerIdList: number[] = [0, 0];
 const readyState = [];
 
 @WebSocketGateway({
@@ -35,11 +36,11 @@ export class GameGateway
 
   @SubscribeMessage('connect')
   handleConnection(client: any, ...args: any[]) {
-    console.log('Connection');
+    console.log('Game Connection');
   }
 
   @SubscribeMessage('enter-queue')
-  handleLogin(client: Socket, payload: any) {
+  handleLogin(client: Socket, id: number) {
     if (waitList.includes(client)) {
       waitList.splice(waitList.indexOf(client), 1);
       return;
@@ -62,19 +63,47 @@ export class GameGateway
       playerList[1].emit('join', roomName);
       console.log('emit join end');
       waitList.splice(0, 2);
+      playerList[0].emit('player-number', 1);
+      playerList[1].emit('player-number', 2);
+      playerList[0].id === client.id
+        ? (playerIdList[0] = id)
+        : (playerIdList[1] = id);
     }
-    playerList[0].emit('player-number', 1);
-    playerList[1].emit('player-number', 2);
   }
+
+  // @SubscribeMessage('player1-id')
+  // handlePlayer1Id(client: any, id: number) {
+  //   console.log('player1-id', id);
+  //   playerIdList[0] = id;
+  // }
+
+  // @SubscribeMessage('player2-id')
+  // handlePlayer2Id(client: any, id: number) {
+  //   console.log('player2-id', id);
+  //   playerIdList[1] = id;
+  // }
 
   @SubscribeMessage('join')
   async handleJoin(client: any, id: number) {
-    const userNickName = await this.gameGatewayService.getNickName(id);
-    console.log('userNickName', userNickName);
+    console.log('제발요bbb');
+    console.log(playerIdList[0]);
+    console.log(playerIdList[1]);
 
-    playerList[0].emit('user-name', userNickName, 'nickName2');
-    playerList[1].emit('user-name', 'nickName2', 'nickName1');
+    const player1NickName = await this.gameGatewayService.getNickName(
+      playerIdList[0],
+    );
+    const player2NickName = await this.gameGatewayService.getNickName(
+      playerIdList[1],
+    );
+    console.log('????');
 
+    console.log('player1NickName: ', player1NickName);
+    console.log('player2NickName: ', player2NickName);
+
+    playerList[0].emit('user-name', player1NickName, player2NickName);
+    playerList[1].emit('user-name', player2NickName, player1NickName);
+
+    playerList.slice(0, 2);
     readyState.push(client);
   }
 
