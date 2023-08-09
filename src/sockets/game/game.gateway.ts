@@ -11,6 +11,7 @@ import { GameGatewayService } from './game.gateway.servcie';
 
 const waitList = [];
 const playerList: any[] = [];
+const readyState = [];
 
 @WebSocketGateway({
   namespace: 'game',
@@ -77,6 +78,21 @@ export class GameGateway
       '2',
       'nickName1',
     );
+  }
+
+  @SubscribeMessage('start')
+  handleStart(client: any) {
+    if (readyState.includes(client)) {
+      readyState.splice(readyState.indexOf(client), 1);
+      return;
+    }
+
+    readyState.push(client);
+
+    if (readyState.length === 2) {
+      playerList[0].emit('start');
+      playerList[1].emit('start');
+    }
   }
 
   @SubscribeMessage('disconnect')
