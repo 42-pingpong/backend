@@ -57,6 +57,7 @@ export class UserService {
   async getNickname(id: number): Promise<string> {
     const user = await this.userRepository.findOne({
       where: { id: id },
+      select: ['nickName'],
     });
     if (!user) throw new NotFoundException();
     return user.nickName;

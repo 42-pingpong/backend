@@ -1,12 +1,21 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import axios from 'axios';
 
 @Injectable()
 export class GameGatewayService {
-  constructor(private readonly jwtService: JwtService) {}
+  private readonly restApiUrl: string;
 
-  async getNickName(nick: string): Promise<string> {
-    const payload = this.jwtService.decode(nick);
-    return payload[nick];
+  constructor(private readonly configService: ConfigService) {
+    this.restApiUrl = configService.get('url.restApiUrl');
+  }
+  async getNickName(userId: number): Promise<string> {
+    const response = await axios.get(`${this.restApiUrl}/user/${userId}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return response.data;
   }
 }

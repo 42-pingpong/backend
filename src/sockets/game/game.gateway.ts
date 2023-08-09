@@ -8,9 +8,10 @@ import {
 } from '@nestjs/websockets';
 import { Server } from 'socket.io';
 import { GameGatewayService } from './game.gateway.servcie';
+import { Socket } from 'socket.io';
 
-const waitList = [];
-const playerList: any[] = [];
+const waitList: Socket[] = [];
+const playerList: Socket[] = [];
 const readyState = [];
 
 @WebSocketGateway({
@@ -38,7 +39,7 @@ export class GameGateway
   }
 
   @SubscribeMessage('enter-queue')
-  handleLogin(client: any, payload: any) {
+  handleLogin(client: Socket, payload: any) {
     if (waitList.includes(client)) {
       waitList.splice(waitList.indexOf(client), 1);
       return;
@@ -56,8 +57,10 @@ export class GameGateway
       waitList[1].join(roomName);
       playerList.push(waitList[0]);
       playerList.push(waitList[1]);
+      console.log('emit join');
       playerList[0].emit('join', roomName);
       playerList[1].emit('join', roomName);
+      console.log('emit join end');
       waitList.splice(0, 2);
     }
     playerList[0].emit('player-number', 1);
@@ -65,19 +68,14 @@ export class GameGateway
   }
 
   @SubscribeMessage('join')
-  handleJoin(client: any, id: number) {
-    playerList[0].emit(
-      'user-name',
-      // this.gameGatewayService.getNickname(),
-      'nickName2',
-      '1',
-    );
-    playerList[1].emit(
-      'user-name',
-      // this.gameGatewayService.getNickname(),
-      '2',
-      'nickName1',
-    );
+  async handleJoin(client: any, id: number) {
+    const userNickName = await this.gameGatewayService.getNickName(id);
+    console.log('userNickName', userNickName);
+
+    playerList[0].emit('user-name', userNickName, 'nickName2');
+    playerList[1].emit('user-name', 'nickName2', 'nickName1');
+
+    readyState.push(client);
   }
 
   @SubscribeMessage('start')
@@ -90,14 +88,14 @@ export class GameGateway
     readyState.push(client);
 
     if (readyState.length === 2) {
-      playerList[0].emit('start');
-      playerList[1].emit('start');
+      readyState[0].emit('start');
+      readyState[1].emit('start');
     }
   }
 
   @SubscribeMessage('disconnect')
   handleDisconnect(client: any) {
-    console.log('Disconnect');
+    console.log('Disconnect 할 때 leave 해야 할 듯');
   }
 
   @SubscribeMessage('message')
