@@ -9,6 +9,8 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
+import { ChatGatewayService } from './chat.gateway.service';
+import { CreateGroupChatDto } from './dto/create-chat.dto';
 
 export interface ChatDTO {
   roomId: string;
@@ -52,23 +54,11 @@ const ChatRoomList: ChatRoomDTO[] = [];
   connectTimeout: 5,
   transports: ['websocket'],
 })
-export class ChatGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
-{
+export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: any;
-  /**
-   * @brief lifecycle hook
-   * @param any server(서버)
-   * @return void
-   * @description
-   * - 서버가 초기화 되었을 때 실행되는 함수
-   * - 즉, Nest Injector가 생성되고 ChatGateway 인스턴스가 만들어진 후에 실행된다.
-   * - Redis 서버에 연결하거나, 다른 서버에 연결하는 등의 작업을 할 수 있다.
-   */
-  afterInit(server: any) {
-    console.log('afterInit');
-  }
+
+  constructor(private readonly chatGatewayService: ChatGatewayService) {}
 
   /**
    * @brief lifecycle hook
@@ -78,13 +68,36 @@ export class ChatGateway
    * - 클라이언트가 연결되었을 때 실행되는 함수
    * - 클라이언트가 연결되었을 때, 클라이언트의 정보를 받아올 수 있다.
    * - chat은 기본적으로 전역상태로 enable되어있으므로, 모든 클라이언트가 연결되었을 때 실행된다.
-   * @TODO
-   * 1. client가 접속한상태일때, 로그인 상태를 redis에 저장한다.
-   * 2. client 좁속시, redis에 저장된 채팅방 정보를 가져온다.
    */
-  @SubscribeMessage('chat-login-any')
-  handleConnection(client: any, ...args: any[]) {
-    console.log('handleConnection', args);
+  @SubscribeMessage('connect')
+  async handleConnection(client: any, ...args: any[]) {
+    if (client.handshake.headers.authorization !== undefined) {
+      console.log('chat socket handleConnection', client.id);
+      const userId = this.chatGatewayService.getSub(
+        client.handshake.headers.authorization,
+      );
+
+      //GroupChat을 위한 코드
+      //클라이언트 연결 시, 클라이언트가 속한 채팅방의 정보를 받아 room에 join한다.
+      const joinedGroupChatList =
+        await this.chatGatewayService.getJoinedGroupChatList(
+          userId,
+          client.handshake.headers.authorization,
+        );
+
+      for (const groupChat of joinedGroupChatList) {
+        client.join(groupChat.groupChatId.toString());
+      }
+
+      //Direct Message를 위한 코드
+      //클라이언트의 chatSocketId를 저장한다.
+      //비동기로 처리해서 빠르게 처리.
+      this.chatGatewayService.login(
+        userId,
+        client.id,
+        client.handshake.headers.authorization,
+      );
+    }
   }
 
   /**
@@ -102,10 +115,44 @@ export class ChatGateway
     return 'Goodbye world!';
   }
 
-  @SubscribeMessage('connect')
-  updateChatRoom(client: any, ...payload: ChatRoomDTO[]): any {
-    client.broadcast.emit('group-chat-update', payload);
-    return payload;
+  /**
+   * @description
+   * - 클라이언트에게 모든 채팅방 목록을 전달한다.
+   * */
+  @SubscribeMessage('group-chat-list')
+  async getChatRoomList(client: any) {
+    return await this.chatGatewayService.getGroupChatList();
+  }
+
+  /**
+   * @description
+   * - 클라이언트가 채팅방을 생성 요청했을 때 실행된다.
+   * - 채팅방을 생성하고, group-chat-update 이벤트를 발생시켜 모든 클라이언트에게 채팅방 목록을 전달한다.
+   **/
+  @SubscribeMessage('create-room')
+  async createChatRoom(client: any, payload: CreateGroupChatDto) {
+    const chat = await this.chatGatewayService.createGroupChat(payload);
+    this.server.broadcast.emit('group-chat-update', chat);
+  }
+
+  @SubscribeMessage('join-room')
+  async joinChatRoom(client: any, roomId: string) {
+    console.log('join-room', roomId);
+    const userId = this.chatGatewayService.getSub(
+      client.handshake.headers.authorization,
+    );
+
+    await this.chatGatewayService.joinGroupChat(
+      +roomId,
+      userId,
+      client.handshake.headers.authorization,
+    );
+    client.join(roomId);
+  }
+
+  @SubscribeMessage('leave-room')
+  leaveChatRoom(client: any, roomId: string) {
+    client.leave(roomId);
   }
 
   @SubscribeMessage('chat-message')
@@ -114,36 +161,5 @@ export class ChatGateway
     // const room = ChatRoomList.find((data) => data.roomId === payload[0].roomId);
     // room.log.push(payload[0]);
     return payload[0];
-  }
-
-  @SubscribeMessage('create-room')
-  createChatRoom(client: any, ...payload: ChatRoomDTO[]): any {
-    payload[0].roomId = roomId.toString();
-    ChatRoomList.push(payload[0]);
-    client.broadcast.emit('group-chat-update', payload[0]);
-    roomId++;
-    return payload[0];
-  }
-
-  @SubscribeMessage('join-room')
-  enterChatRoom(client: any, roomId: string): any {
-    client.join(roomId);
-    // const room = ChatRoomList.find((data) => data.roomId === roomId);
-    // client.emit('group-chat-info', room);
-    // console.log(room.log);
-  }
-
-  // @SubscribeMessage('group-chat-info')
-  // getChatRoomInfo(client: any, roomId: string): any {
-  // }
-
-  @SubscribeMessage('leave-room')
-  leaveChatRoom(client: any, roomId: string): any {
-    client.leave(roomId);
-  }
-
-  @SubscribeMessage('group-chat-list')
-  getChatRoomList(client: any): ChatRoomDTO[] {
-    return ChatRoomList;
   }
 }

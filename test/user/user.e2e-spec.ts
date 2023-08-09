@@ -1,4 +1,8 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import {
+  ExecutionContext,
+  INestApplication,
+  ValidationPipe,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { testDatabase } from 'src/datasource/testDatabase';
 import { UserModule } from 'src/restapi/user/user.module';
@@ -6,8 +10,6 @@ import * as request from 'supertest';
 import { DataSource, Repository } from 'typeorm';
 import { User } from 'src/entities/user/user.entity';
 import { UpdateUserDto } from 'src/restapi/user/dto/update-user.dto';
-import { user1 } from 'test/fixtures/users/user-1';
-import { user2 } from 'test/fixtures/users/user-2';
 import { appDatabase } from 'src/datasource/appdatabase';
 import { UserFactory } from 'src/factory/user.factory';
 import { AppConfigModule } from 'src/config/app.config';
@@ -18,24 +20,31 @@ import { Token } from 'src/entities/auth/token.entity';
 import { GetFriendQueryDto } from 'src/restapi/user/dto/get-friend-query.dto';
 import { CreateUserDto } from 'src/restapi/user/dto/create-user.dto';
 import { CreateRequestFriendDto } from 'src/restapi/user/dto/create-request-friend.dto';
-import { async } from 'rxjs';
 import { Request, RequestType } from 'src/entities/user/request.entity';
 import { InvitationStatus } from 'src/enum/invitation.enum';
 import { SearchUserDto } from 'src/restapi/user/dto/search-user.dto';
-import { CreateResponseDto } from 'src/restapi/upload/response/create.dto';
+import { AccessTokenGuard } from 'src/restapi/auth/Guards/accessToken.guard';
 
 describe('User -/user (e2e)', () => {
   let app: INestApplication;
   let dataSource: DataSource;
   let repository: Repository<User>;
   let friendRepository: Repository<FriendsWith>;
-  let tokenRepository: Repository<Token>;
   let requestRepository: Repository<Request>;
+  let accGuard: AccessTokenGuard;
   const factory: UserFactory = new UserFactory();
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [UserModule],
+      providers: [
+        {
+          provide: AccessTokenGuard,
+          useValue: {
+            canActivate: jest.fn(),
+          },
+        },
+      ],
     })
       .overrideModule(appDatabase)
       .useModule(testDatabase)
@@ -48,9 +57,17 @@ describe('User -/user (e2e)', () => {
     app = moduleFixture.createNestApplication();
     await app.init();
 
+    app.useGlobalPipes(
+      new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+      }),
+    );
+
     dataSource = moduleFixture.get<DataSource>(DataSource);
     repository = dataSource.getRepository(User);
-    tokenRepository = dataSource.getRepository(Token);
+    accGuard = moduleFixture.get<AccessTokenGuard>(AccessTokenGuard);
     requestRepository = dataSource.getRepository(Request);
     friendRepository = dataSource.getRepository(FriendsWith);
   });
@@ -466,7 +483,7 @@ describe('User -/user (e2e)', () => {
       await requestRepository.save({
         requestingUserId: user22.id,
         requestedUserId: user23.id,
-        isAccepted: InvitationStatus.NOTALARMED,
+        isAccepted: InvitationStatus.PENDING,
         requestType: RequestType.FRIEND,
       });
 
@@ -660,6 +677,73 @@ describe('User -/user (e2e)', () => {
         expect(res.body.length).toEqual(3);
       });
     });
+  });
+
+  /**
+   * @user 45~
+   * */
+  describe('PATCH /alarms/:userId', () => {
+    it('모든 알람 PENDDING으로 변경', async () => {});
+  });
+
+  /**
+   * @user 50~
+   * */
+  describe('PATCH /me/friend/request/accept', () => {
+    let user50;
+    let user51;
+    let user52;
+
+    let req1: Request;
+    let req2: Request;
+    beforeEach(async () => {
+      user50 = await repository.save(factory.createUser(50));
+      user51 = await repository.save(factory.createUser(51));
+      user52 = await repository.save(factory.createUser(52));
+
+      accGuard.canActivate = jest
+        .fn()
+        .mockImplementation((context: ExecutionContext) => {
+          context.switchToHttp().getRequest().user = { sub: user50.id };
+          return true;
+        });
+
+      //51 => 50 친구요청을 생성
+      req1 = await requestRepository.save({
+        requestingUserId: user51.id,
+        requestedUserId: user50.id,
+        status: InvitationStatus.NOTALARMED,
+        requestType: RequestType.FRIEND,
+      });
+
+      //52 => 50 친구요청을 생성
+      req2 = await requestRepository.save({
+        requestingUserId: user52.id,
+        requestedUserId: user50.id,
+        status: InvitationStatus.NOTALARMED,
+        requestType: RequestType.FRIEND,
+      });
+    });
+
+    afterEach(async () => {
+      await requestRepository.delete([user50, user51, user52]);
+    });
+
+    it('친구 요청 수락 성공', async () => {
+      console.log(req1);
+      await request(app.getHttpServer())
+        .patch('/user/me/friend/request/accept')
+        .send({ requestId: req1.requestId })
+        .expect(200);
+    });
+    it.todo('해당 요청이 없음');
+    it.todo('해당 요청이 내 것이 아님');
+  });
+
+  describe('PATCH /me/friend/request/reject', () => {
+    it.todo('친구 요청 거절 성공');
+    it.todo('해당 요청이 없음');
+    it.todo('해당 요청이 내 것이 아님');
   });
 
   afterAll(async () => {

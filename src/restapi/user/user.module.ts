@@ -8,6 +8,7 @@ import { Token } from 'src/entities/auth/token.entity';
 import { AppConfigModule } from 'src/config/app.config';
 import { FriendsWith } from 'src/entities/user/friendsWith.entity';
 import { Request } from 'src/entities/user/request.entity';
+import { AccessTokenGuard } from '../auth/Guards/accessToken.guard';
 
 @Module({
   imports: [
@@ -16,6 +17,6 @@ import { Request } from 'src/entities/user/request.entity';
     TypeOrmModule.forFeature([User, Token, FriendsWith, Request]),
   ],
   controllers: [UserController],
-  providers: [UserService],
+  providers: [UserService, AccessTokenGuard],
 })
 export class UserModule {}

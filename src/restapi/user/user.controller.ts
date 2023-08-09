@@ -15,7 +15,6 @@ import {
   ApiBody,
   ApiConflictResponse,
   ApiCreatedResponse,
-  ApiExcludeController,
   ApiExcludeEndpoint,
   ApiOkResponse,
   ApiOperation,
@@ -34,6 +33,8 @@ import { SearchUserDto } from './dto/search-user.dto';
 import { SearchUserResponseDto } from './dto/search-user-response.dto';
 import { GetUserResponseDto } from './response/get-alarm.response';
 import { PostRequestResponseDto } from './response/post-request-response';
+import { RequestAcceptDto } from './dto/request-accept.dto';
+import { RequestRejectDto } from './dto/request-reject.dto';
 
 @ApiTags('user')
 @Controller('user')
@@ -94,6 +95,23 @@ export class UserController {
   //need auth guard
   async addFriend(@Param('id') id: string, @Body() friend: AddFriendDto) {
     return await this.userService.addFriend(+id, friend.friendId);
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @ApiOperation({
+    summary: '친구 요청 수락',
+    description: '친구 요청 수락',
+  })
+  @Patch('/me/friend/request/accept')
+  async acceptRequest(@Body() body: RequestAcceptDto, @Req() req: Request) {
+    return await this.userService.acceptFriendRequest(+req.user.sub, body);
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @Patch('/me/friend/request/reject')
+  //need auth guard
+  async rejectRequest(@Body() body: RequestRejectDto, @Req() req: Request) {
+    return await this.userService.rejectFriendRequest(+req.user.sub, body);
   }
 
   /**
@@ -158,7 +176,12 @@ export class UserController {
     return await this.userService.getAlarms(+id);
   }
 
+  /**
+   * @description userId의 모든 알람 상태 PENDING으로 변경
+   * */
   @ApiExcludeEndpoint()
-  @Patch('/alarms/:id')
-  async updateAlarm(@Param('id') id: string) {}
+  @Patch('/alarms/:userId')
+  async checkAlarms(@Param('userId') userId: string) {
+    return await this.userService.checkAlarmsOfUser(+userId);
+  }
 }
