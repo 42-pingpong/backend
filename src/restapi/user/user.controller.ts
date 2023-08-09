@@ -41,6 +41,21 @@ import { RequestRejectDto } from './dto/request-reject.dto';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  // id -> nickname
+  @ApiOperation({
+    summary: 'get user nickname',
+    description: '유저 닉네임 조회',
+  })
+  @ApiResponse({
+    status: 200,
+    type: String,
+  })
+  @ApiParam({ name: 'id', type: String })
+  @Get(':id')
+  async getNickname(@Param('id') id: string) {
+    return await this.userService.getNickname(+id);
+  }
+
   @ApiOperation({
     summary: 'get my info(profile)',
     description: '내 정보 조회',

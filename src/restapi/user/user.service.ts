@@ -54,6 +54,14 @@ export class UserService {
     }
   }
 
+  async getNickname(id: number): Promise<string> {
+    const user = await this.userRepository.findOne({
+      where: { id: id },
+    });
+    if (!user) throw new NotFoundException();
+    return user.nickName;
+  }
+
   async create(createUserDto: CreateUserDto): Promise<User> {
     return await this.userRepository.save(createUserDto);
   }
