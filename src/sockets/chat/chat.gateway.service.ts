@@ -5,6 +5,7 @@ import axios from 'axios';
 import { GroupChat } from 'src/entities/chat/groupChat.entity';
 import { CreateGroupChatDto } from './dto/create-chat.dto';
 import { GetGroupChatListDto } from './dto/get-groupchatlist.dto';
+import { JoinGroupChatDto } from './dto/join-group-chat.dto';
 
 @Injectable()
 export class ChatGatewayService {
@@ -67,15 +68,26 @@ export class ChatGatewayService {
   }
 
   async createGroupChat(dto: CreateGroupChatDto): Promise<GroupChat> {
-    const response = await axios.post(
-      `${this.restApiUrl}/chat/groupChat`,
-      dto,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+    const response = await axios.post(`${this.restApiUrl}/chat/groupChat`, {
+      headers: {
+        'Content-Type': 'application/json',
       },
-    );
+    });
     return response.data;
+  }
+
+  async joinGroupChat(
+    groupChatId: number,
+    userId: number,
+    bearerToken: string,
+  ) {
+    const joinGroupChat = new JoinGroupChatDto();
+    joinGroupChat.userId = userId;
+    await axios.post(`${this.restApiUrl}/chat/groupChat/${groupChatId}`, {
+      headers: {
+        Authorization: `Bearer ${bearerToken}`,
+      },
+      params: joinGroupChat,
+    });
   }
 }

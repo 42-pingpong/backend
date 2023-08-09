@@ -93,6 +93,7 @@ export class ChatController {
    * - 그룹 채팅방에 참여하는 메서드
    */
   @Post('groupChat/:groupChatId')
+  //need Auth Guard
   async joinGroupChat(
     @Param('groupChatId') groupChatId: string,
     @Query() query: JoinGroupChatDto,

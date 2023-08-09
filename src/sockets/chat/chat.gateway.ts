@@ -86,7 +86,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         );
 
       for (const groupChat of joinedGroupChatList) {
-        client.join(groupChat.groupChatId);
+        client.join(groupChat.groupChatId.toString());
       }
 
       //Direct Message를 위한 코드
@@ -115,9 +115,44 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     return 'Goodbye world!';
   }
 
+  /**
+   * @description
+   * - 클라이언트에게 모든 채팅방 목록을 전달한다.
+   * */
   @SubscribeMessage('group-chat-list')
   async getChatRoomList(client: any) {
     return await this.chatGatewayService.getGroupChatList();
+  }
+
+  /**
+   * @description
+   * - 클라이언트가 채팅방을 생성 요청했을 때 실행된다.
+   * - 채팅방을 생성하고, group-chat-update 이벤트를 발생시켜 모든 클라이언트에게 채팅방 목록을 전달한다.
+   **/
+  @SubscribeMessage('create-room')
+  async createChatRoom(client: any, payload: CreateGroupChatDto) {
+    const chat = await this.chatGatewayService.createGroupChat(payload);
+    this.server.broadcast.emit('group-chat-update', chat);
+  }
+
+  @SubscribeMessage('join-room')
+  async joinChatRoom(client: any, roomId: string) {
+    console.log('join-room', roomId);
+    const userId = this.chatGatewayService.getSub(
+      client.handshake.headers.authorization,
+    );
+
+    await this.chatGatewayService.joinGroupChat(
+      +roomId,
+      userId,
+      client.handshake.headers.authorization,
+    );
+    client.join(roomId);
+  }
+
+  @SubscribeMessage('leave-room')
+  leaveChatRoom(client: any, roomId: string) {
+    client.leave(roomId);
   }
 
   @SubscribeMessage('chat-message')
@@ -126,29 +161,5 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // const room = ChatRoomList.find((data) => data.roomId === payload[0].roomId);
     // room.log.push(payload[0]);
     return payload[0];
-  }
-
-  @SubscribeMessage('create-room')
-  async createChatRoom(client: any, payload: CreateGroupChatDto) {
-    const chat = await this.chatGatewayService.createGroupChat(payload);
-    this.server.emit('group-chat-update', chat);
-  }
-
-  @SubscribeMessage('join-room')
-  enterChatRoom(client: any, roomId: string): any {
-    console.log('join-room', roomId);
-    client.join(roomId);
-    // const room = ChatRoomList.find((data) => data.roomId === roomId);
-    // client.emit('group-chat-info', room);
-    // console.log(room.log);
-  }
-
-  // @SubscribeMessage('group-chat-info')
-  // getChatRoomInfo(client: any, roomId: string): any {
-  // }
-
-  @SubscribeMessage('leave-room')
-  leaveChatRoom(client: any, roomId: string): any {
-    client.leave(roomId);
   }
 }
