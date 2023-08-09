@@ -54,7 +54,7 @@ export class UserService {
     }
   }
 
-  async getNickname(id: number): Promise<string> {
+  async getNickname(id: number) {
     const user = await this.userRepository.findOne({
       where: { id: id },
       select: ['nickName'],

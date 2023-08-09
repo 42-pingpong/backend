@@ -51,7 +51,7 @@ export class UserController {
     type: String,
   })
   @ApiParam({ name: 'id', type: String })
-  @Get(':id')
+  @Get('/nick/:id')
   async getNickname(@Param('id') id: string) {
     return await this.userService.getNickname(+id);
   }
