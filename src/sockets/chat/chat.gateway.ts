@@ -148,7 +148,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       userId,
       client.handshake.auth.token,
     );
-    client.join(roomId);
+    client.join(groupChatId);
   }
 
   @SubscribeMessage('leave-room')
@@ -157,10 +157,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('chat-message')
-  handleMessage(client: Socket, ...payload: ChatDTO[]): any {
-    client.broadcast.to(payload[0].roomId).emit('chat-message', payload[0]);
-    // const room = ChatRoomList.find((data) => data.roomId === payload[0].roomId);
-    // room.log.push(payload[0]);
-    return payload[0];
+  handleMessage(client: Socket, payload: ChatDTO): any {
+    client.broadcast.to(payload.roomId).emit('chat-message', payload);
+    // const room = ChatRoomList.find((data) => data.roomId === payload.roomId);
+    // room.log.push(payload);
+    return payload;
   }
 }
