@@ -87,13 +87,13 @@ export class ChatGatewayService {
     userId: number,
     bearerToken: string,
   ) {
-    const joinGroupChat = new JoinGroupChatDto();
-    joinGroupChat.userId = userId;
-    await axios.post(`${this.restApiUrl}/chat/groupChat/${groupChatId}`, {
-      headers: {
-        Authorization: bearerToken,
+    await axios.post(
+      `${this.restApiUrl}/chat/groupChat/${groupChatId}?userId=${userId}`,
+      {
+        headers: {
+          Authorization: bearerToken,
+        },
       },
-      params: joinGroupChat,
-    });
+    );
   }
 }
