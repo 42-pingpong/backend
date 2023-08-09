@@ -4,6 +4,7 @@ import { ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CreateGameResponseDto } from './response/create-game.dto';
 import { CreateGameDto } from './request/create-game.dto';
 import { CreateGameScoreRequestDto } from './request/create-game-score.dto';
+import { CreateGameScoreResponseDto } from './response/create-game-score.dto';
 
 @ApiTags('game')
 @Controller('game')
@@ -21,6 +22,10 @@ export class GameController {
   }
 
   @ApiOperation({ summary: '새로운 game score를 저장합니다.' })
+  @ApiCreatedResponse({
+    description: '게임 스코어 정보를 반환합니다.',
+    type: CreateGameScoreResponseDto,
+  })
   @Post('/score')
   async createScore(@Body() createGameScoreDto: CreateGameScoreRequestDto) {
     return await this.gameService.createScore(createGameScoreDto);
