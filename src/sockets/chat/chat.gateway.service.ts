@@ -68,11 +68,15 @@ export class ChatGatewayService {
   }
 
   async createGroupChat(dto: CreateGroupChatDto): Promise<GroupChat> {
-    const response = await axios.post(`${this.restApiUrl}/chat/groupChat`, {
-      headers: {
-        'Content-Type': 'application/json',
+    const response = await axios.post(
+      `${this.restApiUrl}/chat/groupChat`,
+      dto,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+        },
       },
-    });
+    );
     return response.data;
   }
 
