@@ -1,26 +1,43 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { GameInfo } from 'src/entities/game/gameInfo.entity';
+import { GameScore } from 'src/entities/game/gameScore.entity';
+import { EntityManager, Repository } from 'typeorm';
 import { CreateGameDto } from './dto/create-game.dto';
-import { UpdateGameDto } from './dto/update-game.dto';
 
 @Injectable()
 export class GameService {
-  create(createGameDto: CreateGameDto) {
+  constructor(
+    @InjectRepository(GameInfo)
+    private readonly gameInfoRepository: Repository<GameInfo>,
+
+    @InjectRepository(GameScore)
+    private readonly gameScoreRepository: Repository<GameScore>,
+  ) {}
+
+  async createGame(createGameDto: CreateGameDto) {
+    return await this.gameInfoRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        const newGameInfo = await manager
+          .getRepository(GameInfo)
+          .insert(createGameDto);
+
+        const newGameInfoId = newGameInfo.identifiers[0].gameId;
+        return await manager.getRepository(GameInfo).findOne({
+          where: { gameId: newGameInfoId },
+          select: {
+            gameId: true,
+            gameMap: true,
+            createDate: true,
+          },
+        });
+      },
+    );
+  }
+
+  async createHistory(createGameDto: CreateGameDto) {
     return 'This action adds a new game';
   }
 
-  findAll() {
-    return `This action returns all game`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} game`;
-  }
-
-  update(id: number, updateGameDto: UpdateGameDto) {
-    return `This action updates a #${id} game`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} game`;
-  }
+  async getHistory(userId: number) {}
 }
