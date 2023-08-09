@@ -100,6 +100,7 @@ export class GameService {
         //user는 게임을 플레이한 유저이다.
         //join했을때 UserId가 1개라도 속한 join된 GameInfo를 가져온다.
 
+        //@TODO: subquery로 해결하기
         const subQueryAlias = 'gameScore2'; // Define the subquery alias
 
         const subQuery = manager
