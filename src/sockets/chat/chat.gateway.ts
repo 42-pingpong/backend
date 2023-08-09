@@ -131,8 +131,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
    **/
   @SubscribeMessage('create-room')
   async createChatRoom(client: any, payload: CreateGroupChatDto) {
+    console.log('create-room', payload);
     const chat = await this.chatGatewayService.createGroupChat(payload);
-    this.server.broadcast.emit('group-chat-update', chat);
+    this.server.emit('group-chat-update', chat);
   }
 
   @SubscribeMessage('join-room')
