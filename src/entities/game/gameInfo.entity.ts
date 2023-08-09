@@ -22,6 +22,6 @@ export class GameInfo {
   })
   gameMap: string;
 
-  @OneToMany(() => GameScore, (gameScore) => gameScore.gameId)
+  @OneToMany(() => GameScore, (gameScore) => gameScore.game)
   gameScores: GameScore[];
 }

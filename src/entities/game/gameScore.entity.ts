@@ -20,10 +20,18 @@ export class GameScore {
   score: number;
 
   @ManyToOne(() => User, (user) => user.gameScores)
-  @JoinColumn()
+  @JoinColumn({ name: 'userId' })
+  user: User;
+  @Column({
+    type: 'int',
+  })
   userId: number;
 
   @ManyToOne(() => GameInfo, (gameInfo) => gameInfo.gameScores)
-  @JoinColumn()
+  @JoinColumn({ name: 'gameId' })
+  game: GameInfo;
+  @Column({
+    type: 'int',
+  })
   gameId: number;
 }
