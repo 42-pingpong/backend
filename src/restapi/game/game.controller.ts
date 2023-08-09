@@ -3,7 +3,7 @@ import { GameService } from './game.service';
 import { ApiCreatedResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CreateGameResponseDto } from './response/create-game.dto';
 import { CreateGameDto } from './request/create-game.dto';
-import { CreateGameHistoryDto } from './request/create-game-history.dto';
+import { CreateGameScoreRequestDto } from './request/create-game-score.dto';
 
 @ApiTags('game')
 @Controller('game')
@@ -20,10 +20,10 @@ export class GameController {
     return await this.gameService.createGame(createGameDto);
   }
 
-  @ApiOperation({ summary: '새로운 game history를 저장합니다.' })
-  @Post('/history')
-  async createHistory(@Body() createGameHistoryDto: CreateGameHistoryDto) {
-    return await this.gameService.createHistory(createGameHistoryDto);
+  @ApiOperation({ summary: '새로운 game score를 저장합니다.' })
+  @Post('/score')
+  async createScore(@Body() createGameScoreDto: CreateGameScoreRequestDto) {
+    return await this.gameService.createScore(createGameScoreDto);
   }
 
   @ApiOperation({ summary: '특정 유저의 game history를 가져옵니다.' })
