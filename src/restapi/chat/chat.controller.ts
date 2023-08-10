@@ -137,9 +137,9 @@ export class ChatController {
    * - 그룹 채팅방에서 유저를 차단하는 메서드
    */
   @Post('groupChat/:groupChatId/ban')
-  async ban(@Param('groupChatId') groupChatId: string, @Query() query: BanDto) {
+  async ban(@Param('groupChatId') groupChatId: string, @Body() body: BanDto) {
     // 그룹 채팅방에서 유저를 차단하는 메서드
-    await this.chatService.ban(+groupChatId, query);
+    await this.chatService.ban(+groupChatId, body);
   }
 
   /**
