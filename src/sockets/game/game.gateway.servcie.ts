@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import axios from 'axios';
+import { CreateGameScoreRequestDto } from 'src/restapi/game/request/create-game-score.dto';
 
 @Injectable()
 export class GameGatewayService {
@@ -31,5 +32,14 @@ export class GameGatewayService {
       },
     });
     return await response.data;
+  }
+
+  async setHistory(bearerToken: string, history: CreateGameScoreRequestDto) {
+    await axios.post(`${this.restApiUrl}/game/score`, history, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${bearerToken}`,
+      },
+    });
   }
 }

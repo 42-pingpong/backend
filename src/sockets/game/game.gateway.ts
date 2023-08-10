@@ -9,13 +9,13 @@ import {
 import { Server } from 'socket.io';
 import { GameGatewayService } from './game.gateway.servcie';
 import { Socket } from 'socket.io';
+import { CreateGameScoreRequestDto } from 'src/restapi/game/request/create-game-score.dto';
 
-interface History {
-  winnerId: number;
-  loserId: number;
-  winnerScore: number;
-  loserScore: number;
-}
+// interface History {
+//   userId: number;
+//   gameId: number;
+//   score: number;
+// }
 
 interface PlayerInfo {
   socket: Socket; // 이 Socket은 실제 사용되는 Socket 타입에 맞게 수정해야 함
@@ -107,7 +107,6 @@ export class GameGateway
     player1Info.socket.emit('user-name', player1NickName, player2NickName);
     player2Info.socket.emit('user-name', player1NickName, player2NickName);
 
-    // playerList.slice(0, 2);
     readyState.push(client);
   }
 
@@ -136,26 +135,6 @@ export class GameGateway
     return 'Hello world!';
   }
 
-  // @SubscribeMessage('w')
-  // handleWMove(client: any, payload: any) {
-  //   client.broadcast.to(playerList[0].roomId).emit('w-move');
-  // }
-
-  // @SubscribeMessage('s')
-  // handleSMove(client: any, payload: any) {
-  //   client.broadcast.to(playerList[0].roomId).emit('s-move');
-  // }
-
-  // @SubscribeMessage('down')
-  // handleDownMove(client: any, payload: any) {
-  //   client.broadcast.to(playerList[0].roomId).emit('down-move');
-  // }
-
-  // @SubscribeMessage('up')
-  // handleUpMove(client: any, payload: any) {
-  //   client.broadcast.to(playerList[0].roomId).emit('up-move');
-  // }
-
   @SubscribeMessage('move')
   handlePaddleMovement(client: Socket, payload: string) {
     console.log('back', payload);
@@ -173,7 +152,14 @@ export class GameGateway
   }
 
   @SubscribeMessage('end')
-  handleEnd(client: Socket, payload: History) {
-    // db에 저장
+  handleEnd(client: Socket, payload: CreateGameScoreRequestDto) {
+    this.gameGatewayService.setHistory(playerList[0].token, payload);
+    this.gameGatewayService.setHistory(playerList[1].token, payload);
+    client.leave(playerList[0].roomId);
+    client.leave(playerList[1].roomId);
+    readyState.splice(0, 2);
+    playerIdList.splice(0, 2);
+    playerList.splice(0, 2);
+    waitList.splice(0, 2);
   }
 }
