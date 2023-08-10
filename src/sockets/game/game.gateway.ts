@@ -10,6 +10,13 @@ import { Server } from 'socket.io';
 import { GameGatewayService } from './game.gateway.servcie';
 import { Socket } from 'socket.io';
 
+interface History {
+  winnerId: number;
+  loserId: number;
+  winnerScore: number;
+  loserScore: number;
+}
+
 interface PlayerInfo {
   socket: Socket; // 이 Socket은 실제 사용되는 Socket 타입에 맞게 수정해야 함
   id: number;
@@ -129,23 +136,44 @@ export class GameGateway
     return 'Hello world!';
   }
 
-  @SubscribeMessage('w')
-  handleWMove(client: any, payload: any) {
-    client.broadcast.to(playerList[0].roomId).emit('w-move');
+  // @SubscribeMessage('w')
+  // handleWMove(client: any, payload: any) {
+  //   client.broadcast.to(playerList[0].roomId).emit('w-move');
+  // }
+
+  // @SubscribeMessage('s')
+  // handleSMove(client: any, payload: any) {
+  //   client.broadcast.to(playerList[0].roomId).emit('s-move');
+  // }
+
+  // @SubscribeMessage('down')
+  // handleDownMove(client: any, payload: any) {
+  //   client.broadcast.to(playerList[0].roomId).emit('down-move');
+  // }
+
+  // @SubscribeMessage('up')
+  // handleUpMove(client: any, payload: any) {
+  //   client.broadcast.to(playerList[0].roomId).emit('up-move');
+  // }
+
+  @SubscribeMessage('move')
+  handlePaddleMovement(client: Socket, payload: string) {
+    console.log('back', payload);
+    this.server.to(playerList[0].roomId).emit('move', payload);
   }
 
-  @SubscribeMessage('s')
-  handleSMove(client: any, payload: any) {
-    client.broadcast.to(playerList[0].roomId).emit('s-move');
+  @SubscribeMessage('ballX-set')
+  handleBallXSet(client: Socket, ballX: any, xSpeed?: number) {
+    this.server.to(playerList[0].roomId).emit('ballX', ballX, xSpeed);
   }
 
-  @SubscribeMessage('down')
-  handleDownMove(client: any, payload: any) {
-    client.broadcast.to(playerList[0].roomId).emit('down-move');
+  @SubscribeMessage('ballY-set')
+  handleBallYSet(client: Socket, ballY: any, ySpeed?: number) {
+    this.server.to(playerList[0].roomId).emit('ballY', ballY, ySpeed);
   }
 
-  @SubscribeMessage('up')
-  handleUpMove(client: any, payload: any) {
-    client.broadcast.to(playerList[0].roomId).emit('up-move');
+  @SubscribeMessage('end')
+  handleEnd(client: Socket, payload: History) {
+    // db에 저장
   }
 }
