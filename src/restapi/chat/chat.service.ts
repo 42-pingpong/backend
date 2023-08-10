@@ -14,6 +14,7 @@ import { AddAdminDto } from './dto/add-admin.dto';
 import { DeleteAdminDto } from './dto/delete-admin.dto';
 import { JoinGroupChatDto } from './dto/join-group-chat.dto';
 import { BanDto } from './dto/ban.dto';
+import { MuteRequestDto } from './request/mute.dto';
 
 @Injectable()
 export class ChatService {
@@ -120,11 +121,40 @@ export class ChatService {
           .findOne({
             where: { groupChatId },
             relations: {
+              admin: true,
               joinedUser: true,
+              bannedUser: true,
             },
           });
         if (!groupChat) {
           throw new NotFoundException('그룹 채팅방이 존재하지 않습니다.');
+        }
+
+        if (groupChat.levelOfPublicity === 'Prot') {
+          if (dto.password && groupChat.password !== dto.password) {
+            throw new ForbiddenException('비밀번호가 일치하지 않습니다.');
+          }
+        }
+
+        const isOwner = groupChat.ownerId === dto.userId;
+        if (isOwner) {
+          return;
+        }
+
+        // 그룹 채팅방에 참여한 유저가 admin인지 검증
+        const isAdmin = groupChat.admin.find(
+          (admin) => admin.id === dto.userId,
+        );
+        if (isAdmin) {
+          return;
+        }
+
+        // 그룹 채팅방에 참여한 유저가 bannedUser인지 검증
+        const isBanned = groupChat.bannedUser.find(
+          (bannedUser) => bannedUser.id === dto.userId,
+        );
+        if (isBanned) {
+          throw new ForbiddenException('참여할 수 없는 그룹 채팅방입니다.');
         }
 
         // 그룹 채팅방의 최대 참여 인원 조회
@@ -169,7 +199,6 @@ export class ChatService {
             },
             relations: {
               admin: true,
-              owner: true,
               joinedUser: true,
             },
           });
@@ -195,7 +224,7 @@ export class ChatService {
         const isAdminUser = groupChat.admin.find(
           (admin) => admin.id === dto.userId,
         );
-        const isOwnerUser = groupChat.owner.id === dto.userId;
+        const isOwnerUser = groupChat.ownerId === dto.userId;
         if (!isAdminUser && !isOwnerUser) {
           throw new ForbiddenException('admin 권한이 없습니다.');
         }
@@ -239,7 +268,6 @@ export class ChatService {
             },
             relations: {
               admin: true,
-              owner: true,
               joinedUser: true,
             },
           });
@@ -247,6 +275,7 @@ export class ChatService {
         if (!groupChat) {
           throw new NotFoundException();
         }
+        const isOwner = groupChat.ownerId === dto.userId;
 
         // userId와 requestedId가 admin인지 검증
         const isAdminUser = groupChat.admin.find(
@@ -255,14 +284,17 @@ export class ChatService {
         const adminToRemove = groupChat.admin.find(
           (admin) => admin.id === dto.requestedId,
         );
-        if (isAdminUser) {
-          if (adminToRemove)
-            throw new ForbiddenException('admin 끼리는 삭제가 불가능합니다.');
+
+        if (!isAdminUser && !isOwner) {
+          throw new ForbiddenException('admin 권한이 없습니다.');
         }
+
         if (!adminToRemove) {
-          throw new NotFoundException(
-            'admin이 그룹 채팅방에 존재하지 않습니다.',
-          );
+          throw new NotFoundException('admin이 아닙니다.');
+        }
+
+        if (isAdminUser && adminToRemove) {
+          throw new ForbiddenException('admin끼리 admin을 제거할 수 없습니다.');
         }
 
         // joinUser로 requestedId를 추가
@@ -280,7 +312,68 @@ export class ChatService {
     );
   }
 
-  async ban(groupChatId: number, dto: BanDto) {}
+  async ban(groupChatId: number, dto: BanDto) {
+    //1. owner/admin 유저인지 검증
+    //2. banUser가 joinedUser인지 검증
+    //3. banUser를 joinedUser에서 제거
+    //4. banUser를 banUser에 추가
+
+    await this.groupChatRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        //1.
+        const groupChat: GroupChat = await manager
+          .getRepository(GroupChat)
+          .findOne({
+            where: {
+              groupChatId: groupChatId,
+            },
+            relations: {
+              owner: true,
+              admin: true,
+              joinedUser: true,
+              bannedUser: true,
+            },
+          });
+        if (!groupChat) {
+          throw new NotFoundException();
+        }
+        const isAdminUser = groupChat.admin.find(
+          (admin) => admin.id === dto.userId,
+        );
+        const isOwnerUser = groupChat.owner.id === dto.userId;
+        if (!isAdminUser && !isOwnerUser) {
+          throw new ForbiddenException('admin 권한이 없습니다.');
+        }
+        //2.
+
+        const isJoinedUser = groupChat.joinedUser.find(
+          (user) => user.id === dto.bannedId,
+        );
+        if (!isJoinedUser) {
+          throw new NotFoundException('참여하지 않은 유저입니다.');
+        }
+
+        //3.
+        // joinUser에서 banUserId를 제거
+        groupChat.joinedUser = groupChat.joinedUser.filter(
+          (joinedUser) => joinedUser.id !== dto.bannedId,
+        );
+
+        //4.
+        // groupChat에 banUserId를 banUser로 추가
+        const user = await manager.getRepository(User).findOne({
+          where: { id: dto.bannedId },
+        });
+
+        if (!user) {
+          throw new NotFoundException('user가 존재하지 않습니다.');
+        }
+        // db에 저장
+        groupChat.bannedUser.push(user);
+        await manager.update(GroupChat, { groupChatId }, groupChat);
+      },
+    );
+  }
 
   async getJoinedUser(groupChatId: number) {
     await this.groupChatRepository.findOne({
@@ -349,8 +442,68 @@ export class ChatService {
     });
   }
 
-  // mute 테이블 아직 존재 X
-  // async mute(groupChatId: number, userId: number) {
-  //   // 그룹 채팅방에서 유저를 뮤트하는 로직
-  // }
+  async mute(dto: MuteRequestDto) {
+    // 그룹 채팅방에서 유저를 뮤트하는 로직
+    await this.groupChatRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        const groupChat: GroupChat = await manager
+          .getRepository(GroupChat)
+          .findOne({
+            where: {
+              groupChatId: dto.groupChatId,
+            },
+            relations: {
+              admin: true,
+              joinedUser: true,
+              mutedUser: true,
+            },
+          });
+
+        if (!groupChat) {
+          throw new NotFoundException();
+        }
+
+        // userId가 owner인지 검증
+        const isOwnerUser = groupChat.owner.id === dto.userId;
+
+        // userId가 admin인지 검증
+        const isAdminUser = groupChat.admin.find(
+          (admin) => admin.id === dto.requestUserId,
+        );
+
+        if (!isAdminUser && !isOwnerUser) {
+          throw new ForbiddenException('권한이 없습니다.');
+        }
+
+        // mutedUser가 joinedUser인지 검증
+
+        const isJoinedUser = groupChat.joinedUser.find(
+          (user) => user.id === dto.userId,
+        );
+        if (!isJoinedUser) {
+          throw new NotFoundException('참여하지 않은 유저입니다.');
+        }
+
+        // mutedUser가 mutedUser에 이미 존재하는지 검증
+        const isMutedUser = groupChat.mutedUser.find(
+          (user) => user.id === dto.userId,
+        );
+        if (isMutedUser) {
+          throw new ForbiddenException('이미 뮤트된 유저입니다.');
+        }
+
+        // mutedUser를 mutedUser에 추가
+        const user = await manager.getRepository(User).findOne({
+          where: { id: dto.userId },
+        });
+
+        if (!user) {
+          throw new NotFoundException('user가 존재하지 않습니다.');
+        }
+        // db에 저장
+        groupChat.mutedUser.push(user);
+        await manager.save(GroupChat, groupChat);
+      },
+    );
+  }
 }

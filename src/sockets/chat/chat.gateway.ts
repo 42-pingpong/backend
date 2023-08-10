@@ -143,12 +143,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
     if (userId === null) return;
 
-    await this.chatGatewayService.joinGroupChat(
-      +groupChatId,
-      userId,
-      client.handshake.auth.token,
-    );
-    client.join(groupChatId);
+    try {
+      await this.chatGatewayService.joinGroupChat(
+        +groupChatId,
+        userId,
+        client.handshake.auth.token,
+      );
+      client.join(groupChatId);
+    } catch (e) {
+      client.emit('error', e.message);
+    }
   }
 
   @SubscribeMessage('leave-room')

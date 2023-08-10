@@ -61,6 +61,12 @@ export class GroupChat {
   })
   bannedUser: User[];
 
+  @ManyToMany(() => User, (user) => user.mutedGroupChats, { cascade: true })
+  @JoinTable({
+    name: 'MutedGroupChat_user_joinTable',
+  })
+  mutedUser: User[];
+
   @ManyToMany(() => User, (user) => user.adminingGroupChats, { cascade: true })
   @JoinTable({
     name: 'GroupChatAdmin_user_joinTable',

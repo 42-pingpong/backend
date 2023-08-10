@@ -103,6 +103,9 @@ export class User {
   @ManyToMany(() => GroupChat, (groupChat) => groupChat.bannedUser)
   bannedGroupChats: GroupChat[];
 
+  @ManyToMany(() => GroupChat, (groupChat) => groupChat.mutedUser)
+  mutedGroupChats: GroupChat[];
+
   @ManyToMany(() => GroupChat, (groupChat) => groupChat.admin)
   adminingGroupChats: GroupChat[];
 
