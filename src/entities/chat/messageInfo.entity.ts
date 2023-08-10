@@ -17,8 +17,11 @@ export class MessageInfo {
   messageId: number;
 
   @ManyToOne(() => User, (user) => user.messages)
-  @JoinColumn()
   sender: User;
+  @Column({
+    type: 'int',
+  })
+  senderId: number;
 
   @CreateDateColumn()
   createdAt: Date;
