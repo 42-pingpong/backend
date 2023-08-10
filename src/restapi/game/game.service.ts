@@ -92,57 +92,24 @@ export class GameService {
           throw new NotFoundException('유저가 존재하지 않습니다.');
         }
 
-        //userId가 플레이한 게임의 정보를 가져온다.
-        //게임은 gameInfo와 여러개의 GameScore로 이루어져있다.
-        //gameInfo는 게임의 기본 정보를 담고있고, GameScore는 게임의 점수와 유저를 담고있다.
-        //gameInfo와 GameScore는 1:N 관계이다.
-        //gameInfo와 GameScore를 조인하고, GameScore의 user를 조인한다.
-        //user는 게임을 플레이한 유저이다.
-        //join했을때 UserId가 1개라도 속한 join된 GameInfo를 가져온다.
-
-        //@TODO: subquery로 해결하기
-        const subQueryAlias = 'gameScore2'; // Define the subquery alias
-
         const subQuery = manager
-          .createQueryBuilder(GameScore, subQueryAlias) // Use the defined alias for the subquery
-          .select(`${subQueryAlias}.gameId`) // Use the alias in the select
-          .from(GameScore, subQueryAlias) // Use the alias for the table reference
-          .where(`${subQueryAlias}.userId = ${userId}`); // Use the alias for the condition
+          .createQueryBuilder(GameScore, 'GameScore2') // Use the defined alias for the subquery
+          .select('GameScore2.gameId') // Use the alias in the select
+          .where(`GameScore2.userId = ${userId}`); // Use the alias for the condition
 
         const qb = manager
           .createQueryBuilder(GameInfo, 'gameInfo')
           .innerJoinAndSelect('gameInfo.gameScores', 'gameScore')
           .innerJoinAndSelect('gameScore.user', 'user')
-          .innerJoinAndSelect(
-            '(' + subQuery.getQuery() + ')',
-            subQueryAlias + 3, // Use the alias here as well
-            `${subQueryAlias + 3}.gameId = gameScore.gameId`, // Use the alias in the join condition
-          );
-
-        console.log(qb.getQuery());
-        const res2 = await qb.getMany();
-        console.log(res2);
-
-        return await manager.getRepository(GameInfo).find({
-          relations: {
-            gameScores: {
-              game: true,
-            },
-          },
-          select: {
-            gameId: true,
-            createDate: true,
-            gameMap: true,
-            gameScores: {
-              score: true,
-              user: {
-                id: true,
-                nickName: true,
-                profile: true,
-              },
-            },
-          },
-        });
+          .select('gameInfo.gameId')
+          .addSelect('gameInfo.createDate')
+          .addSelect('gameInfo.gameMap')
+          .addSelect('gameScore.score')
+          .addSelect('user.id')
+          .addSelect('user.nickName')
+          .addSelect('user.profile')
+          .where(`gameInfo.gameId IN (${subQuery.getQuery()})`);
+        return await qb.getMany();
       },
     );
   }

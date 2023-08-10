@@ -241,6 +241,7 @@ describe('Game -/game (e2e)', () => {
       const res = await request(app.getHttpServer())
         .get(`/game/history/${user3020.id}`)
         .expect(200);
+      console.log(res.body[0]);
       console.log(res.body[0].gameScores);
     });
   });
