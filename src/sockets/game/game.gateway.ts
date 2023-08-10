@@ -95,7 +95,7 @@ export class GameGateway
     );
 
     player1Info.socket.emit('user-name', player1NickName, player2NickName);
-    player2Info.socket.emit('user-name', player2NickName, player1NickName);
+    player2Info.socket.emit('user-name', player1NickName, player2NickName);
 
     // playerList.slice(0, 2);
     readyState.push(client);
