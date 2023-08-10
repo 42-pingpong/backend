@@ -87,7 +87,6 @@ export class GameGateway
       // playerList[0].id === client.id
       //   ? (playerIdList[0] = id)
       //   : (playerIdList[1] = id);
-    }
   }
 
   // @SubscribeMessage('player1-id')
@@ -129,8 +128,8 @@ export class GameGateway
     readyState.push(client);
   }
 
-  @SubscribeMessage('start')
-  handleStart(client: any) {
+  @SubscribeMessage('ready')
+  handleReady(client: any) {
     if (readyState.includes(client)) {
       readyState.splice(readyState.indexOf(client), 1);
       return;
@@ -139,18 +138,38 @@ export class GameGateway
     readyState.push(client);
 
     if (readyState.length === 2) {
-      readyState[0].emit('start');
-      readyState[1].emit('start');
+      readyState[0].emit('ready', true);
+      readyState[1].emit('ready', true);
     }
   }
 
   @SubscribeMessage('disconnect')
   handleDisconnect(client: any) {
-    console.log('Disconnect 할 때 leave 해야 할 듯');
+    console.log('Disconnect 할 때 leave 해야 할      듯');
   }
 
   @SubscribeMessage('message')
   handleMessage(client: any, payload: any): string {
     return 'Hello world!';
+  }
+
+  @SubscribeMessage('w')
+  handleWMove(client: any, payload: any) {
+    client.broadcast.emit('w-move');
+  }
+
+  @SubscribeMessage('s')
+  handleSMove(client: any, payload: any) {
+    client.broadcast.emit('s-move');
+  }
+
+  @SubscribeMessage('down')
+  handleDownMove(client: any, payload: any) {
+    client.broadcast.emit('down-move');
+  }
+
+  @SubscribeMessage('up')
+  handleUpMove(client: any, payload: any) {
+    client.broadcast.emit('up-move');
   }
 }
