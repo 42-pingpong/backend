@@ -130,7 +130,7 @@ export class ChatService {
           throw new NotFoundException('그룹 채팅방이 존재하지 않습니다.');
         }
 
-        const isOwner = groupChat.owner.id === dto.userId;
+        const isOwner = groupChat.ownerId === dto.userId;
         if (isOwner) {
           return;
         }
@@ -193,7 +193,6 @@ export class ChatService {
             },
             relations: {
               admin: true,
-              owner: true,
               joinedUser: true,
             },
           });
@@ -219,7 +218,7 @@ export class ChatService {
         const isAdminUser = groupChat.admin.find(
           (admin) => admin.id === dto.userId,
         );
-        const isOwnerUser = groupChat.owner.id === dto.userId;
+        const isOwnerUser = groupChat.ownerId === dto.userId;
         if (!isAdminUser && !isOwnerUser) {
           throw new ForbiddenException('admin 권한이 없습니다.');
         }
@@ -263,7 +262,6 @@ export class ChatService {
             },
             relations: {
               admin: true,
-              owner: true,
               joinedUser: true,
             },
           });
@@ -271,6 +269,7 @@ export class ChatService {
         if (!groupChat) {
           throw new NotFoundException();
         }
+        const isOwner = groupChat.ownerId === dto.userId;
 
         // userId와 requestedId가 admin인지 검증
         const isAdminUser = groupChat.admin.find(
@@ -279,14 +278,17 @@ export class ChatService {
         const adminToRemove = groupChat.admin.find(
           (admin) => admin.id === dto.requestedId,
         );
-        if (isAdminUser) {
-          if (adminToRemove)
-            throw new ForbiddenException('admin 끼리는 삭제가 불가능합니다.');
+
+        if (!isAdminUser && !isOwner) {
+          throw new ForbiddenException('admin 권한이 없습니다.');
         }
+
         if (!adminToRemove) {
-          throw new NotFoundException(
-            'admin이 그룹 채팅방에 존재하지 않습니다.',
-          );
+          throw new NotFoundException('admin이 아닙니다.');
+        }
+
+        if (isAdminUser && adminToRemove) {
+          throw new ForbiddenException('admin끼리 admin을 제거할 수 없습니다.');
         }
 
         // joinUser로 requestedId를 추가
