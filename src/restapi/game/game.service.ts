@@ -79,5 +79,38 @@ export class GameService {
     );
   }
 
-  async getHistory(userId: number) {}
+  async getHistory(userId: number) {
+    return await this.gameScoreRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        const user = await manager.getRepository(User).findOne({
+          where: {
+            id: userId,
+          },
+        });
+
+        if (!user) {
+          throw new NotFoundException('유저가 존재하지 않습니다.');
+        }
+
+        const subQuery = manager
+          .createQueryBuilder(GameScore, 'GameScore2') // Use the defined alias for the subquery
+          .select('GameScore2.gameId') // Use the alias in the select
+          .where(`GameScore2.userId = ${userId}`); // Use the alias for the condition
+
+        const qb = manager
+          .createQueryBuilder(GameInfo, 'gameInfo')
+          .innerJoinAndSelect('gameInfo.gameScores', 'gameScore')
+          .innerJoinAndSelect('gameScore.user', 'user')
+          .select('gameInfo.gameId')
+          .addSelect('gameInfo.createDate')
+          .addSelect('gameInfo.gameMap')
+          .addSelect('gameScore.score')
+          .addSelect('user.id')
+          .addSelect('user.nickName')
+          .addSelect('user.profile')
+          .where(`gameInfo.gameId IN (${subQuery.getQuery()})`);
+        return await qb.getMany();
+      },
+    );
+  }
 }
