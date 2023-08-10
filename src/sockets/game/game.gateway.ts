@@ -58,14 +58,8 @@ export class GameGateway
       console.log('length 2');
       const roomName = waitList[0].id + '/' + waitList[1].id;
 
-      // client.join(roomName);
       waitList[0].socket.join(roomName);
       waitList[1].socket.join(roomName);
-
-      // const player1Info = { socket: waitList[0], id: id }; // new
-      // const player2Info = { socket: waitList[1], id: id }; // new
-
-      // playerList.push(player1Info, player2Info); // new
 
       playerList.push(waitList[0]);
       playerList.push(waitList[1]);
@@ -80,26 +74,8 @@ export class GameGateway
       playerList[0].socket.emit('player-number', 1);
       playerList[1].socket.emit('player-number', 2);
 
-      // console.log('player1Info.id', player1Info.id);
-      // console.log('player2Info.id', player2Info.id);
       console.log('client.id', client.id);
-
-      // playerList[0].id === client.id
-      //   ? (playerIdList[0] = id)
-      //   : (playerIdList[1] = id);
     }
-
-    // @SubscribeMessage('player1-id')
-    // handlePlayer1Id(client: any, id: number) {
-    //   console.log('player1-id', id);
-    //   playerIdList[0] = id;
-    // }
-
-    // @SubscribeMessage('player2-id')
-    // handlePlayer2Id(client: any, id: number) {
-    //   console.log('player2-id', id);
-    //   playerIdList[1] = id;
-    // }
   }
   @SubscribeMessage('join')
   async handleJoin(client: any, id: number) {
@@ -124,7 +100,7 @@ export class GameGateway
     player1Info.socket.emit('user-name', player1NickName, player2NickName);
     player2Info.socket.emit('user-name', player2NickName, player1NickName);
 
-    // playerList.slice(0, 2);
+    playerList.slice(0, 2);
     readyState.push(client);
   }
 
