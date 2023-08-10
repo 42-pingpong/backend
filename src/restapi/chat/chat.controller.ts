@@ -24,6 +24,7 @@ import { DeleteAdminDto } from './dto/delete-admin.dto';
 import { JoinGroupChatDto } from './dto/join-group-chat.dto';
 import { BanDto } from './dto/ban.dto';
 import { GetGroupChatListDto } from './dto/get-groupchatlist.dto';
+import { MuteRequestDto } from './request/mute.dto';
 
 @ApiTags('chat')
 @Controller('chat')
@@ -158,12 +159,9 @@ export class ChatController {
     return await this.chatService.getJoinedGroupChatList(+userId);
   }
 
-  // @Post('groupChat/:groupChatId/mute')
-  // async mute(
-  //   @Param('groupChatId') groupChatId: number,
-  //   @Query('userId') userId: number,
-  // ) {
-  //   // 그룹 채팅방에서 유저를 뮤트하는 메서드
-  //   this.chatService.mute(+groupChatId, userId);
-  // }
+  @Post('groupChat/mute/:groupChatId')
+  async mute(@Body() body: MuteRequestDto) {
+    // 그룹 채팅방에서 유저를 뮤트하는 메서드
+    await this.chatService.mute(body);
+  }
 }
