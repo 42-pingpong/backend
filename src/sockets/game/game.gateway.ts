@@ -14,6 +14,7 @@ interface PlayerInfo {
   socket: Socket; // 이 Socket은 실제 사용되는 Socket 타입에 맞게 수정해야 함
   id: number;
   token: string;
+  roomId?: string;
 }
 
 const waitList: PlayerInfo[] = [];
@@ -61,7 +62,9 @@ export class GameGateway
 
     if (waitList.length === 2) {
       console.log('waitList.length 2');
-      const roomName = waitList[0].id + '/' + waitList[1].id;
+      const roomName = waitList[0].socket.id + '/' + waitList[1].socket.id;
+      waitList[0].roomId = roomName;
+      waitList[1].roomId = roomName;
 
       await waitList[0].socket.join(roomName);
       await waitList[1].socket.join(roomName);
