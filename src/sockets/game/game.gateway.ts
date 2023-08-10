@@ -87,20 +87,20 @@ export class GameGateway
       // playerList[0].id === client.id
       //   ? (playerIdList[0] = id)
       //   : (playerIdList[1] = id);
+    }
+
+    // @SubscribeMessage('player1-id')
+    // handlePlayer1Id(client: any, id: number) {
+    //   console.log('player1-id', id);
+    //   playerIdList[0] = id;
+    // }
+
+    // @SubscribeMessage('player2-id')
+    // handlePlayer2Id(client: any, id: number) {
+    //   console.log('player2-id', id);
+    //   playerIdList[1] = id;
+    // }
   }
-
-  // @SubscribeMessage('player1-id')
-  // handlePlayer1Id(client: any, id: number) {
-  //   console.log('player1-id', id);
-  //   playerIdList[0] = id;
-  // }
-
-  // @SubscribeMessage('player2-id')
-  // handlePlayer2Id(client: any, id: number) {
-  //   console.log('player2-id', id);
-  //   playerIdList[1] = id;
-  // }
-
   @SubscribeMessage('join')
   async handleJoin(client: any, id: number) {
     console.log('제발요bbb');
