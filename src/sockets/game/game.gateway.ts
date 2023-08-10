@@ -10,25 +10,16 @@ import { Server } from 'socket.io';
 import { GameGatewayService } from './game.gateway.servcie';
 import { Socket } from 'socket.io';
 import { CreateGameScoreRequestDto } from 'src/restapi/game/request/create-game-score.dto';
-
-// interface History {
-//   userId: number;
-//   gameId: number;
-//   score: number;
-// }
-
-interface PlayerInfo {
-  socket: Socket; // 이 Socket은 실제 사용되는 Socket 타입에 맞게 수정해야 함
-  id: number;
-  token: string;
-  roomId?: string;
-}
+import { PlayerInfo } from './PlayerInfo';
 
 const waitList: PlayerInfo[] = [];
-// const playerList: Socket[] = [];
 const playerList: PlayerInfo[] = [];
 const playerIdList: number[] = [null, null];
 const readyState = [];
+enum playerNumber {
+  PLAYER1,
+  PLAYER2,
+}
 
 @WebSocketGateway({
   namespace: 'game',
@@ -56,57 +47,64 @@ export class GameGateway
 
   @SubscribeMessage('enter-queue')
   async handleLogin(client: Socket, id: number) {
+    // 이미 대기열에 있는지 확인
     if (waitList.length && waitList[0].socket === client) {
       return;
     }
 
+    // 대기열에 넣음
     waitList.push({
       socket: client,
       id: id,
       token: client.handshake.auth.token,
     });
-    console.log(waitList.length);
 
+    // 대기열에 2명이 모이면 방을 만듬
     if (waitList.length === 2) {
-      console.log('waitList.length 2');
       const roomName = waitList[0].socket.id + '/' + waitList[1].socket.id;
       waitList[0].roomId = roomName;
+      waitList[0].number = playerNumber.PLAYER1;
       waitList[1].roomId = roomName;
+      waitList[1].number = playerNumber.PLAYER2;
 
+      // 방에 입장
       await waitList[0].socket.join(roomName);
       await waitList[1].socket.join(roomName);
 
+      // 대기열에서 제거, 플레이어 목록에 추가
       playerList.push(waitList[0]);
       playerList.push(waitList[1]);
 
-      console.log('emit join');
+      // 플레이어 목록에 있는 플레이어들에게 방 입장을 알림
       playerList[0].socket.emit('join', roomName);
       playerList[1].socket.emit('join', roomName);
-      console.log('emit join end');
 
+      // 대기열에서 제거
       waitList.splice(0, 2);
 
-      playerList[0].socket.emit('player-number', 1);
-      playerList[1].socket.emit('player-number', 2);
+      // 플레이어들에게 플레이어 번호를 알림
+      playerList[0].socket.emit('player-number', 0);
+      playerList[1].socket.emit('player-number', 1);
     }
   }
-  @SubscribeMessage('join')
-  async handleJoin(client: any, id: number) {
-    const player1Info = playerList[0];
-    const player2Info = playerList[1];
 
+  @SubscribeMessage('join')
+  async handleJoin(client: any) {
+    // 플레이어의 닉네임을 가져옴
     const player1NickName = await this.gameGatewayService.getNickName(
-      player1Info.id,
-      player1Info.token,
+      playerList[0].id,
+      playerList[0].token,
     );
     const player2NickName = await this.gameGatewayService.getNickName(
-      player2Info.id,
-      player2Info.token,
+      playerList[1].id,
+      playerList[1].token,
     );
 
-    player1Info.socket.emit('user-name', player1NickName, player2NickName);
-    player2Info.socket.emit('user-name', player1NickName, player2NickName);
+    // 플레이어들에게 닉네임을 알림
+    playerList[0].socket.emit('user-name', player1NickName, player2NickName);
+    playerList[1].socket.emit('user-name', player1NickName, player2NickName);
 
+    // readyState에 클라이언트를 추가
     readyState.push(client);
   }
 
@@ -152,9 +150,14 @@ export class GameGateway
   }
 
   @SubscribeMessage('end')
-  handleEnd(client: Socket, payload: CreateGameScoreRequestDto) {
-    this.gameGatewayService.setHistory(playerList[0].token, payload);
-    this.gameGatewayService.setHistory(playerList[1].token, payload);
+  async handleEnd(client: Socket, payload: CreateGameScoreRequestDto) {
+    await this.gameGatewayService.setHistory(playerList[0].token, payload);
+    await this.gameGatewayService.setHistory(playerList[1].token, payload);
+
+    console.log(payload.gameId);
+    console.log(payload.score);
+    console.log(payload.userId);
+
     client.leave(playerList[0].roomId);
     client.leave(playerList[1].roomId);
     readyState.splice(0, 2);
