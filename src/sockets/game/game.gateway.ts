@@ -14,7 +14,6 @@ import { PlayerInfo } from './PlayerInfo';
 
 const waitList: PlayerInfo[] = [];
 const playerList: PlayerInfo[] = [];
-const playerIdList: number[] = [null, null];
 const readyState = [];
 enum playerNumber {
   PLAYER1,
@@ -161,7 +160,6 @@ export class GameGateway
     client.leave(playerList[0].roomId);
     client.leave(playerList[1].roomId);
     readyState.splice(0, 2);
-    playerIdList.splice(0, 2);
     playerList.splice(0, 2);
     waitList.splice(0, 2);
   }
