@@ -131,21 +131,21 @@ export class GameGateway
 
   @SubscribeMessage('w')
   handleWMove(client: any, payload: any) {
-    client.broadcast.emit('w-move');
+    client.broadcast.to(playerList[0].roomId).emit('w-move');
   }
 
   @SubscribeMessage('s')
   handleSMove(client: any, payload: any) {
-    client.broadcast.emit('s-move');
+    client.broadcast.to(playerList[0].roomId).emit('s-move');
   }
 
   @SubscribeMessage('down')
   handleDownMove(client: any, payload: any) {
-    client.broadcast.emit('down-move');
+    client.broadcast.to(playerList[0].roomId).emit('down-move');
   }
 
   @SubscribeMessage('up')
   handleUpMove(client: any, payload: any) {
-    client.broadcast.emit('up-move');
+    client.broadcast.to(playerList[0].roomId).emit('up-move');
   }
 }
