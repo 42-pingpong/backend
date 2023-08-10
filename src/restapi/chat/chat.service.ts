@@ -130,6 +130,12 @@ export class ChatService {
           throw new NotFoundException('그룹 채팅방이 존재하지 않습니다.');
         }
 
+        if (groupChat.levelOfPublicity === 'Prot') {
+          if (dto.password && groupChat.password !== dto.password) {
+            throw new ForbiddenException('비밀번호가 일치하지 않습니다.');
+          }
+        }
+
         const isOwner = groupChat.ownerId === dto.userId;
         if (isOwner) {
           return;
