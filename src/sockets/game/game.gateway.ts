@@ -10,9 +10,15 @@ import { Server } from 'socket.io';
 import { GameGatewayService } from './game.gateway.servcie';
 import { Socket } from 'socket.io';
 
-const waitList: Socket[] = [];
-const playerList: Socket[] = [];
-const playerIdList: number[] = [0, 0];
+interface PlayerInfo {
+  socket: Socket; // 이 Socket은 실제 사용되는 Socket 타입에 맞게 수정해야 함
+  id: number;
+}
+
+const waitList: PlayerInfo[] = [];
+// const playerList: Socket[] = [];
+const playerList: PlayerInfo[] = [];
+const playerIdList: number[] = [null, null];
 const readyState = [];
 
 @WebSocketGateway({
@@ -41,12 +47,11 @@ export class GameGateway
 
   @SubscribeMessage('enter-queue')
   handleLogin(client: Socket, id: number) {
-    if (waitList.includes(client)) {
-      waitList.splice(waitList.indexOf(client), 1);
+    if (waitList.length && waitList[0].socket === client) {
       return;
     }
 
-    waitList.push(client);
+    waitList.push({ socket: client, id: id });
     console.log(waitList.length);
 
     if (waitList.length === 2) {
@@ -54,20 +59,34 @@ export class GameGateway
       const roomName = waitList[0].id + '/' + waitList[1].id;
 
       // client.join(roomName);
-      waitList[0].join(roomName);
-      waitList[1].join(roomName);
+      waitList[0].socket.join(roomName);
+      waitList[1].socket.join(roomName);
+
+      // const player1Info = { socket: waitList[0], id: id }; // new
+      // const player2Info = { socket: waitList[1], id: id }; // new
+
+      // playerList.push(player1Info, player2Info); // new
+
       playerList.push(waitList[0]);
       playerList.push(waitList[1]);
+
       console.log('emit join');
-      playerList[0].emit('join', roomName);
-      playerList[1].emit('join', roomName);
+      playerList[0].socket.emit('join', roomName);
+      playerList[1].socket.emit('join', roomName);
       console.log('emit join end');
+
       waitList.splice(0, 2);
-      playerList[0].emit('player-number', 1);
-      playerList[1].emit('player-number', 2);
-      playerList[0].id === client.id
-        ? (playerIdList[0] = id)
-        : (playerIdList[1] = id);
+
+      playerList[0].socket.emit('player-number', 1);
+      playerList[1].socket.emit('player-number', 2);
+
+      // console.log('player1Info.id', player1Info.id);
+      // console.log('player2Info.id', player2Info.id);
+      console.log('client.id', client.id);
+
+      // playerList[0].id === client.id
+      //   ? (playerIdList[0] = id)
+      //   : (playerIdList[1] = id);
     }
   }
 
@@ -86,24 +105,27 @@ export class GameGateway
   @SubscribeMessage('join')
   async handleJoin(client: any, id: number) {
     console.log('제발요bbb');
-    console.log(playerIdList[0]);
-    console.log(playerIdList[1]);
+    console.log('playerIdList[0]', playerIdList[0]);
+    console.log('playerIdList[1]', playerIdList[1]);
+
+    const player1Info = playerList[0];
+    const player2Info = playerList[1];
 
     const player1NickName = await this.gameGatewayService.getNickName(
-      playerIdList[0],
+      player1Info.id,
     );
     const player2NickName = await this.gameGatewayService.getNickName(
-      playerIdList[1],
+      player2Info.id,
     );
     console.log('????');
 
     console.log('player1NickName: ', player1NickName);
     console.log('player2NickName: ', player2NickName);
 
-    playerList[0].emit('user-name', player1NickName, player2NickName);
-    playerList[1].emit('user-name', player2NickName, player1NickName);
+    player1Info.socket.emit('user-name', player1NickName, player2NickName);
+    player2Info.socket.emit('user-name', player2NickName, player1NickName);
 
-    playerList.slice(0, 2);
+    // playerList.slice(0, 2);
     readyState.push(client);
   }
 
