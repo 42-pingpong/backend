@@ -506,6 +506,7 @@ export class ChatService {
           receivedGroupChatId: messageDto.receivedGroupChatId,
         });
 
+        //3. Request를 저장.
         return await manager.getRepository(GroupChatMessage).findOne({
           relations: {
             messageInfo: {
@@ -567,6 +568,9 @@ export class ChatService {
           select: {
             directMessageId: true,
             receivedUserId: true,
+            receivedUser: {
+              chatSocketId: true,
+            },
             messageInfo: {
               messageId: true,
               message: true,

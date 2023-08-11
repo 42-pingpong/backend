@@ -12,6 +12,7 @@ import * as request from 'supertest';
 import { RestapiModule } from 'src/restapi/restapi.module';
 import { User } from 'src/entities/user/user.entity';
 import { Token } from 'src/entities/auth/token.entity';
+import { ChatModule } from 'src/sockets/chat/chat.module';
 
 /**
  * @link https://medium.com/@tozwierz/testing-socket-io-with-jest-on-backend-node-js-f71f7ec7010f
@@ -21,12 +22,14 @@ describe('Status-Socket', () => {
   let socketApp: INestApplication;
   let restApp: INestApplication;
   let datasource: DataSource;
-  let socket;
+  let StatusSocketClient;
+  let ChatSocketClient;
+  let GameSocketClient;
   let accToken;
 
   beforeAll(async () => {
     const moduleFixture = await Test.createTestingModule({
-      imports: [StatusModule],
+      imports: [StatusModule, ChatModule],
     })
       .overrideModule(AppConfigModule)
       .useModule(TestConfigModule)
@@ -87,7 +90,7 @@ describe('Status-Socket', () => {
       .expect(200);
 
     // Do not hardcode server port and address, square brackets are used for IPv6
-    socket = io(
+    StatusSocketClient = io(
       `ws://[${restApp.getHttpServer().address().address}]:10051/status`,
       {
         transports: ['websocket'],
@@ -99,14 +102,39 @@ describe('Status-Socket', () => {
         },
       },
     );
-    socket.on('connect', () => {
-      console.log('connect');
-    });
+
+    ChatSocketClient = io(
+      `ws://[${restApp.getHttpServer().address().address}]:10051/chat`,
+      {
+        transports: ['websocket'],
+        forceNew: true,
+        autoConnect: false,
+        auth: (cb) => {
+          const token = 'Bearer ' + accToken;
+          cb({ token });
+        },
+      },
+    );
+
+    // StatusSocketClient = io(
+    //   `ws://[${restApp.getHttpServer().address().address}]:10051/status`,
+    //   {
+    //     transports: ['websocket'],
+    //     forceNew: true,
+    //     autoConnect: false,
+    //     auth: (cb) => {
+    //       const token = 'Bearer ' + accToken;
+    //       cb({ token });
+    //     },
+    //   },
+    // );
   });
 
   afterEach(async () => {
-    socket.removeAllListeners();
-    socket.disconnect();
+    StatusSocketClient.removeAllListeners();
+    StatusSocketClient.disconnect();
+    ChatSocketClient.removeAllListeners();
+    ChatSocketClient.disconnect();
     await datasource.getRepository(Token).delete({ ownerId: 10000 });
     await datasource.getRepository(User).delete({ id: 10000 });
   });
@@ -116,29 +144,16 @@ describe('Status-Socket', () => {
     await restApp.close();
   });
 
-  describe('connect', () => {
+  describe('Status', () => {
     it.todo('connect');
-  });
-
-  describe('disconnect', () => {
     it.todo('disconnect');
-  });
-
-  describe('request-friend', () => {
     it.todo('request-friend');
-  });
-
-  describe('checked-alarm', () => {
     it.todo('데이터베이스 변경 확인');
-  });
-
-  describe('accept-friend', () => {
     it.todo('database 변경확인');
-    it.todo('requesting user에게 accept 알람 확인')
-  });
-
-  describe('reject-friend', () => {
+    it.todo('requesting user에게 accept 알람 확인');
     it.todo('database 변경확인');
     it.todo('requesting user에게 reject 알람 확인');
   });
+
+  describe('Chat', () => {});
 });

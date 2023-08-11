@@ -6,6 +6,8 @@ import { GroupChat } from 'src/entities/chat/groupChat.entity';
 import { CreateGroupChatDto } from './dto/create-chat.dto';
 import { GetGroupChatListDto } from './dto/get-groupchatlist.dto';
 import { JoinGroupChatDto } from './dto/join-group-chat.dto';
+import { DirectMessageDto } from './request/directMessage.dto';
+import { GroupChatMessageDto } from './request/groupChatMessage.dto';
 
 @Injectable()
 export class ChatGatewayService {
@@ -95,5 +97,27 @@ export class ChatGatewayService {
         },
       },
     );
+  }
+
+  async saveGroupChatMessage(dto: GroupChatMessageDto, bearerToken: string) {
+    const res = await axios.post(
+      `${this.restApiUrl}/chat/groupChatMessage`,
+      dto,
+      {
+        headers: {
+          Authorization: bearerToken,
+        },
+      },
+    );
+    return res.data;
+  }
+
+  async saveDirectMessage(dto: DirectMessageDto, bearerToken: string) {
+    const res = await axios.post(`${this.restApiUrl}/chat/messages`, dto, {
+      headers: {
+        Authorization: bearerToken,
+      },
+    });
+    return res.data;
   }
 }

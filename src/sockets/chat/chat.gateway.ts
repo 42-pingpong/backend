@@ -11,6 +11,10 @@ import {
 import { Socket } from 'socket.io';
 import { ChatGatewayService } from './chat.gateway.service';
 import { CreateGroupChatDto } from './dto/create-chat.dto';
+import { DirectMessageDto } from './request/directMessage.dto';
+import { GroupChatMessageDto } from './request/groupChatMessage.dto';
+import { DirectMessageResponse } from './restApiResponse/directMessageResponse.dto';
+import { GroupChatMessageResponse } from './restApiResponse/groupChatMessageResponse.dto';
 
 export interface ChatDTO {
   roomId: string;
@@ -156,11 +160,60 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.leave(roomId);
   }
 
-  @SubscribeMessage('chat-message')
-  handleMessage(client: Socket, payload: ChatDTO): any {
-    client.broadcast.to(payload.roomId).emit('chat-message', payload);
-    // const room = ChatRoomList.find((data) => data.roomId === payload.roomId);
-    // room.log.push(payload);
-    return payload;
+  /**
+   * @description
+   * - 클라이언트가 그룹채팅방에서 메시지를 보냈을 때 실행된다.
+   * - 메시지를 저장하고, 그룹채팅방에 속한 모든 클라이언트에게 메시지를 전달한다.
+   * */
+  @SubscribeMessage('group-message')
+  async handleMessage(client: Socket, dto: GroupChatMessageDto) {
+    //TODO: 로그인 하지 않은 사용자는 메시지를 어떻게 처리할 것인가?
+    const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
+    if (userId === null) return;
+
+    try {
+      const responseBody: GroupChatMessageResponse =
+        await this.chatGatewayService.saveGroupChatMessage(
+          dto,
+          client.handshake.auth.token,
+        );
+      //sender를 제외한 room의 모든 client에게 메시지를 전달한다.
+      client
+        .to(responseBody.receivedGroupChatId.toString())
+        .emit('group-message', responseBody);
+      //offline인 경우 어떻게함?//push notification으로 처리
+    } catch (e) {
+      client.emit('error', e.message);
+    }
+  }
+
+  /**
+   * @description
+   * - 클라이언트가 1:1 채팅방에서 메시지를 보냈을 때 실행된다.
+   * - 메시지를 저장하고, 해당 클라이언트에게 메시지를 전달한다.
+   * */
+  @SubscribeMessage('direct-message')
+  async handleDirectMessage(client: Socket, dto: DirectMessageDto) {
+    console.log('direct-message', dto);
+    const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
+    if (userId === null) return;
+    try {
+      const responseBody: DirectMessageResponse =
+        await this.chatGatewayService.saveDirectMessage(
+          dto,
+          client.handshake.auth.token,
+        );
+      //client가 socket에 연결되어있는지 확인한다.
+      if (responseBody.receivedUser.chatSocketId) {
+        //client가 연결되어있다면, 해당 client에게 메시지를 전달한다.
+        const socketId = responseBody.receivedUser.chatSocketId;
+        delete responseBody.receivedUser;
+        this.server.to(socketId).emit('direct-message', responseBody);
+        //TODO: client가 연결되어있지 않다면, 어떻게 처리할 것인가?
+        //TODO: client 알람 처리
+      }
+    } catch (e) {
+      client.emit('error', e.message);
+    }
   }
 }

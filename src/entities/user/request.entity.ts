@@ -12,7 +12,8 @@ import { User } from './user.entity';
 export enum RequestType {
   FRIEND = 'F',
   GAME = 'G',
-  CHAT = 'C',
+  DMCHAT = 'D',
+  GROUPCHAT = 'C',
 }
 
 export enum AlarmStatus {
