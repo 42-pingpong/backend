@@ -14,6 +14,7 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { ChatService } from './chat.service';
@@ -27,6 +28,8 @@ import { GetGroupChatListDto } from './dto/get-groupchatlist.dto';
 import { GroupChatMessageDto } from './request/groupChatMessage.dto';
 import { MuteRequestDto } from './request/mute.dto';
 import { DirectMessageDto } from './request/DirectMessage.dto';
+import { GroupChatMessageResponse } from './response/groupChatMessage.response';
+import { DirectMessageResponse } from './response/directMessage.response';
 
 @ApiTags('chat')
 @Controller('chat')
@@ -162,12 +165,20 @@ export class ChatController {
   }
 
   @ApiOperation({ summary: '그룹 채팅방에서 메시지를 보내는 메서드' })
+  @ApiCreatedResponse({
+    description: '그룹 채팅방에서 메시지를 보냄',
+    type: GroupChatMessageResponse,
+  })
   @Post('groupChat/messages/send')
   async sendGroupMessage(@Body() message: GroupChatMessageDto) {
     return await this.chatService.sendGroupMessage(message);
   }
 
   @ApiOperation({ summary: '게인 메시지를 보내는 메서드' })
+  @ApiCreatedResponse({
+    description: '게인 메시지를 보냄',
+    type: DirectMessageResponse,
+  })
   @Post('messages')
   async sendDirectMessage(@Body() message: DirectMessageDto) {
     return await this.chatService.sendDirectMessage(message);

@@ -107,6 +107,8 @@ export class StatusService {
         {
           status: 'offline',
           statusSocketId: null,
+          chatSocketId: null,
+          gameSocketId: null,
         },
         {
           headers: {
