@@ -100,6 +100,31 @@ describe('Chat', () => {
       });
       await userRepository.delete({ id: user.id });
     });
+
+    it('초대와 함께 채팅방 생성', async () => {
+      const uf = new UserFactory();
+
+      const user1 = await userRepository.save(uf.createUser(1998));
+
+      const user2 = await userRepository.save(uf.createUser(1999));
+
+      const createChatDto = new CreateGroupChatDto();
+      createChatDto.chatName = '테스트 채팅방';
+      createChatDto.levelOfPublicity = 'Prot';
+      createChatDto.maxParticipants = 10;
+      createChatDto.ownerId = user1.id;
+      createChatDto.participants = [user2.id];
+
+      const res = await request(app.getHttpServer())
+        .post('/chat/groupChat')
+        .send(createChatDto);
+
+      console.log(res.body);
+      expect(res.status).toBe(201);
+      expect(res.body).toBeDefined();
+      expect(res.body.joinedUser.length).toBe(1);
+      expect(res.body.curParticipants).toBe(2);
+    });
   });
 
   describe('GET /api/chat/groupChat/:groupChatId', () => {

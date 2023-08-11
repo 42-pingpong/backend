@@ -24,6 +24,7 @@ import { JoinGroupChatDto } from './dto/join-group-chat.dto';
 import { BanDto } from './dto/ban.dto';
 import { GetGroupChatListDto } from './dto/get-groupchatlist.dto';
 import { GroupChatMessageDto } from './request/groupChatMessage.dto';
+import { MuteRequestDto } from './request/mute.dto';
 
 @ApiTags('chat')
 @Controller('chat')
@@ -137,9 +138,9 @@ export class ChatController {
    * - 그룹 채팅방에서 유저를 차단하는 메서드
    */
   @Post('groupChat/:groupChatId/ban')
-  async ban(@Param('groupChatId') groupChatId: string, @Query() query: BanDto) {
+  async ban(@Param('groupChatId') groupChatId: string, @Body() body: BanDto) {
     // 그룹 채팅방에서 유저를 차단하는 메서드
-    await this.chatService.ban(+groupChatId, query);
+    await this.chatService.ban(+groupChatId, body);
   }
 
   /**
@@ -158,17 +159,14 @@ export class ChatController {
     return await this.chatService.getJoinedGroupChatList(+userId);
   }
 
-  // @Post('groupChat/:groupChatId/mute')
-  // async mute(
-  //   @Param('groupChatId') groupChatId: number,
-  //   @Query('userId') userId: number,
-  // ) {
-  //   // 그룹 채팅방에서 유저를 뮤트하는 메서드
-  //   this.chatService.mute(+groupChatId, userId);
-  // }
-
   @Post('groupChat/messages')
   async sendGroupMessage(@Body() message: GroupChatMessageDto) {
     return await this.chatService.sendGroupMessage(message);
+  }
+
+  @Post('groupChat/mute/:groupChatId')
+  async mute(@Body() body: MuteRequestDto) {
+    // 그룹 채팅방에서 유저를 뮤트하는 메서드
+    await this.chatService.mute(body);
   }
 }

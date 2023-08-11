@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsNumber } from 'class-validator';
+import { IsNumber, IsOptional } from 'class-validator';
 
 export class JoinGroupChatDto {
   @ApiProperty({
@@ -10,4 +10,13 @@ export class JoinGroupChatDto {
   @Type(() => Number)
   @IsNumber()
   userId: number;
+
+  @ApiProperty({
+    description: '그룹 채팅방에 비밀번호',
+    example: '1234',
+    required: false,
+  })
+  @IsOptional()
+  @Type(() => String)
+  password?: string;
 }
