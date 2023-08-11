@@ -139,13 +139,13 @@ export class GameGateway
   }
 
   @SubscribeMessage('ballX-set')
-  handleBallXSet(client: Socket, ballX: any, xSpeed?: number) {
-    this.server.to(playerList[0].roomId).emit('ballX', ballX, xSpeed);
+  handleBallXSet(client: Socket, ballX: number) {
+    this.server.to(playerList[0].roomId).emit('ballX', ballX);
   }
-
+  ////////////
   @SubscribeMessage('ballY-set')
-  handleBallYSet(client: Socket, ballY: any, ySpeed?: number) {
-    this.server.to(playerList[0].roomId).emit('ballY', ballY, ySpeed);
+  handleBallYSet(client: Socket, ballY: number) {
+    this.server.to(playerList[0].roomId).emit('ballY', ballY);
   }
 
   @SubscribeMessage('end')
