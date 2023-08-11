@@ -686,6 +686,31 @@ describe('Chat', () => {
    * user 2230~
    * */
   describe('POST /chat/groupChat/messages', () => {
+    let user2230: User;
+    let user2231: User;
+    let user2232: User;
+    let user2233: User;
+
+    let groupChat2230: GroupChat;
+
+    beforeAll(async () => {
+      const joinGroupChatDto = new JoinGroupChatDto();
+      user2230 = await userRepository.save(userFactory.createUser(2230));
+      user2231 = await userRepository.save(userFactory.createUser(2231));
+      user2232 = await userRepository.save(userFactory.createUser(2232));
+      user2233 = await userRepository.save(userFactory.createUser(2233));
+
+      const createChatDto = new CreateGroupChatDto();
+      createChatDto.levelOfPublicity = 'Pub';
+      createChatDto.chatName = 'test';
+      createChatDto.ownerId = user2230.id;
+      createChatDto.maxParticipants = 10;
+
+      const response = await request(app.getHttpServer())
+        .post('/chat/groupChat')
+        .send(createChatDto);
+    });
+
     it.todo('owner가 메세지 보내기');
     it.todo('admin이 메세지 보내기');
     it.todo('user가 메세지 보내기');

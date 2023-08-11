@@ -390,9 +390,18 @@ export class ChatService {
           message: messageDto.message,
           senderId: messageDto.senderId,
         });
-        return await manager.getRepository(GroupChatMessage).insert({
+        const msg = await manager.getRepository(GroupChatMessage).insert({
           messageInfoId: newMessageInfo.identifiers[0].messageId,
           receivedGroupChatId: messageDto.groupChatId,
+        });
+
+        return await manager.getRepository(GroupChatMessage).findOne({
+          where: {
+            messageInfoId: msg.identifiers[0].messageId,
+          },
+          relations: {
+            messageInfo: true,
+          },
         });
       },
     );
