@@ -44,7 +44,6 @@ export class ChatService {
 
   async createGroupChat(createChatDto: CreateGroupChatDto) {
     // 그룹 채팅방을 생성하고 저장하는 로직
-    console.log(createChatDto);
     return await this.groupChatRepository.manager.transaction(
       async (manager: EntityManager) => {
         if (createChatDto.participants != undefined) {
@@ -466,22 +465,22 @@ export class ChatService {
     });
   }
 
-  async sendGroupMessage(messageDto: GroupChatMessageDto) {
+  async sendGroupMessage(messageDto: GroupChatMessageDto, groupChatId: number) {
     return await this.groupChatRepository.manager.transaction(
       async (manager: EntityManager) => {
         //1. 그룹채팅방 존재확인
         const groupChat = await manager.getRepository(GroupChat).findOne({
           where: [
             {
-              groupChatId: messageDto.groupChatId,
+              groupChatId: groupChatId,
               ownerId: messageDto.senderId,
             },
             {
-              groupChatId: messageDto.groupChatId,
+              groupChatId: groupChatId,
               admin: { id: messageDto.senderId },
             },
             {
-              groupChatId: messageDto.groupChatId,
+              groupChatId: groupChatId,
               joinedUser: { id: messageDto.senderId },
             },
           ],
@@ -499,17 +498,34 @@ export class ChatService {
           message: messageDto.message,
           senderId: messageDto.senderId,
         });
+
         const msg = await manager.getRepository(GroupChatMessage).insert({
           messageInfoId: newMessageInfo.identifiers[0].messageId,
-          receivedGroupChatId: messageDto.groupChatId,
+          receivedGroupChatId: groupChatId,
         });
 
         return await manager.getRepository(GroupChatMessage).findOne({
-          where: {
-            messageInfoId: msg.identifiers[0].messageId,
-          },
           relations: {
-            messageInfo: true,
+            messageInfo: {
+              sender: true,
+            },
+          },
+          where: {
+            groupChatMessageId: msg.identifiers[0].groupChatMessageId,
+          },
+          select: {
+            groupChatMessageId: true,
+            receivedGroupChatId: true,
+            messageInfo: {
+              messageId: true,
+              message: true,
+              createdAt: true,
+              sender: {
+                id: true,
+                nickName: true,
+                profile: true,
+              },
+            },
           },
         });
       },

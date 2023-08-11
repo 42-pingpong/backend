@@ -5,6 +5,7 @@ import {
   ManyToOne,
   Column,
   OneToOne,
+  JoinColumn,
 } from 'typeorm';
 import { User } from '../user/user.entity';
 import { DirectMessage } from './directMessage.entity';
@@ -16,6 +17,7 @@ export class MessageInfo {
   messageId: number;
 
   @ManyToOne(() => User, (user) => user.messages)
+  @JoinColumn({ name: 'senderId' })
   sender: User;
   @Column({
     type: 'int',

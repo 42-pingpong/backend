@@ -159,9 +159,13 @@ export class ChatController {
     return await this.chatService.getJoinedGroupChatList(+userId);
   }
 
-  @Post('groupChat/messages')
-  async sendGroupMessage(@Body() message: GroupChatMessageDto) {
-    return await this.chatService.sendGroupMessage(message);
+  @ApiOperation({ summary: '그룹 채팅방에서 메시지를 보내는 메서드' })
+  @Post('groupChat/messages/:groupChatId')
+  async sendGroupMessage(
+    @Param('groupChatId') groupChatId: string,
+    @Body() message: GroupChatMessageDto,
+  ) {
+    return await this.chatService.sendGroupMessage(message, +groupChatId);
   }
 
   @Post('groupChat/mute/:groupChatId')

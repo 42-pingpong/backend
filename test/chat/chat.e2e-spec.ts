@@ -17,6 +17,7 @@ import { CreateGroupChatDto } from 'src/restapi/chat/dto/create-group-chat.dto';
 import { DeleteAdminDto } from 'src/restapi/chat/dto/delete-admin.dto';
 import { JoinGroupChatDto } from 'src/restapi/chat/dto/join-group-chat.dto';
 import { UpdateGroupChatDto } from 'src/restapi/chat/dto/update-group-chat.dto';
+import { GroupChatMessageDto } from 'src/restapi/chat/request/groupChatMessage.dto';
 import * as request from 'supertest';
 import { DataSource, In, Repository } from 'typeorm';
 
@@ -119,7 +120,6 @@ describe('Chat', () => {
         .post('/chat/groupChat')
         .send(createChatDto);
 
-      console.log(res.body);
       expect(res.status).toBe(201);
       expect(res.body).toBeDefined();
       expect(res.body.joinedUser.length).toBe(1);
@@ -682,7 +682,6 @@ describe('Chat', () => {
         .get(`/chat/groupChatList/${user2202.id}`)
         .expect(200);
 
-      console.log(res.body[0].joinedUser);
       expect(res.body[0].joinedUser[0].id).toBe(user2202.id);
     });
   });
@@ -730,15 +729,58 @@ describe('Chat', () => {
       createChatDto.chatName = 'test';
       createChatDto.ownerId = user2230.id;
       createChatDto.maxParticipants = 10;
+      createChatDto.participants = [user2231.id, user2232.id, user2233.id];
 
-      const response = await request(app.getHttpServer())
-        .post('/chat/groupChat')
-        .send(createChatDto);
+      groupChat2230 = (
+        await request(app.getHttpServer())
+          .post('/chat/groupChat')
+          .send(createChatDto)
+      ).body;
     });
 
-    it.todo('owner가 메세지 보내기');
-    it.todo('admin이 메세지 보내기');
-    it.todo('user가 메세지 보내기');
+    it('owner가 메세지 보내기', async () => {
+      const createMessageDto = new GroupChatMessageDto();
+      createMessageDto.senderId = user2230.id;
+      createMessageDto.message = 'test';
+
+      const res = await request(app.getHttpServer())
+        .post(`/chat/groupChat/messages/${groupChat2230.groupChatId}`)
+        .send(createMessageDto);
+
+      expect(res.body.messageInfo.sender.id).toBe(user2230.id);
+      expect(res.status).toBe(201);
+    });
+
+    it('admin이 메세지 보내기', async () => {
+      //2231을 admin으로 만들기
+      await request(app.getHttpServer())
+        .post(`/chat/groupChat/${groupChat2230.groupChatId}/admin`)
+        .query({ userId: user2230.id, requestedId: user2231.id });
+
+      const createMessageDto = new GroupChatMessageDto();
+      createMessageDto.senderId = user2231.id;
+      createMessageDto.message = 'test';
+
+      const res = await request(app.getHttpServer())
+        .post(`/chat/groupChat/messages/${groupChat2230.groupChatId}`)
+        .send(createMessageDto);
+
+      expect(res.body.messageInfo.sender.id).toBe(user2231.id);
+      expect(res.status).toBe(201);
+    });
+
+    it('user가 메세지 보내기', async () => {
+      const createMessageDto = new GroupChatMessageDto();
+      createMessageDto.senderId = user2232.id;
+      createMessageDto.message = 'test';
+
+      const res = await request(app.getHttpServer())
+        .post(`/chat/groupChat/messages/${groupChat2230.groupChatId}`)
+        .send(createMessageDto);
+
+      expect(res.body.messageInfo.sender.id).toBe(user2232.id);
+      expect(res.status).toBe(201);
+    });
   });
 
   afterAll(async () => {
