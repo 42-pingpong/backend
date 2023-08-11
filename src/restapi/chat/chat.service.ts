@@ -41,12 +41,29 @@ export class ChatService {
 
   async createGroupChat(createChatDto: CreateGroupChatDto) {
     // 그룹 채팅방을 생성하고 저장하는 로직
-
+    console.log(createChatDto);
     return await this.groupChatRepository.manager.transaction(
       async (manager: EntityManager) => {
+        if (createChatDto.participants != undefined) {
+          createChatDto['curParticipants'] =
+            1 + createChatDto.participants.length;
+        }
         const result = await manager.insert(GroupChat, createChatDto);
+
+        if (createChatDto.participants != undefined) {
+          await manager
+            .createQueryBuilder(GroupChat, 'groupChat')
+            .relation('joinedUser')
+            .of(result.identifiers[0].groupChatId)
+            .add(createChatDto.participants);
+        }
+
         return await manager.findOne(GroupChat, {
           where: { groupChatId: result.identifiers[0].groupChatId },
+          relations: {
+            joinedUser: true,
+            owner: true,
+          },
           select: {
             groupChatId: true,
             chatName: true,
@@ -55,6 +72,10 @@ export class ChatService {
             curParticipants: true,
             ownerId: true,
             owner: {
+              id: true,
+              nickName: true,
+            },
+            joinedUser: {
               id: true,
               nickName: true,
             },
