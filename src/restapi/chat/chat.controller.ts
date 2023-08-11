@@ -6,7 +6,6 @@ import {
   Patch,
   Param,
   Delete,
-  Req,
   Query,
 } from '@nestjs/common';
 import {
@@ -24,6 +23,7 @@ import { DeleteAdminDto } from './dto/delete-admin.dto';
 import { JoinGroupChatDto } from './dto/join-group-chat.dto';
 import { BanDto } from './dto/ban.dto';
 import { GetGroupChatListDto } from './dto/get-groupchatlist.dto';
+import { GroupChatMessageDto } from './request/groupChatMessage.dto';
 import { MuteRequestDto } from './request/mute.dto';
 
 @ApiTags('chat')
@@ -157,6 +157,15 @@ export class ChatController {
   @Get('groupChatList/:userId')
   async getJoinedGroupChatList(@Param('userId') userId: string) {
     return await this.chatService.getJoinedGroupChatList(+userId);
+  }
+
+  @ApiOperation({ summary: '그룹 채팅방에서 메시지를 보내는 메서드' })
+  @Post('groupChat/messages/:groupChatId')
+  async sendGroupMessage(
+    @Param('groupChatId') groupChatId: string,
+    @Body() message: GroupChatMessageDto,
+  ) {
+    return await this.chatService.sendGroupMessage(message, +groupChatId);
   }
 
   @Post('groupChat/mute/:groupChatId')

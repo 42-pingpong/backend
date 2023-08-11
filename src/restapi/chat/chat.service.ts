@@ -14,6 +14,9 @@ import { AddAdminDto } from './dto/add-admin.dto';
 import { DeleteAdminDto } from './dto/delete-admin.dto';
 import { JoinGroupChatDto } from './dto/join-group-chat.dto';
 import { BanDto } from './dto/ban.dto';
+import { GroupChatMessageDto } from './request/groupChatMessage.dto';
+import { MessageInfo } from 'src/entities/chat/messageInfo.entity';
+import { GroupChatMessage } from 'src/entities/chat/groupChatMessage.entity';
 import { MuteRequestDto } from './request/mute.dto';
 
 @Injectable()
@@ -41,7 +44,6 @@ export class ChatService {
 
   async createGroupChat(createChatDto: CreateGroupChatDto) {
     // 그룹 채팅방을 생성하고 저장하는 로직
-    console.log(createChatDto);
     return await this.groupChatRepository.manager.transaction(
       async (manager: EntityManager) => {
         if (createChatDto.participants != undefined) {
@@ -461,6 +463,73 @@ export class ChatService {
         },
       },
     });
+  }
+
+  async sendGroupMessage(messageDto: GroupChatMessageDto, groupChatId: number) {
+    return await this.groupChatRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        //1. 그룹채팅방 존재확인
+        const groupChat = await manager.getRepository(GroupChat).findOne({
+          where: [
+            {
+              groupChatId: groupChatId,
+              ownerId: messageDto.senderId,
+            },
+            {
+              groupChatId: groupChatId,
+              admin: { id: messageDto.senderId },
+            },
+            {
+              groupChatId: groupChatId,
+              joinedUser: { id: messageDto.senderId },
+            },
+          ],
+          relations: {
+            joinedUser: true,
+            admin: true,
+          },
+        });
+        if (!groupChat) {
+          throw new NotFoundException('유저/그룹 채팅방이 존재하지 않습니다.');
+        }
+
+        //2. 그룹 채팅방에 메세지 저장
+        const newMessageInfo = await manager.getRepository(MessageInfo).insert({
+          message: messageDto.message,
+          senderId: messageDto.senderId,
+        });
+
+        const msg = await manager.getRepository(GroupChatMessage).insert({
+          messageInfoId: newMessageInfo.identifiers[0].messageId,
+          receivedGroupChatId: groupChatId,
+        });
+
+        return await manager.getRepository(GroupChatMessage).findOne({
+          relations: {
+            messageInfo: {
+              sender: true,
+            },
+          },
+          where: {
+            groupChatMessageId: msg.identifiers[0].groupChatMessageId,
+          },
+          select: {
+            groupChatMessageId: true,
+            receivedGroupChatId: true,
+            messageInfo: {
+              messageId: true,
+              message: true,
+              createdAt: true,
+              sender: {
+                id: true,
+                nickName: true,
+                profile: true,
+              },
+            },
+          },
+        });
+      },
+    );
   }
 
   async mute(dto: MuteRequestDto) {

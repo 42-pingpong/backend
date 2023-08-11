@@ -5,7 +5,9 @@ import { AppConfigModule } from 'src/config/app.config';
 import { TestConfigModule } from 'src/config/test.config';
 import { appDatabase } from 'src/datasource/appdatabase';
 import { testDatabase } from 'src/datasource/testDatabase';
+import { DirectMessage } from 'src/entities/chat/directMessage.entity';
 import { GroupChat } from 'src/entities/chat/groupChat.entity';
+import { GroupChatMessage } from 'src/entities/chat/groupChatMessage.entity';
 import { User } from 'src/entities/user/user.entity';
 import { ChatFactory } from 'src/factory/chat.factory';
 import { UserFactory } from 'src/factory/user.factory';
@@ -15,6 +17,7 @@ import { CreateGroupChatDto } from 'src/restapi/chat/dto/create-group-chat.dto';
 import { DeleteAdminDto } from 'src/restapi/chat/dto/delete-admin.dto';
 import { JoinGroupChatDto } from 'src/restapi/chat/dto/join-group-chat.dto';
 import { UpdateGroupChatDto } from 'src/restapi/chat/dto/update-group-chat.dto';
+import { GroupChatMessageDto } from 'src/restapi/chat/request/groupChatMessage.dto';
 import * as request from 'supertest';
 import { DataSource, In, Repository } from 'typeorm';
 
@@ -23,6 +26,8 @@ describe('Chat', () => {
   let dataSource: DataSource;
   let groupChatRepository: Repository<GroupChat>;
   let userRepository: Repository<User>;
+  let groupMessageRepository: Repository<GroupChatMessage>;
+  let dmRepository: Repository<DirectMessage>;
   let userFactory: UserFactory;
   let chatFactory: ChatFactory;
 
@@ -35,7 +40,14 @@ describe('Chat', () => {
       .overrideModule(AppConfigModule)
       .useModule(TestConfigModule)
       .overrideModule(TypeOrmModule)
-      .useModule(TypeOrmModule.forFeature([GroupChat, User]))
+      .useModule(
+        TypeOrmModule.forFeature([
+          GroupChat,
+          User,
+          GroupChatMessage,
+          DirectMessage,
+        ]),
+      )
       .compile();
 
     app = module.createNestApplication();
@@ -53,6 +65,8 @@ describe('Chat', () => {
     dataSource = module.get<DataSource>(DataSource);
     groupChatRepository = dataSource.getRepository(GroupChat);
     userRepository = dataSource.getRepository(User);
+    groupMessageRepository = dataSource.getRepository(GroupChatMessage);
+    dmRepository = dataSource.getRepository(DirectMessage);
     userFactory = new UserFactory();
     chatFactory = new ChatFactory();
   });
@@ -106,7 +120,6 @@ describe('Chat', () => {
         .post('/chat/groupChat')
         .send(createChatDto);
 
-      console.log(res.body);
       expect(res.status).toBe(201);
       expect(res.body).toBeDefined();
       expect(res.body.joinedUser.length).toBe(1);
@@ -669,8 +682,104 @@ describe('Chat', () => {
         .get(`/chat/groupChatList/${user2202.id}`)
         .expect(200);
 
-      console.log(res.body[0].joinedUser);
       expect(res.body[0].joinedUser[0].id).toBe(user2202.id);
+    });
+  });
+
+  /**
+   * user 2210~
+   * */
+  describe('POST /chat/groupChat/:groupChatId/ban', () => {
+    it.todo('owner가 admin을 ban');
+    it.todo('owner가 user를 ban');
+    it.todo('admin이 user를 ban');
+    it.todo('admin이 admin을 ban');
+  });
+
+  /**
+   * user 2220~
+   * */
+  describe('POST /chat/groupChat/:groupChatId/unban', () => {
+    it.todo('owner가 admin을 ban');
+    it.todo('owner가 user를 ban');
+    it.todo('admin이 user를 ban');
+    it.todo('admin이 admin을 ban');
+  });
+
+  /**
+   * user 2230~
+   * */
+  describe('POST /chat/groupChat/messages', () => {
+    let user2230: User;
+    let user2231: User;
+    let user2232: User;
+    let user2233: User;
+
+    let groupChat2230: GroupChat;
+
+    beforeAll(async () => {
+      const joinGroupChatDto = new JoinGroupChatDto();
+      user2230 = await userRepository.save(userFactory.createUser(2230));
+      user2231 = await userRepository.save(userFactory.createUser(2231));
+      user2232 = await userRepository.save(userFactory.createUser(2232));
+      user2233 = await userRepository.save(userFactory.createUser(2233));
+
+      const createChatDto = new CreateGroupChatDto();
+      createChatDto.levelOfPublicity = 'Pub';
+      createChatDto.chatName = 'test';
+      createChatDto.ownerId = user2230.id;
+      createChatDto.maxParticipants = 10;
+      createChatDto.participants = [user2231.id, user2232.id, user2233.id];
+
+      groupChat2230 = (
+        await request(app.getHttpServer())
+          .post('/chat/groupChat')
+          .send(createChatDto)
+      ).body;
+    });
+
+    it('owner가 메세지 보내기', async () => {
+      const createMessageDto = new GroupChatMessageDto();
+      createMessageDto.senderId = user2230.id;
+      createMessageDto.message = 'test';
+
+      const res = await request(app.getHttpServer())
+        .post(`/chat/groupChat/messages/${groupChat2230.groupChatId}`)
+        .send(createMessageDto);
+
+      expect(res.body.messageInfo.sender.id).toBe(user2230.id);
+      expect(res.status).toBe(201);
+    });
+
+    it('admin이 메세지 보내기', async () => {
+      //2231을 admin으로 만들기
+      await request(app.getHttpServer())
+        .post(`/chat/groupChat/${groupChat2230.groupChatId}/admin`)
+        .query({ userId: user2230.id, requestedId: user2231.id });
+
+      const createMessageDto = new GroupChatMessageDto();
+      createMessageDto.senderId = user2231.id;
+      createMessageDto.message = 'test';
+
+      const res = await request(app.getHttpServer())
+        .post(`/chat/groupChat/messages/${groupChat2230.groupChatId}`)
+        .send(createMessageDto);
+
+      expect(res.body.messageInfo.sender.id).toBe(user2231.id);
+      expect(res.status).toBe(201);
+    });
+
+    it('user가 메세지 보내기', async () => {
+      const createMessageDto = new GroupChatMessageDto();
+      createMessageDto.senderId = user2232.id;
+      createMessageDto.message = 'test';
+
+      const res = await request(app.getHttpServer())
+        .post(`/chat/groupChat/messages/${groupChat2230.groupChatId}`)
+        .send(createMessageDto);
+
+      expect(res.body.messageInfo.sender.id).toBe(user2232.id);
+      expect(res.status).toBe(201);
     });
   });
 

@@ -17,8 +17,12 @@ export class MessageInfo {
   messageId: number;
 
   @ManyToOne(() => User, (user) => user.messages)
-  @JoinColumn()
+  @JoinColumn({ name: 'senderId' })
   sender: User;
+  @Column({
+    type: 'int',
+  })
+  senderId: number;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -28,12 +32,6 @@ export class MessageInfo {
     length: 400,
   })
   message: string;
-
-  @Column({
-    type: 'bigint',
-    default: 1,
-  })
-  isRead: number;
 
   @OneToOne(
     () => GroupChatMessage,
