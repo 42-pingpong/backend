@@ -182,6 +182,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         .to(responseBody.receivedGroupChatId.toString())
         .emit('group-message', responseBody);
       //offline인 경우 어떻게함?//push notification으로 처리
+
+      //sender에게도 메시지 전달해줘요
+      client.emit('group-message', responseBody);
     } catch (e) {
       client.emit('error', e.message);
     }
