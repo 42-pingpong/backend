@@ -30,10 +30,6 @@ export interface ChatRoomDTO {
   roomId: string;
 }
 
-let roomId = 1;
-
-const ChatRoomList: ChatRoomDTO[] = [];
-
 /**
  * @brief chat gateway
  *

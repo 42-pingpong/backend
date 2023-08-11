@@ -18,6 +18,8 @@ import { GroupChatMessageDto } from './request/groupChatMessage.dto';
 import { MessageInfo } from 'src/entities/chat/messageInfo.entity';
 import { GroupChatMessage } from 'src/entities/chat/groupChatMessage.entity';
 import { MuteRequestDto } from './request/mute.dto';
+import { DirectMessageDto } from './request/DirectMessage.dto';
+import { DirectMessage } from 'src/entities/chat/directMessage.entity';
 
 @Injectable()
 export class ChatService {
@@ -465,22 +467,22 @@ export class ChatService {
     });
   }
 
-  async sendGroupMessage(messageDto: GroupChatMessageDto, groupChatId: number) {
+  async sendGroupMessage(messageDto: GroupChatMessageDto) {
     return await this.groupChatRepository.manager.transaction(
       async (manager: EntityManager) => {
         //1. 그룹채팅방 존재확인
         const groupChat = await manager.getRepository(GroupChat).findOne({
           where: [
             {
-              groupChatId: groupChatId,
+              groupChatId: messageDto.receivedGroupChatId,
               ownerId: messageDto.senderId,
             },
             {
-              groupChatId: groupChatId,
+              groupChatId: messageDto.receivedGroupChatId,
               admin: { id: messageDto.senderId },
             },
             {
-              groupChatId: groupChatId,
+              groupChatId: messageDto.receivedGroupChatId,
               joinedUser: { id: messageDto.senderId },
             },
           ],
@@ -501,7 +503,7 @@ export class ChatService {
 
         const msg = await manager.getRepository(GroupChatMessage).insert({
           messageInfoId: newMessageInfo.identifiers[0].messageId,
-          receivedGroupChatId: groupChatId,
+          receivedGroupChatId: messageDto.receivedGroupChatId,
         });
 
         return await manager.getRepository(GroupChatMessage).findOne({
@@ -516,6 +518,55 @@ export class ChatService {
           select: {
             groupChatMessageId: true,
             receivedGroupChatId: true,
+            messageInfo: {
+              messageId: true,
+              message: true,
+              createdAt: true,
+              sender: {
+                id: true,
+                nickName: true,
+                profile: true,
+              },
+            },
+          },
+        });
+      },
+    );
+  }
+
+  async sendDirectMessage(messageDto: DirectMessageDto) {
+    return await this.groupChatRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        const receiver = await manager.getRepository(User).findOne({
+          where: { id: messageDto.receiverId },
+        });
+
+        if (!receiver) {
+          throw new NotFoundException('받는 사람이 존재하지 않습니다.');
+        }
+
+        const newMessageInfo = await manager.getRepository(MessageInfo).insert({
+          message: messageDto.message,
+          senderId: messageDto.senderId,
+        });
+
+        const msg = await manager.getRepository(DirectMessage).insert({
+          messageInfoId: newMessageInfo.identifiers[0].messageId,
+          receivedUserId: messageDto.receiverId,
+        });
+
+        return await manager.getRepository(DirectMessage).findOne({
+          where: {
+            directMessageId: msg.identifiers[0].directMessageId,
+          },
+          relations: {
+            messageInfo: {
+              sender: true,
+            },
+          },
+          select: {
+            directMessageId: true,
+            receivedUserId: true,
             messageInfo: {
               messageId: true,
               message: true,

@@ -3,12 +3,12 @@ import { Type } from 'class-transformer';
 import { IsNumber } from 'class-validator';
 import { MessageRequestDto } from './message.dto';
 
-export class GroupChatMessageDto extends MessageRequestDto {
+export class DirectMessageDto extends MessageRequestDto {
   @ApiProperty({
-    description: '그룹채팅방의 id',
+    description: '받는 사람의 id',
     example: 3,
   })
   @Type(() => Number)
   @IsNumber()
-  receivedGroupChatId: number;
+  receiverId: number;
 }
