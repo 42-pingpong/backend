@@ -17,6 +17,7 @@ import { CreateGroupChatDto } from 'src/restapi/chat/dto/create-group-chat.dto';
 import { DeleteAdminDto } from 'src/restapi/chat/dto/delete-admin.dto';
 import { JoinGroupChatDto } from 'src/restapi/chat/dto/join-group-chat.dto';
 import { UpdateGroupChatDto } from 'src/restapi/chat/dto/update-group-chat.dto';
+import { DirectMessageDto } from 'src/restapi/chat/request/DirectMessage.dto';
 import { GroupChatMessageDto } from 'src/restapi/chat/request/groupChatMessage.dto';
 import * as request from 'supertest';
 import { DataSource, In, Repository } from 'typeorm';
@@ -741,14 +742,15 @@ describe('Chat', () => {
     it('owner가 메세지 보내기', async () => {
       const createMessageDto = new GroupChatMessageDto();
       createMessageDto.senderId = user2230.id;
+      createMessageDto.receivedGroupChatId = groupChat2230.groupChatId;
       createMessageDto.message = 'test';
 
       const res = await request(app.getHttpServer())
-        .post(`/chat/groupChat/messages/${groupChat2230.groupChatId}`)
+        .post(`/chat/groupChat/messages/send`)
         .send(createMessageDto);
 
-      expect(res.body.messageInfo.sender.id).toBe(user2230.id);
       expect(res.status).toBe(201);
+      expect(res.body.messageInfo.sender.id).toBe(user2230.id);
     });
 
     it('admin이 메세지 보내기', async () => {
@@ -759,27 +761,62 @@ describe('Chat', () => {
 
       const createMessageDto = new GroupChatMessageDto();
       createMessageDto.senderId = user2231.id;
+      createMessageDto.receivedGroupChatId = groupChat2230.groupChatId;
       createMessageDto.message = 'test';
 
       const res = await request(app.getHttpServer())
-        .post(`/chat/groupChat/messages/${groupChat2230.groupChatId}`)
+        .post(`/chat/groupChat/messages/send`)
         .send(createMessageDto);
 
-      expect(res.body.messageInfo.sender.id).toBe(user2231.id);
       expect(res.status).toBe(201);
+      expect(res.body.messageInfo.sender.id).toBe(user2231.id);
     });
 
     it('user가 메세지 보내기', async () => {
       const createMessageDto = new GroupChatMessageDto();
       createMessageDto.senderId = user2232.id;
+      createMessageDto.receivedGroupChatId = groupChat2230.groupChatId;
       createMessageDto.message = 'test';
 
       const res = await request(app.getHttpServer())
-        .post(`/chat/groupChat/messages/${groupChat2230.groupChatId}`)
+        .post(`/chat/groupChat/messages/send`)
         .send(createMessageDto);
 
-      expect(res.body.messageInfo.sender.id).toBe(user2232.id);
       expect(res.status).toBe(201);
+      expect(res.body.messageInfo.sender.id).toBe(user2232.id);
+    });
+  });
+
+  /**
+   * user 2240
+   * */
+  describe('POST /chat/messages', () => {
+    let user2240: User;
+    let user2241: User;
+    let user2242: User;
+    let user2243: User;
+
+    beforeAll(async () => {
+      user2240 = await userRepository.save(userFactory.createUser(2240));
+      user2241 = await userRepository.save(userFactory.createUser(2241));
+      user2242 = await userRepository.save(userFactory.createUser(2242));
+      user2243 = await userRepository.save(userFactory.createUser(2243));
+    });
+
+    it('user2240이 메세지 보내기', async () => {
+      const dmDto = new DirectMessageDto();
+
+      dmDto.senderId = user2240.id;
+      dmDto.receiverId = user2241.id;
+      dmDto.message = 'test';
+
+      const res = await request(app.getHttpServer())
+        .post(`/chat/messages`)
+        .send(dmDto);
+
+      expect(res.status).toBe(201);
+      expect(res.body.messageInfo.sender.id).toBe(user2240.id);
+      expect(res.body.receivedUserId).toBe(user2241.id);
     });
   });
 
