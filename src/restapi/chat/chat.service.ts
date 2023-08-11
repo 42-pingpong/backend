@@ -14,6 +14,9 @@ import { AddAdminDto } from './dto/add-admin.dto';
 import { DeleteAdminDto } from './dto/delete-admin.dto';
 import { JoinGroupChatDto } from './dto/join-group-chat.dto';
 import { BanDto } from './dto/ban.dto';
+import { GroupChatMessageDto } from './request/groupChatMessage.dto';
+import { MessageInfo } from 'src/entities/chat/messageInfo.entity';
+import { GroupChatMessage } from 'src/entities/chat/groupChatMessage.entity';
 
 @Injectable()
 export class ChatService {
@@ -353,4 +356,45 @@ export class ChatService {
   // async mute(groupChatId: number, userId: number) {
   //   // 그룹 채팅방에서 유저를 뮤트하는 로직
   // }
+
+  async sendGroupMessage(messageDto: GroupChatMessageDto) {
+    return await this.groupChatRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        //1. 그룹채팅방 존재확인
+        const groupChat = await manager.getRepository(GroupChat).findOne({
+          where: [
+            {
+              groupChatId: messageDto.groupChatId,
+              ownerId: messageDto.senderId,
+            },
+            {
+              groupChatId: messageDto.groupChatId,
+              admin: { id: messageDto.senderId },
+            },
+            {
+              groupChatId: messageDto.groupChatId,
+              joinedUser: { id: messageDto.senderId },
+            },
+          ],
+          relations: {
+            joinedUser: true,
+            admin: true,
+          },
+        });
+        if (!groupChat) {
+          throw new NotFoundException('유저/그룹 채팅방이 존재하지 않습니다.');
+        }
+
+        //2. 그룹 채팅방에 메세지 저장
+        const newMessageInfo = await manager.getRepository(MessageInfo).insert({
+          message: messageDto.message,
+          senderId: messageDto.senderId,
+        });
+        return await manager.getRepository(GroupChatMessage).insert({
+          messageInfoId: newMessageInfo.identifiers[0].messageId,
+          receivedGroupChatId: messageDto.groupChatId,
+        });
+      },
+    );
+  }
 }

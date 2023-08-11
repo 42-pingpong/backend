@@ -4,6 +4,7 @@ import {
   PrimaryGeneratedColumn,
   ManyToOne,
   JoinColumn,
+  Column,
 } from 'typeorm';
 import { MessageInfo } from './messageInfo.entity';
 import { GroupChat } from './groupChat.entity';
@@ -14,12 +15,18 @@ export class GroupChatMessage {
   groupChatMessageId: number;
 
   @OneToOne(() => MessageInfo, (messageInfo) => messageInfo.groupChatMessage)
-  @JoinColumn({
-    name: 'messageInfoId',
-  })
   messageInfo: MessageInfo;
 
+  @Column({
+    type: 'int',
+  })
+  messageInfoId: number;
+
   @ManyToOne(() => GroupChat, (groupChat) => groupChat.groupChatMessages)
-  @JoinColumn()
-  receivedGroupChatId: GroupChat;
+  receivedGroupChat: GroupChat;
+
+  @Column({
+    type: 'int',
+  })
+  receivedGroupChatId: number;
 }

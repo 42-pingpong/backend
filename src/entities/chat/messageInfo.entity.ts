@@ -5,7 +5,6 @@ import {
   ManyToOne,
   Column,
   OneToOne,
-  JoinColumn,
 } from 'typeorm';
 import { User } from '../user/user.entity';
 import { DirectMessage } from './directMessage.entity';
@@ -31,12 +30,6 @@ export class MessageInfo {
     length: 400,
   })
   message: string;
-
-  @Column({
-    type: 'bigint',
-    default: 1,
-  })
-  isRead: number;
 
   @OneToOne(
     () => GroupChatMessage,

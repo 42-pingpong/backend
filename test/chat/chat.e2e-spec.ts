@@ -5,7 +5,9 @@ import { AppConfigModule } from 'src/config/app.config';
 import { TestConfigModule } from 'src/config/test.config';
 import { appDatabase } from 'src/datasource/appdatabase';
 import { testDatabase } from 'src/datasource/testDatabase';
+import { DirectMessage } from 'src/entities/chat/directMessage.entity';
 import { GroupChat } from 'src/entities/chat/groupChat.entity';
+import { GroupChatMessage } from 'src/entities/chat/groupChatMessage.entity';
 import { User } from 'src/entities/user/user.entity';
 import { ChatFactory } from 'src/factory/chat.factory';
 import { UserFactory } from 'src/factory/user.factory';
@@ -23,6 +25,8 @@ describe('Chat', () => {
   let dataSource: DataSource;
   let groupChatRepository: Repository<GroupChat>;
   let userRepository: Repository<User>;
+  let groupMessageRepository: Repository<GroupChatMessage>;
+  let dmRepository: Repository<DirectMessage>;
   let userFactory: UserFactory;
   let chatFactory: ChatFactory;
 
@@ -35,7 +39,14 @@ describe('Chat', () => {
       .overrideModule(AppConfigModule)
       .useModule(TestConfigModule)
       .overrideModule(TypeOrmModule)
-      .useModule(TypeOrmModule.forFeature([GroupChat, User]))
+      .useModule(
+        TypeOrmModule.forFeature([
+          GroupChat,
+          User,
+          GroupChatMessage,
+          DirectMessage,
+        ]),
+      )
       .compile();
 
     app = module.createNestApplication();
@@ -53,6 +64,8 @@ describe('Chat', () => {
     dataSource = module.get<DataSource>(DataSource);
     groupChatRepository = dataSource.getRepository(GroupChat);
     userRepository = dataSource.getRepository(User);
+    groupMessageRepository = dataSource.getRepository(GroupChatMessage);
+    dmRepository = dataSource.getRepository(DirectMessage);
     userFactory = new UserFactory();
     chatFactory = new ChatFactory();
   });
@@ -647,6 +660,35 @@ describe('Chat', () => {
       console.log(res.body[0].joinedUser);
       expect(res.body[0].joinedUser[0].id).toBe(user2202.id);
     });
+  });
+
+  /**
+   * user 2210~
+   * */
+  describe('POST /chat/groupChat/:groupChatId/ban', () => {
+    it.todo('owner가 admin을 ban');
+    it.todo('owner가 user를 ban');
+    it.todo('admin이 user를 ban');
+    it.todo('admin이 admin을 ban');
+  });
+
+  /**
+   * user 2220~
+   * */
+  describe('POST /chat/groupChat/:groupChatId/unban', () => {
+    it.todo('owner가 admin을 ban');
+    it.todo('owner가 user를 ban');
+    it.todo('admin이 user를 ban');
+    it.todo('admin이 admin을 ban');
+  });
+
+  /**
+   * user 2230~
+   * */
+  describe('POST /chat/groupChat/messages', () => {
+    it.todo('owner가 메세지 보내기');
+    it.todo('admin이 메세지 보내기');
+    it.todo('user가 메세지 보내기');
   });
 
   afterAll(async () => {
