@@ -8,6 +8,7 @@ import { testDatabase } from 'src/datasource/testDatabase';
 import { DirectMessage } from 'src/entities/chat/directMessage.entity';
 import { GroupChat } from 'src/entities/chat/groupChat.entity';
 import { GroupChatMessage } from 'src/entities/chat/groupChatMessage.entity';
+import { MessageInfo } from 'src/entities/chat/messageInfo.entity';
 import { User } from 'src/entities/user/user.entity';
 import { ChatFactory } from 'src/factory/chat.factory';
 import { UserFactory } from 'src/factory/user.factory';
@@ -19,6 +20,7 @@ import { JoinGroupChatDto } from 'src/restapi/chat/dto/join-group-chat.dto';
 import { UpdateGroupChatDto } from 'src/restapi/chat/dto/update-group-chat.dto';
 import { DirectMessageDto } from 'src/restapi/chat/request/DirectMessage.dto';
 import { GetDirectMessageDto } from 'src/restapi/chat/request/getDirectMessage.dto';
+import { GetGroupMessageDto } from 'src/restapi/chat/request/getGroupMessage.dto';
 import { GroupChatMessageDto } from 'src/restapi/chat/request/groupChatMessage.dto';
 import * as request from 'supertest';
 import { DataSource, In, Repository } from 'typeorm';
@@ -30,6 +32,7 @@ describe('Chat', () => {
   let userRepository: Repository<User>;
   let groupMessageRepository: Repository<GroupChatMessage>;
   let dmRepository: Repository<DirectMessage>;
+  let msgInfoRepository: Repository<MessageInfo>;
   let userFactory: UserFactory;
   let chatFactory: ChatFactory;
 
@@ -48,6 +51,7 @@ describe('Chat', () => {
           User,
           GroupChatMessage,
           DirectMessage,
+          MessageInfo,
         ]),
       )
       .compile();
@@ -69,6 +73,7 @@ describe('Chat', () => {
     userRepository = dataSource.getRepository(User);
     groupMessageRepository = dataSource.getRepository(GroupChatMessage);
     dmRepository = dataSource.getRepository(DirectMessage);
+    msgInfoRepository = dataSource.getRepository(MessageInfo);
     userFactory = new UserFactory();
     chatFactory = new ChatFactory();
   });
@@ -740,6 +745,22 @@ describe('Chat', () => {
       ).body;
     });
 
+    afterAll(async () => {
+      await groupMessageRepository.delete({
+        receivedGroupChatId: groupChat2230.groupChatId,
+      });
+      await msgInfoRepository.delete({
+        senderId: In([user2230.id, user2231.id, user2232.id, user2233.id]),
+      });
+
+      await groupChatRepository.delete({
+        groupChatId: groupChat2230.groupChatId,
+      });
+      await userRepository.delete({
+        id: In([user2230.id, user2231.id, user2232.id, user2233.id]),
+      });
+    });
+
     it('owner가 메세지 보내기', async () => {
       const createMessageDto = new GroupChatMessageDto();
       createMessageDto.senderId = user2230.id;
@@ -804,6 +825,25 @@ describe('Chat', () => {
       user2243 = await userRepository.save(userFactory.createUser(2243));
     });
 
+    afterAll(async () => {
+      await dmRepository.delete({
+        receivedUserId: In([
+          user2240.id,
+          user2241.id,
+          user2242.id,
+          user2243.id,
+        ]),
+      });
+
+      await msgInfoRepository.delete({
+        senderId: In([user2240.id, user2241.id, user2242.id, user2243.id]),
+      });
+
+      await userRepository.delete({
+        id: In([user2240.id, user2241.id, user2242.id, user2243.id]),
+      });
+    });
+
     it('user2240이 메세지 보내기', async () => {
       const dmDto = new DirectMessageDto();
 
@@ -850,6 +890,14 @@ describe('Chat', () => {
       user2253 = await userRepository.save(userFactory.createUser(2253));
     });
 
+    afterAll(async () => {
+      await dmRepository.delete({});
+      await msgInfoRepository.delete({});
+      await userRepository.delete({
+        id: In([user2250.id, user2251.id, user2252.id, user2253.id]),
+      });
+    });
+
     it('user2250이 user2251에게 메세지 보내기', async () => {
       const dmDto = new DirectMessageDto();
 
@@ -880,6 +928,129 @@ describe('Chat', () => {
 
       expect(dms.status).toBe(200);
       expect(dms.body.length).toBe(2);
+    });
+  });
+
+  describe('GET /groupMessages', () => {
+    let user2260: User;
+    let user2261: User;
+    let user2262: User;
+    let user2263: User;
+    let groupChat2260: GroupChat;
+
+    beforeAll(async () => {
+      user2260 = await userRepository.save(userFactory.createUser(2260));
+      user2261 = await userRepository.save(userFactory.createUser(2261));
+      user2262 = await userRepository.save(userFactory.createUser(2262));
+      user2263 = await userRepository.save(userFactory.createUser(2263));
+
+      // 2260이 owner인 groupChat 만들기
+      const createChatDto = new CreateGroupChatDto();
+      createChatDto.levelOfPublicity = 'Pub';
+      createChatDto.chatName = 'test';
+      createChatDto.ownerId = user2260.id;
+      createChatDto.maxParticipants = 10;
+      createChatDto.participants = [user2261.id, user2262.id, user2263.id];
+
+      groupChat2260 = (
+        await request(app.getHttpServer())
+          .post('/chat/groupChat')
+          .send(createChatDto)
+      ).body;
+
+      //2260이 message 보내기
+      const createMessageDto = new GroupChatMessageDto();
+      createMessageDto.senderId = user2260.id;
+      createMessageDto.receivedGroupChatId = groupChat2260.groupChatId;
+      createMessageDto.message = 'message from owner 1';
+      await request(app.getHttpServer())
+        .post(`/chat/groupChat/messages/send`)
+        .send(createMessageDto);
+
+      createMessageDto.message = 'message from owner 2';
+      await request(app.getHttpServer())
+        .post(`/chat/groupChat/messages/send`)
+        .send(createMessageDto);
+
+      //2261을 admin으로 만들기
+      await request(app.getHttpServer())
+        .post(`/chat/groupChat/${groupChat2260.groupChatId}/admin`)
+        .query({ userId: user2260.id, requestedId: user2261.id });
+
+      //admin이 message 보내기
+      createMessageDto.senderId = user2261.id;
+      createMessageDto.receivedGroupChatId = groupChat2260.groupChatId;
+      createMessageDto.message = 'message from admin 1';
+      await request(app.getHttpServer())
+        .post(`/chat/groupChat/messages/send`)
+        .send(createMessageDto);
+
+      createMessageDto.message = 'message from admin 2';
+      await request(app.getHttpServer())
+        .post(`/chat/groupChat/messages/send`)
+        .send(createMessageDto);
+
+      //2262가 message 보내기
+      createMessageDto.senderId = user2262.id;
+      createMessageDto.receivedGroupChatId = groupChat2260.groupChatId;
+      createMessageDto.message = 'message from 2262 1';
+      await request(app.getHttpServer())
+        .post(`/chat/groupChat/messages/send`)
+        .send(createMessageDto);
+
+      createMessageDto.message = 'message from 2262 2';
+      await request(app.getHttpServer())
+        .post(`/chat/groupChat/messages/send`)
+        .send(createMessageDto);
+    });
+
+    afterAll(async () => {
+      await groupMessageRepository.delete({});
+      await msgInfoRepository.delete({});
+      await groupChatRepository.delete(groupChat2260.groupChatId);
+      await userRepository.delete(user2260.id);
+      await userRepository.delete(user2261.id);
+      await userRepository.delete(user2262.id);
+      await userRepository.delete(user2263.id);
+    });
+
+    it('user2260이 groupChat2260에서 메세지 가져오기', async () => {
+      const qr = new GetGroupMessageDto();
+      qr.userId = user2260.id;
+      qr.groupChatId = groupChat2260.groupChatId;
+
+      const res = await request(app.getHttpServer())
+        .get('/chat/groupMessages')
+        .query(qr);
+      console.log(res.body);
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBe(6);
+    });
+
+    it('user2261이 groupChat2260에서 메세지 가져오기', async () => {
+      const qr = new GetGroupMessageDto();
+      qr.userId = user2261.id;
+      qr.groupChatId = groupChat2260.groupChatId;
+
+      const res = await request(app.getHttpServer())
+        .get('/chat/groupMessages')
+        .query(qr);
+
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBe(6);
+    });
+
+    it('user2262가 groupChat2260에서 메세지 가져오기', async () => {
+      const qr = new GetGroupMessageDto();
+      qr.userId = user2262.id;
+      qr.groupChatId = groupChat2260.groupChatId;
+
+      const res = await request(app.getHttpServer())
+        .get('/chat/groupMessages')
+        .query(qr);
+
+      expect(res.status).toBe(200);
+      expect(res.body.length).toBe(6);
     });
   });
 
