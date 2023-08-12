@@ -59,18 +59,23 @@ export class GameGateway
     if (waitList.length === 2) {
       const gameInfo: CreateGameDto = {
         // gameMap: 'map1',
-        createDate: new Date(),
+        // gameId: roomName,
       };
-      // await this.gameGatewayService.setGame(waitList[0].token, gameInfo);
-      const roomName = waitList[0].socket.id + '/' + waitList[1].socket.id;
+      const game = await this.gameGatewayService.setGame(
+        waitList[0].token,
+        gameInfo,
+      );
+
+      const roomName = game.gameId;
+
       waitList[0].roomId = roomName;
       waitList[0].number = 1;
       waitList[1].roomId = roomName;
       waitList[1].number = 2;
 
       // 방에 입장
-      await waitList[0].socket.join(roomName);
-      await waitList[1].socket.join(roomName);
+      await waitList[0].socket.join(roomName.toString());
+      await waitList[1].socket.join(roomName.toString());
 
       // 대기열에서 제거, 플레이어 목록에 추가
       playerList.push(waitList[0]);
@@ -118,7 +123,7 @@ export class GameGateway
 
     readyState.push(client);
 
-    this.server.to(playerList[0].roomId).emit('ready', true);
+    this.server.to(playerList[0].roomId.toString()).emit('ready', true);
 
     if (readyState.length === 2) {
       readyState[0].emit('start', true);
@@ -139,31 +144,35 @@ export class GameGateway
   @SubscribeMessage('move')
   handlePaddleMovement(client: Socket, payload: string) {
     console.log('back', payload);
-    this.server.to(playerList[0].roomId).emit('move', payload);
+    this.server.to(playerList[0].roomId.toString()).emit('move', payload);
   }
 
   @SubscribeMessage('ballX-set')
   handleBallXSet(client: Socket, ballX: number) {
     if (client === playerList[0].socket)
-      this.server.to(playerList[0].roomId).emit('ballX', ballX);
+      this.server.to(playerList[0].roomId.toString()).emit('ballX', ballX);
   }
-  ////////////
+  /////////////
   @SubscribeMessage('ballY-set')
   handleBallYSet(client: Socket, ballY: number) {
     if (client === playerList[0].socket)
-      this.server.to(playerList[0].roomId).emit('ballY', ballY);
+      this.server.to(playerList[0].roomId.toString()).emit('ballY', ballY);
   }
 
   @SubscribeMessage('player1Score-set')
   handlePlayer1ScoreSet(client: Socket, player1Score: number) {
     if (client === playerList[0].socket)
-      this.server.to(playerList[0].roomId).emit('player1Score', player1Score);
+      this.server
+        .to(playerList[0].roomId.toString())
+        .emit('player1Score', player1Score);
   }
 
   @SubscribeMessage('player2Score-set')
   handlePlayer2ScoreSet(client: Socket, player2Score: number) {
     if (client === playerList[0].socket)
-      this.server.to(playerList[0].roomId).emit('player2Score', player2Score);
+      this.server
+        .to(playerList[0].roomId.toString())
+        .emit('player2Score', player2Score);
   }
 
   // @SubscribeMessage('room-out')
@@ -191,6 +200,7 @@ export class GameGateway
 
   @SubscribeMessage('end')
   async handleEnd(client: Socket, payload: CreateGameScoreRequestDto) {
+    console.log('payload', payload);
     if (!client.id) return;
     if (client.id === playerList[0].socket.id) {
       await this.gameGatewayService.setHistory(playerList[0].token, payload);
@@ -202,7 +212,7 @@ export class GameGateway
       // console.log(payload.userId);
 
       // 모든 플레이어를 방에서 나가도록 함
-      await client.leave(playerList[0].roomId);
+      await client.leave(playerList[0].roomId.toString());
       // client.leave(playerList[1].roomId);
 
       playerList.splice(0, 2);

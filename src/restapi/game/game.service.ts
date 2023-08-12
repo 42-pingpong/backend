@@ -41,7 +41,6 @@ export class GameService {
   async createScore(
     createGameDto: CreateGameScoreRequestDto,
   ): Promise<CreateGameScoreResponseDto> {
-    // console.log('createGameDto', createGameDto);
     return await this.gameScoreRepository.manager.transaction(
       async (manager: EntityManager) => {
         // 유저가 존재하는지 확인
@@ -52,9 +51,8 @@ export class GameService {
         });
 
         if (!user) {
-          console.log('user', user);
           throw new NotFoundException('유저가 존재하지 않습니다.');
-        } else console.log('user', user);
+        }
 
         // 게임이 존재하는지 확인
         const gameInfo = await manager.getRepository(GameInfo).findOne({
@@ -63,9 +61,8 @@ export class GameService {
           },
         });
         if (!gameInfo) {
-          console.log('gameInfo', gameInfo);
           throw new NotFoundException('게임이 존재하지 않습니다.');
-        } else console.log('gameInfo', gameInfo);
+        }
 
         // 게임 점수를 생성합니다.
         const res = await manager

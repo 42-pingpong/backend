@@ -4,6 +4,6 @@ export interface PlayerInfo {
   socket: Socket;
   id: number;
   token: string;
-  roomId?: string;
+  roomId?: number;
   number?: number;
 }

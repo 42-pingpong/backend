@@ -27,13 +27,15 @@ export class GameGatewayService {
   }
 
   async setGame(bearerToken: string, gameinfo: CreateGameDto) {
-    console.log('gameinfo', gameinfo);
-    await axios.post(`${this.restApiUrl}/game/`, gameinfo, {
+    console.log('gameinfo gateway', gameinfo);
+    const res = await axios.post(`${this.restApiUrl}/game`, gameinfo, {
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${bearerToken}`,
       },
     });
+    // gameInfo 반환
+    return res.data;
   }
 
   async setHistory(bearerToken: string, history: CreateGameScoreRequestDto) {
