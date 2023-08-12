@@ -36,15 +36,18 @@ export class GameGateway
     console.log('Init');
   }
 
+  // game socket 연결시 실행
   @SubscribeMessage('connect')
   handleConnection(client: any, ...args: any[]) {
     console.log('Game Socket Connection');
   }
 
+  // game 버튼 클릭시 실행
   @SubscribeMessage('enter-queue')
   async handleLogin(client: Socket, id: number) {
     // 이미 대기열에 있는지 확인
     if (waitList.length && waitList[0].socket === client) {
+      waitList.splice(0, 1);
       return;
     }
 
@@ -91,6 +94,7 @@ export class GameGateway
     }
   }
 
+  // 방에 입장시 실행
   @SubscribeMessage('join')
   async handleJoin(client: any) {
     // 플레이어의 닉네임을 가져옴
@@ -111,9 +115,12 @@ export class GameGateway
     readyState.push(client);
   }
 
+  // 게임 시작 전에 Ready 버튼 클릭시 실행
   @SubscribeMessage('ready')
   handleReady(client: any) {
+    // readyState에 클라이언트가 있으면 제거
     if (readyState.includes(client)) {
+      // 이거 생각해봐야함
       readyState.splice(readyState.indexOf(client), 1);
       return;
     }
@@ -128,6 +135,7 @@ export class GameGateway
     }
   }
 
+  // 게임 종료시 실행
   @SubscribeMessage('disconnect')
   handleDisconnect(client: any) {
     console.log('Disconnect 할 때 leave 해야 할      듯');
@@ -140,7 +148,6 @@ export class GameGateway
 
   @SubscribeMessage('move')
   handlePaddleMovement(client: Socket, payload: string) {
-    console.log('back', payload);
     this.server.to(playerList[0].roomId.toString()).emit('move', payload);
   }
 
@@ -149,7 +156,7 @@ export class GameGateway
     if (client === playerList[0].socket)
       this.server.to(playerList[0].roomId.toString()).emit('ballX', ballX);
   }
-  /////////////
+
   @SubscribeMessage('ballY-set')
   handleBallYSet(client: Socket, ballY: number) {
     if (client === playerList[0].socket)
