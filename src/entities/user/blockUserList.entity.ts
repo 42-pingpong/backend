@@ -1,4 +1,10 @@
-import { Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { User } from './user.entity';
 
 @Entity()
@@ -7,10 +13,20 @@ export class BlockUserList {
   blockUserListid: number;
 
   @ManyToOne(() => User, (user) => user.blockList)
-  @JoinColumn()
+  @JoinColumn({ name: 'blockUserId' })
+  BlockUser: User;
+
+  @Column({
+    type: 'int',
+  })
   blockUserId: number;
 
   @ManyToOne(() => User, (user) => user.blockedList)
-  @JoinColumn()
+  @JoinColumn({ name: 'blockedUserId' })
+  BlockedUser: User;
+
+  @Column({
+    type: 'int',
+  })
   blockedUserId: number;
 }

@@ -118,10 +118,7 @@ export class User {
   @OneToMany(() => MessageInfo, (messageInfo) => messageInfo.sender)
   messages: MessageInfo[];
 
-  @OneToMany(
-    () => DirectMessage,
-    (directMessage) => directMessage.receivedUserId,
-  )
+  @OneToMany(() => DirectMessage, (directMessage) => directMessage.receivedUser)
   directMessages: DirectMessage;
 
   @OneToMany(() => Request, (request) => request.requestingUser)
@@ -130,13 +127,10 @@ export class User {
   @OneToMany(() => Request, (request) => request.requestedUser)
   requested: Request[];
 
-  @OneToMany(() => BlockUserList, (blockUserList) => blockUserList.blockUserId)
+  @OneToMany(() => BlockUserList, (blockUserList) => blockUserList.BlockUser)
   blockList: BlockUserList[];
 
-  @OneToMany(
-    () => BlockUserList,
-    (blockUserList) => blockUserList.blockedUserId,
-  )
+  @OneToMany(() => BlockUserList, (blockUserList) => blockUserList.BlockedUser)
   blockedList: BlockUserList[];
 
   @OneToMany(() => GameScore, (gameScore) => gameScore.userId)

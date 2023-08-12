@@ -20,6 +20,9 @@ import { GroupChatMessage } from 'src/entities/chat/groupChatMessage.entity';
 import { MuteRequestDto } from './request/mute.dto';
 import { DirectMessageDto } from './request/DirectMessage.dto';
 import { DirectMessage } from 'src/entities/chat/directMessage.entity';
+import { GetDirectMessageDto } from './request/getDirectMessage.dto';
+import { GetGroupMessageDto } from './request/getGroupMessage.dto';
+import { GetDirectMessageDtoResponse } from './response/getDirectMessage.dto';
 
 @Injectable()
 export class ChatService {
@@ -648,6 +651,104 @@ export class ChatService {
         // db에 저장
         groupChat.mutedUser.push(user);
         await manager.save(GroupChat, groupChat);
+      },
+    );
+  }
+
+  /**
+   * @TODO 에러 핸들링 // 유저가 존재하지 않을 경우
+   * */
+  async getDirectMessage(
+    dto: GetDirectMessageDto,
+  ): Promise<GetDirectMessageDtoResponse[]> {
+    return await this.groupChatRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        return await manager.getRepository(DirectMessage).find({
+          where: [
+            {
+              receivedUserId: dto.userId,
+              messageInfo: {
+                senderId: dto.targetId,
+              },
+            },
+            {
+              receivedUserId: dto.targetId,
+              messageInfo: {
+                senderId: dto.userId,
+              },
+            },
+          ],
+          relations: {
+            messageInfo: {
+              sender: true,
+            },
+            receivedUser: true,
+          },
+          select: {
+            directMessageId: true,
+            receivedUser: {
+              id: true,
+              nickName: true,
+              profile: true,
+            },
+            messageInfo: {
+              sender: {
+                id: true,
+                nickName: true,
+                profile: true,
+              },
+              createdAt: true,
+              message: true,
+            },
+          },
+          order: {
+            messageInfo: {
+              createdAt: 'DESC',
+            },
+          },
+        });
+      },
+    );
+  }
+
+  /**
+   * @TODO 에러핸들링 // user/groupChat 존재하지 않을 때
+   * */
+  async getGroupChatMessages(dto: GetGroupMessageDto) {
+    return await this.groupChatRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        return await manager.getRepository(GroupChatMessage).find({
+          where: {
+            receivedGroupChatId: dto.groupChatId,
+          },
+          relations: {
+            messageInfo: {
+              sender: true,
+            },
+            receivedGroupChat: true,
+          },
+          select: {
+            groupChatMessageId: true,
+            receivedGroupChat: {
+              groupChatId: true,
+              chatName: true,
+            },
+            messageInfo: {
+              sender: {
+                id: true,
+                nickName: true,
+                profile: true,
+              },
+              createdAt: true,
+              message: true,
+            },
+          },
+          order: {
+            messageInfo: {
+              createdAt: 'DESC',
+            },
+          },
+        });
       },
     );
   }
