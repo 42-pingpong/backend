@@ -15,10 +15,6 @@ import { PlayerInfo } from './PlayerInfo';
 const waitList: PlayerInfo[] = [];
 const playerList: PlayerInfo[] = [];
 const readyState = [];
-enum playerNumber {
-  PLAYER1,
-  PLAYER2,
-}
 
 @WebSocketGateway({
   namespace: 'game',
@@ -62,9 +58,9 @@ export class GameGateway
     if (waitList.length === 2) {
       const roomName = waitList[0].socket.id + '/' + waitList[1].socket.id;
       waitList[0].roomId = roomName;
-      waitList[0].number = playerNumber.PLAYER1;
+      waitList[0].number = 1;
       waitList[1].roomId = roomName;
-      waitList[1].number = playerNumber.PLAYER2;
+      waitList[1].number = 2;
 
       // 방에 입장
       await waitList[0].socket.join(roomName);
@@ -82,8 +78,8 @@ export class GameGateway
       waitList.splice(0, 2);
 
       // 플레이어들에게 플레이어 번호를 알림
-      playerList[0].socket.emit('player-number', 0);
-      playerList[1].socket.emit('player-number', 1);
+      playerList[0].socket.emit('player-number', 1);
+      playerList[1].socket.emit('player-number', 2);
     }
   }
 
@@ -140,12 +136,26 @@ export class GameGateway
 
   @SubscribeMessage('ballX-set')
   handleBallXSet(client: Socket, ballX: number) {
-    this.server.to(playerList[0].roomId).emit('ballX', ballX);
+    if (client === playerList[0].socket)
+      this.server.to(playerList[0].roomId).emit('ballX', ballX);
   }
   ////////////
   @SubscribeMessage('ballY-set')
   handleBallYSet(client: Socket, ballY: number) {
-    this.server.to(playerList[0].roomId).emit('ballY', ballY);
+    if (client === playerList[0].socket)
+      this.server.to(playerList[0].roomId).emit('ballY', ballY);
+  }
+
+  @SubscribeMessage('player1Score-set')
+  handlePlayer1ScoreSet(client: Socket, player1Score: number) {
+    if (client === playerList[0].socket)
+      this.server.to(playerList[0].roomId).emit('player1Score', player1Score);
+  }
+
+  @SubscribeMessage('player2Score-set')
+  handlePlayer2ScoreSet(client: Socket, player2Score: number) {
+    if (client === playerList[0].socket)
+      this.server.to(playerList[0].roomId).emit('player2Score', player2Score);
   }
 
   @SubscribeMessage('room-out')
