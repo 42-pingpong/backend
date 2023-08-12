@@ -27,7 +27,6 @@ export class GameGatewayService {
   }
 
   async setGame(bearerToken: string, gameinfo: CreateGameDto) {
-    console.log('gameinfo gateway', gameinfo);
     const res = await axios.post(`${this.restApiUrl}/game`, gameinfo, {
       headers: {
         'Content-Type': 'application/json',

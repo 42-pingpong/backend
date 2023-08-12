@@ -57,10 +57,7 @@ export class GameGateway
 
     // 대기열에 2명이 모이면 방을 만듬
     if (waitList.length === 2) {
-      const gameInfo: CreateGameDto = {
-        // gameMap: 'map1',
-        // gameId: roomName,
-      };
+      const gameInfo: CreateGameDto = {};
       const game = await this.gameGatewayService.setGame(
         waitList[0].token,
         gameInfo,
