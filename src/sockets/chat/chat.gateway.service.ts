@@ -101,7 +101,7 @@ export class ChatGatewayService {
 
   async saveGroupChatMessage(dto: GroupChatMessageDto, bearerToken: string) {
     const res = await axios.post(
-      `${this.restApiUrl}/chat/groupChatMessage`,
+      `${this.restApiUrl}/chat/groupChat/messages/send`,
       dto,
       {
         headers: {
