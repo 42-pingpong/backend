@@ -3,11 +3,7 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import {
-  OnGatewayInit,
-  OnGatewayConnection,
-  OnGatewayDisconnect,
-} from '@nestjs/websockets';
+import { OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 import { ChatGatewayService } from './chat.gateway.service';
 import { CreateGroupChatDto } from './dto/create-chat.dto';

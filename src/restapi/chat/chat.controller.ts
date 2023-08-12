@@ -13,8 +13,6 @@ import {
   ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
-  ApiParam,
-  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import { ChatService } from './chat.service';
@@ -34,6 +32,8 @@ import { GetDirectMessageDto } from './request/getDirectMessage.dto';
 import { GetDirectMessageDtoResponse } from './response/getDirectMessage.dto';
 import { GetGroupMessageDto } from './request/getGroupMessage.dto';
 import { GetGroupMessageResponse } from './response/getGroupMessage.dto';
+import { BlockRequestDto } from './request/block.request.dto';
+import { UnBlockRequestDto } from './request/unBlock.request.dto';
 
 @ApiTags('chat')
 @Controller('chat')
@@ -214,5 +214,15 @@ export class ChatController {
   //need auth guard
   async getGroupMessages(@Query() query: GetGroupMessageDto) {
     return await this.chatService.getGroupChatMessages(query);
+  }
+
+  @Post('block')
+  async block(@Body() body: BlockRequestDto) {
+    await this.chatService.blockUser(body);
+  }
+
+  @Delete('unBlock')
+  async unblock(@Body() body: UnBlockRequestDto) {
+    await this.chatService.unBlockUser(body);
   }
 }
