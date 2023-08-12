@@ -148,6 +148,31 @@ export class GameGateway
     this.server.to(playerList[0].roomId).emit('ballY', ballY);
   }
 
+  @SubscribeMessage('room-out')
+  async handleRoomOut(client: Socket, roomId: string) {
+    // 해당 방의 모든 플레이어들을 얻어옴
+    const playersInRoom = playerList.filter(
+      (player) => player.roomId === roomId,
+    );
+
+    if (playersInRoom.length == 1) {
+      // 남아있는 플레이어 winner 결정
+      const winner = playersInRoom[0];
+
+      winner.socket.emit('end', { winner: true });
+
+      // 게임 종료 후 데이터를 초기화하거나 저장
+      // await this.gameGatewayService.setHistory(winner.token, {
+      //   gameId: 1,
+      //   score: 1,
+      //   userId: winner.id,
+      // });
+
+      // 방 삭제 (선택적)
+      client.leave(roomId);
+    }
+  }
+
   @SubscribeMessage('end')
   async handleEnd(client: Socket, payload: CreateGameScoreRequestDto) {
     await this.gameGatewayService.setHistory(playerList[0].token, payload);
@@ -157,10 +182,17 @@ export class GameGateway
     console.log(payload.score);
     console.log(payload.userId);
 
+    // 방 정보 초기화
+    const roomId = playerList[0].roomId;
+
+    // 모든 플레이어를 방에서 나가도록 함
     client.leave(playerList[0].roomId);
     client.leave(playerList[1].roomId);
-    readyState.splice(0, 2);
+
     playerList.splice(0, 2);
-    waitList.splice(0, 2);
+    readyState.splice(0, 2);
+
+    // 다시 매칭을 위해 나갔던 방 정보를 반환
+    return { roomId };
   }
 }
