@@ -216,6 +216,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         const socketId = responseBody.receivedUser.chatSocketId;
         delete responseBody.receivedUser;
         this.server.to(socketId).emit('direct-message', responseBody);
+        //sender에게도 메시지 전달해줘요
+        client.emit('direct-message', responseBody);
+        console.log('direct-message', responseBody);
         //TODO: client가 연결되어있지 않다면, 어떻게 처리할 것인가?
         //TODO: client 알람 처리
       }

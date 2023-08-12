@@ -703,7 +703,7 @@ export class ChatService {
           },
           order: {
             messageInfo: {
-              createdAt: 'DESC',
+              createdAt: 'ASC',
             },
           },
         });
@@ -741,7 +741,7 @@ export class ChatService {
           },
           order: {
             messageInfo: {
-              createdAt: 'DESC',
+              createdAt: 'ASC',
             },
           },
         });
