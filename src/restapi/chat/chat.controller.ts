@@ -30,6 +30,8 @@ import { MuteRequestDto } from './request/mute.dto';
 import { DirectMessageDto } from './request/DirectMessage.dto';
 import { GroupChatMessageResponse } from './response/groupChatMessage.response';
 import { DirectMessageResponse } from './response/directMessage.response';
+import { GetDirectMessageDto } from './request/getDirectMessage.dto';
+import { GetDirectMessageDtoResponse } from './response/getDirectMessage.dto';
 
 @ApiTags('chat')
 @Controller('chat')
@@ -188,5 +190,16 @@ export class ChatController {
   async mute(@Body() body: MuteRequestDto) {
     // 그룹 채팅방에서 유저를 뮤트하는 메서드
     await this.chatService.mute(body);
+  }
+
+  @ApiOkResponse({
+    description: 'Direct Message를 받아옴.',
+    type: GetDirectMessageDtoResponse,
+    isArray: true,
+  })
+  @Get('directMessages')
+  //need auth guard
+  async getDirectMessages(@Query() query: GetDirectMessageDto) {
+    return await this.chatService.getDirectMessage(query);
   }
 }

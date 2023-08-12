@@ -20,6 +20,7 @@ import { GroupChatMessage } from 'src/entities/chat/groupChatMessage.entity';
 import { MuteRequestDto } from './request/mute.dto';
 import { DirectMessageDto } from './request/DirectMessage.dto';
 import { DirectMessage } from 'src/entities/chat/directMessage.entity';
+import { GetDirectMessageDto } from './request/getDirectMessage.dto';
 
 @Injectable()
 export class ChatService {
@@ -648,6 +649,57 @@ export class ChatService {
         // db에 저장
         groupChat.mutedUser.push(user);
         await manager.save(GroupChat, groupChat);
+      },
+    );
+  }
+
+  async getDirectMessage(dto: GetDirectMessageDto) {
+    return await this.groupChatRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        return await manager.getRepository(DirectMessage).find({
+          where: [
+            {
+              receivedUserId: dto.userId,
+              messageInfo: {
+                senderId: dto.targetId,
+              },
+            },
+            {
+              receivedUserId: dto.targetId,
+              messageInfo: {
+                senderId: dto.userId,
+              },
+            },
+          ],
+          select: {
+            directMessageId: true,
+            receivedUser: {
+              id: true,
+              nickName: true,
+              profile: true,
+            },
+            messageInfo: {
+              sender: {
+                id: true,
+                nickName: true,
+                profile: true,
+              },
+              createdAt: true,
+              message: true,
+            },
+          },
+          relations: {
+            messageInfo: {
+              sender: true,
+            },
+            receivedUser: true,
+          },
+          order: {
+            messageInfo: {
+              createdAt: 'DESC',
+            },
+          },
+        });
       },
     );
   }
