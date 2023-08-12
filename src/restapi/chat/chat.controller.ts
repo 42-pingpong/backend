@@ -33,6 +33,7 @@ import { DirectMessageResponse } from './response/directMessage.response';
 import { GetDirectMessageDto } from './request/getDirectMessage.dto';
 import { GetDirectMessageDtoResponse } from './response/getDirectMessage.dto';
 import { GetGroupMessageDto } from './request/getGroupMessage.dto';
+import { GetGroupMessageResponse } from './response/getGroupMessage.dto';
 
 @ApiTags('chat')
 @Controller('chat')
@@ -204,6 +205,11 @@ export class ChatController {
     return await this.chatService.getDirectMessage(query);
   }
 
+  @ApiOkResponse({
+    description: 'Group Message를 받아옴.',
+    type: GetGroupMessageResponse,
+    isArray: true,
+  })
   @Get('groupMessages')
   //need auth guard
   async getGroupMessages(@Query() query: GetGroupMessageDto) {
