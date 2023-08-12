@@ -32,6 +32,7 @@ import { GroupChatMessageResponse } from './response/groupChatMessage.response';
 import { DirectMessageResponse } from './response/directMessage.response';
 import { GetDirectMessageDto } from './request/getDirectMessage.dto';
 import { GetDirectMessageDtoResponse } from './response/getDirectMessage.dto';
+import { GetGroupMessageDto } from './request/getGroupMessage.dto';
 
 @ApiTags('chat')
 @Controller('chat')
@@ -201,5 +202,11 @@ export class ChatController {
   //need auth guard
   async getDirectMessages(@Query() query: GetDirectMessageDto) {
     return await this.chatService.getDirectMessage(query);
+  }
+
+  @Get('groupMessages')
+  //need auth guard
+  async getGroupMessages(@Query() query: GetGroupMessageDto) {
+    return await this.chatService.getGroupChatMessages(query);
   }
 }
