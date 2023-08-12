@@ -7,7 +7,11 @@ import { CreateGroupChatDto } from './dto/create-chat.dto';
 import { GetGroupChatListDto } from './dto/get-groupchatlist.dto';
 import { JoinGroupChatDto } from './dto/join-group-chat.dto';
 import { DirectMessageDto } from './request/directMessage.dto';
+import { FetchDirectMessageDto } from './request/FetchDirectMessage.dto';
+import { FetchGroupMessageDto } from './request/FetchGroupChatMessage.dto';
 import { GroupChatMessageDto } from './request/groupChatMessage.dto';
+import { FetchDirectMessageResponseDto } from './restApiResponse/FetchDirectMessageResponse.dto';
+import { FetchGroupChatMessageResponseDto } from './restApiResponse/FetchGroupChatMessageResponse.dto';
 
 @Injectable()
 export class ChatGatewayService {
@@ -118,6 +122,37 @@ export class ChatGatewayService {
         Authorization: bearerToken,
       },
     });
+    return res.data;
+  }
+
+  async fetchGroupMessage(
+    dto: FetchGroupMessageDto,
+    bearerToken: string,
+  ): Promise<FetchGroupChatMessageResponseDto> {
+    const res = await axios.get(
+      `${this.restApiUrl}/chat/groupMessages?groupChatId=${dto.groupChatId}&userId=${dto.userId}`,
+      {
+        headers: {
+          Authorization: bearerToken,
+        },
+      },
+    );
+    return res.data;
+  }
+
+  async fetchDirectMessage(
+    dto: FetchDirectMessageDto,
+    bearerToken: string,
+  ): Promise<FetchDirectMessageResponseDto> {
+    const res = await axios.get(
+      `${this.restApiUrl}/chat/directMessages?userId=${dto.userId}&targetId=${dto.targetId}`,
+      {
+        headers: {
+          Authorization: bearerToken,
+        },
+      },
+    );
+
     return res.data;
   }
 }

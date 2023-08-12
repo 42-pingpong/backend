@@ -12,8 +12,12 @@ import { Socket } from 'socket.io';
 import { ChatGatewayService } from './chat.gateway.service';
 import { CreateGroupChatDto } from './dto/create-chat.dto';
 import { DirectMessageDto } from './request/directMessage.dto';
+import { FetchDirectMessageDto } from './request/FetchDirectMessage.dto';
+import { FetchGroupMessageDto } from './request/FetchGroupChatMessage.dto';
 import { GroupChatMessageDto } from './request/groupChatMessage.dto';
 import { DirectMessageResponse } from './restApiResponse/directMessageResponse.dto';
+import { FetchDirectMessageResponseDto } from './restApiResponse/FetchDirectMessageResponse.dto';
+import { FetchGroupChatMessageResponseDto } from './restApiResponse/FetchGroupChatMessageResponse.dto';
 import { GroupChatMessageResponse } from './restApiResponse/groupChatMessageResponse.dto';
 
 export interface ChatDTO {
@@ -215,6 +219,46 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         //TODO: client가 연결되어있지 않다면, 어떻게 처리할 것인가?
         //TODO: client 알람 처리
       }
+    } catch (e) {
+      client.emit('error', e.message);
+    }
+  }
+
+  /**
+   * @description
+   * - DM을 가져온다.
+   * */
+  @SubscribeMessage('fetch-direct-message')
+  async fetchDirectMessage(client: Socket, dto: FetchDirectMessageDto) {
+    const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
+    if (userId === null) return;
+    try {
+      const data: FetchDirectMessageResponseDto =
+        await this.chatGatewayService.fetchDirectMessage(
+          dto,
+          client.handshake.auth.token,
+        );
+      client.emit('fetch-direct-message', data);
+    } catch (e) {
+      client.emit('error', e.message);
+    }
+  }
+
+  /**
+   * @description
+   * - 그룹채팅방의 메시지를 가져온다.
+   * */
+  @SubscribeMessage('fetch-group-message')
+  async fetchGroupMessage(client: Socket, dto: FetchGroupMessageDto) {
+    const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
+    if (userId === null) return;
+    try {
+      const data: FetchGroupChatMessageResponseDto =
+        await this.chatGatewayService.fetchGroupMessage(
+          dto,
+          client.handshake.auth.token,
+        );
+      client.emit('fetch-group-message', data);
     } catch (e) {
       client.emit('error', e.message);
     }
