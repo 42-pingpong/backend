@@ -11,6 +11,7 @@ import { GameGatewayService } from './game.gateway.servcie';
 import { Socket } from 'socket.io';
 import { CreateGameScoreRequestDto } from 'src/restapi/game/request/create-game-score.dto';
 import { PlayerInfo } from './PlayerInfo';
+import { CreateGameDto } from 'src/restapi/game/request/create-game.dto';
 
 const waitList: PlayerInfo[] = [];
 const playerList: PlayerInfo[] = [];
@@ -56,6 +57,11 @@ export class GameGateway
 
     // 대기열에 2명이 모이면 방을 만듬
     if (waitList.length === 2) {
+      const gameInfo: CreateGameDto = {
+        // gameMap: 'map1',
+        createDate: new Date(),
+      };
+      // await this.gameGatewayService.setGame(waitList[0].token, gameInfo);
       const roomName = waitList[0].socket.id + '/' + waitList[1].socket.id;
       waitList[0].roomId = roomName;
       waitList[0].number = 1;
@@ -112,9 +118,11 @@ export class GameGateway
 
     readyState.push(client);
 
+    this.server.to(playerList[0].roomId).emit('ready', true);
+
     if (readyState.length === 2) {
-      readyState[0].emit('ready', true);
-      readyState[1].emit('ready', true);
+      readyState[0].emit('start', true);
+      readyState[1].emit('start', true);
     }
   }
 
@@ -158,51 +166,47 @@ export class GameGateway
       this.server.to(playerList[0].roomId).emit('player2Score', player2Score);
   }
 
-  @SubscribeMessage('room-out')
-  async handleRoomOut(client: Socket, roomId: string) {
-    // 해당 방의 모든 플레이어들을 얻어옴
-    const playersInRoom = playerList.filter(
-      (player) => player.roomId === roomId,
-    );
+  // @SubscribeMessage('room-out')
+  // async handleRoomOut(client: Socket, payload: CreateGameScoreRequestDto) {
+  //   // 방의 안나간 플레이어 정보 저장
+  //   const playersInRoom = playerList.filter(
+  //     (player) => player.roomId === payload.gameId.toString(),
+  //   );
 
-    if (playersInRoom.length == 1) {
-      // 남아있는 플레이어 winner 결정
-      const winner = playersInRoom[0];
+  //   const leaver = playerList.find()
 
-      winner.socket.emit('end', { winner: true });
+  //   if (playersInRoom.length == 1) {
+  //     // 남아있는 플레이어 winner 결정
+  //     const winner = playersInRoom[0];
 
-      // 게임 종료 후 데이터를 초기화하거나 저장
-      // await this.gameGatewayService.setHistory(winner.token, {
-      //   gameId: 1,
-      //   score: 1,
-      //   userId: winner.id,
-      // });
+  //     winner.socket.emit('end', { winner: true });
 
-      // 방 삭제 (선택적)
-      client.leave(roomId);
-    }
-  }
+  //     // 게임 종료 후 데이터를 초기화하거나 저장
+  //     await this.gameGatewayService.setHistory(winner.token, payload);
+
+  //     // 방 삭제
+  //     client.leave(payload.gameId.toString());
+  //   }
+  // }
 
   @SubscribeMessage('end')
   async handleEnd(client: Socket, payload: CreateGameScoreRequestDto) {
-    await this.gameGatewayService.setHistory(playerList[0].token, payload);
-    await this.gameGatewayService.setHistory(playerList[1].token, payload);
+    if (!client.id) return;
+    if (client.id === playerList[0].socket.id) {
+      await this.gameGatewayService.setHistory(playerList[0].token, payload);
+    } else {
+      await this.gameGatewayService.setHistory(playerList[1].token, payload);
 
-    console.log(payload.gameId);
-    console.log(payload.score);
-    console.log(payload.userId);
+      // console.log(payload.gameId);
+      // console.log(payload.score);
+      // console.log(payload.userId);
 
-    // 방 정보 초기화
-    const roomId = playerList[0].roomId;
+      // 모든 플레이어를 방에서 나가도록 함
+      await client.leave(playerList[0].roomId);
+      // client.leave(playerList[1].roomId);
 
-    // 모든 플레이어를 방에서 나가도록 함
-    client.leave(playerList[0].roomId);
-    client.leave(playerList[1].roomId);
-
-    playerList.splice(0, 2);
-    readyState.splice(0, 2);
-
-    // 다시 매칭을 위해 나갔던 방 정보를 반환
-    return { roomId };
+      playerList.splice(0, 2);
+      readyState.splice(0, 2);
+    }
   }
 }
