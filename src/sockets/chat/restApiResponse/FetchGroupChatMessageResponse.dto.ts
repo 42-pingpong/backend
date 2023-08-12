@@ -9,5 +9,5 @@ export class FetchGroupChatMessageResponseDto {
 
   messageInfo: MessageInfo;
 
-  receivedGroupChat: GroupChat;
+  receivedGroupChatId: number;
 }

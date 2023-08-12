@@ -725,14 +725,10 @@ export class ChatService {
             messageInfo: {
               sender: true,
             },
-            receivedGroupChat: true,
           },
           select: {
             groupChatMessageId: true,
-            receivedGroupChat: {
-              groupChatId: true,
-              chatName: true,
-            },
+            receivedGroupChatId: true,
             messageInfo: {
               sender: {
                 id: true,
