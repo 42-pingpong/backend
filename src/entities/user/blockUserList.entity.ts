@@ -13,13 +13,13 @@ export class BlockUserList {
   blockUserListid: number;
 
   @ManyToOne(() => User, (user) => user.blockList)
-  @JoinColumn({ name: 'blockUserId' })
-  BlockUser: User;
+  @JoinColumn({ name: 'UserId' })
+  user: User;
 
   @Column({
     type: 'int',
   })
-  blockUserId: number;
+  userId: number;
 
   @ManyToOne(() => User, (user) => user.blockedList)
   @JoinColumn({ name: 'blockedUserId' })
