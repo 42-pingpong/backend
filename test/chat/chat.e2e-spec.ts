@@ -18,6 +18,7 @@ import { DeleteAdminDto } from 'src/restapi/chat/dto/delete-admin.dto';
 import { JoinGroupChatDto } from 'src/restapi/chat/dto/join-group-chat.dto';
 import { UpdateGroupChatDto } from 'src/restapi/chat/dto/update-group-chat.dto';
 import { DirectMessageDto } from 'src/restapi/chat/request/DirectMessage.dto';
+import { GetDirectMessageDto } from 'src/restapi/chat/request/getDirectMessage.dto';
 import { GroupChatMessageDto } from 'src/restapi/chat/request/groupChatMessage.dto';
 import * as request from 'supertest';
 import { DataSource, In, Repository } from 'typeorm';
@@ -817,6 +818,68 @@ describe('Chat', () => {
       expect(res.status).toBe(201);
       expect(res.body.messageInfo.sender.id).toBe(user2240.id);
       expect(res.body.receivedUserId).toBe(user2241.id);
+    });
+
+    it('user2241이 메세지 보내기', async () => {
+      const dmDto = new DirectMessageDto();
+
+      dmDto.senderId = user2241.id;
+      dmDto.receiverId = user2240.id;
+      dmDto.message = 'test';
+
+      const res = await request(app.getHttpServer())
+        .post(`/chat/messages`)
+        .send(dmDto);
+
+      expect(res.status).toBe(201);
+      expect(res.body.messageInfo.sender.id).toBe(user2241.id);
+      expect(res.body.receivedUserId).toBe(user2240.id);
+    });
+  });
+
+  describe('GET /directMessages', () => {
+    let user2250: User;
+    let user2251: User;
+    let user2252: User;
+    let user2253: User;
+
+    beforeAll(async () => {
+      user2250 = await userRepository.save(userFactory.createUser(2250));
+      user2251 = await userRepository.save(userFactory.createUser(2251));
+      user2252 = await userRepository.save(userFactory.createUser(2252));
+      user2253 = await userRepository.save(userFactory.createUser(2253));
+    });
+
+    it('user2250이 user2251에게 메세지 보내기', async () => {
+      const dmDto = new DirectMessageDto();
+
+      dmDto.senderId = user2250.id;
+      dmDto.receiverId = user2251.id;
+      dmDto.message = 'message from 2250 to 2251';
+      await request(app.getHttpServer()).post(`/chat/messages`).send(dmDto);
+
+      dmDto.senderId = user2251.id;
+      dmDto.receiverId = user2250.id;
+      dmDto.message = 'message from 2251 to 2250';
+      await request(app.getHttpServer()).post(`/chat/messages`).send(dmDto);
+
+      dmDto.senderId = user2250.id;
+      dmDto.receiverId = user2252.id;
+      dmDto.message = 'message from 2250 to 2252';
+      await request(app.getHttpServer()).post(`/chat/messages`).send(dmDto);
+
+      /**
+       * user2250이 user2251에게 보낸 메세지들을 가져오기
+       * */
+      const getDmDto = new GetDirectMessageDto();
+      getDmDto.userId = user2250.id;
+      getDmDto.targetId = user2251.id;
+      const dms = await request(app.getHttpServer())
+        .get('/chat/directMessages')
+        .query(getDmDto);
+
+      expect(dms.status).toBe(200);
+      expect(dms.body.length).toBe(2);
     });
   });
 
