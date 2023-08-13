@@ -5,13 +5,12 @@ import axios from 'axios';
 import { GroupChat } from 'src/entities/chat/groupChat.entity';
 import { CreateGroupChatDto } from './dto/create-chat.dto';
 import { GetGroupChatListDto } from './dto/get-groupchatlist.dto';
-import { JoinGroupChatDto } from './dto/join-group-chat.dto';
 import { DirectMessageDto } from './request/directMessage.dto';
 import { FetchDirectMessageDto } from './request/FetchDirectMessage.dto';
 import { FetchGroupMessageDto } from './request/FetchGroupChatMessage.dto';
 import { GroupChatMessageDto } from './request/groupChatMessage.dto';
-import { FetchDirectMessageResponseDto } from './restApiResponse/FetchDirectMessageResponse.dto';
-import { FetchGroupChatMessageResponseDto } from './restApiResponse/FetchGroupChatMessageResponse.dto';
+import { DirectMessageResponse } from './restApiResponse/directMessageResponse.dto';
+import { GroupChatMessageResponse } from './restApiResponse/groupChatMessageResponse.dto';
 
 @Injectable()
 export class ChatGatewayService {
@@ -128,7 +127,7 @@ export class ChatGatewayService {
   async fetchGroupMessage(
     dto: FetchGroupMessageDto,
     bearerToken: string,
-  ): Promise<FetchGroupChatMessageResponseDto> {
+  ): Promise<GroupChatMessageResponse> {
     const res = await axios.get(
       `${this.restApiUrl}/chat/groupMessages?groupChatId=${dto.groupChatId}&userId=${dto.userId}`,
       {
@@ -143,7 +142,7 @@ export class ChatGatewayService {
   async fetchDirectMessage(
     dto: FetchDirectMessageDto,
     bearerToken: string,
-  ): Promise<FetchDirectMessageResponseDto> {
+  ): Promise<DirectMessageResponse> {
     const res = await axios.get(
       `${this.restApiUrl}/chat/directMessages?userId=${dto.userId}&targetId=${dto.targetId}`,
       {

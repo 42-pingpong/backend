@@ -30,12 +30,9 @@ import { DirectMessageDto } from './request/DirectMessage.dto';
 import { GroupChatMessageResponse } from './response/groupChatMessage.response';
 import { DirectMessageResponse } from './response/directMessage.response';
 import { GetDirectMessageDto } from './request/getDirectMessage.dto';
-import { GetDirectMessageDtoResponse } from './response/getDirectMessage.dto';
 import { GetGroupMessageDto } from './request/getGroupMessage.dto';
-import { GetGroupMessageResponse } from './response/getGroupMessage.dto';
 import { BlockRequestDto } from './request/block.request.dto';
 import { UnBlockRequestDto } from './request/unBlock.request.dto';
-import { GetSendableUserDto } from './request/getSendableUser.dto';
 
 @ApiTags('chat')
 @Controller('chat')
@@ -198,7 +195,7 @@ export class ChatController {
 
   @ApiOkResponse({
     description: 'Direct Message를 받아옴.',
-    type: GetDirectMessageDtoResponse,
+    type: DirectMessageResponse,
     isArray: true,
   })
   @Get('directMessages')
@@ -209,7 +206,7 @@ export class ChatController {
 
   @ApiOkResponse({
     description: 'Group Message를 받아옴.',
-    type: GetGroupMessageResponse,
+    type: GroupChatMessageResponse,
     isArray: true,
   })
   @Get('groupMessages')
