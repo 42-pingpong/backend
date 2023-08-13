@@ -21,24 +21,6 @@ import { UnmuteUserDto } from './request/unMute.dto';
 import { DirectMessageResponse } from './restApiResponse/directMessageResponse.dto';
 import { GroupChatMessageResponse } from './restApiResponse/groupChatMessageResponse.dto';
 
-export interface ChatDTO {
-  roomId: string;
-  id?: number;
-  nickname: string;
-  text: string;
-}
-
-export interface ChatRoomDTO {
-  log?: ChatDTO[];
-  chatName: string;
-  password?: string;
-  levelOfPublicity: string;
-  currentParticipants: number;
-  maxParticipants: number;
-  ownerId?: number;
-  roomId: string;
-}
-
 /**
  * @brief chat gateway
  *
@@ -273,10 +255,30 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('block-user')
-  async blockUser(client: Socket, dto: BlockUserDto) {}
+  async blockUser(client: Socket, dto: BlockUserDto) {
+    console.log('block-user', dto);
+    const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
+    if (userId === null) return;
+    try {
+      await this.chatGatewayService.blockUser(dto, client.handshake.auth.token);
+    } catch (e) {
+      client.emit('error', e.message);
+    }
+  }
 
   @SubscribeMessage('unblock-user')
-  async unblockUser(client: Socket, dto: UnblockUserDto) {}
+  async unblockUser(client: Socket, dto: UnblockUserDto) {
+    const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
+    if (userId === null) return;
+    try {
+      await this.chatGatewayService.unBlockUser(
+        dto,
+        client.handshake.auth.token,
+      );
+    } catch (e) {
+      client.emit('error', e.message);
+    }
+  }
 
   @SubscribeMessage('mute-user')
   async muteUser(client: Socket, dto: MuteUserDto) {}

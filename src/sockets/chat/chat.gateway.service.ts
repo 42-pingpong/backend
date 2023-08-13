@@ -5,10 +5,12 @@ import axios from 'axios';
 import { GroupChat } from 'src/entities/chat/groupChat.entity';
 import { CreateGroupChatDto } from './dto/create-chat.dto';
 import { GetGroupChatListDto } from './dto/get-groupchatlist.dto';
+import { BlockUserDto } from './request/BlockUser.dto';
 import { DirectMessageDto } from './request/directMessage.dto';
 import { FetchDirectMessageDto } from './request/FetchDirectMessage.dto';
 import { FetchGroupMessageDto } from './request/FetchGroupChatMessage.dto';
 import { GroupChatMessageDto } from './request/groupChatMessage.dto';
+import { UnblockUserDto } from './request/unBlockUser.dto';
 import { DirectMessageResponse } from './restApiResponse/directMessageResponse.dto';
 import { GroupChatMessageResponse } from './restApiResponse/groupChatMessageResponse.dto';
 
@@ -153,5 +155,21 @@ export class ChatGatewayService {
     );
 
     return res.data;
+  }
+
+  async blockUser(dto: BlockUserDto, bearerToken: string) {
+    await axios.post(`${this.restApiUrl}/chat/block`, dto, {
+      headers: {
+        Authorization: bearerToken,
+      },
+    });
+  }
+
+  async unBlockUser(dto: UnblockUserDto, bearerToken: string) {
+    await axios.post(`${this.restApiUrl}/chat/unBlock`, dto, {
+      headers: {
+        Authorization: bearerToken,
+      },
+    });
   }
 }
