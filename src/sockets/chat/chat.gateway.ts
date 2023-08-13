@@ -21,6 +21,7 @@ import { UnmuteUserDto } from './request/unMute.dto';
 import { DirectMessageResponse } from './restApiResponse/directMessageResponse.dto';
 import { GroupChatMessageResponse } from './restApiResponse/groupChatMessageResponse.dto';
 import { JoinRoomResponse } from './restApiResponse/joinRoomResponse.dto';
+import { JoinGroupChatDto } from './request/joinGroupChat.dto';
 
 /**
  * @brief chat gateway
@@ -126,19 +127,18 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('join-room')
-  async joinChatRoom(client: any, groupChatId: string) {
-    console.log('join-room', groupChatId);
+  async joinChatRoom(client: any, groupChatDto: JoinGroupChatDto) {
+    console.log('join-room', groupChatDto.groupChatId);
     const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
     if (userId === null) return;
 
     try {
       const resPonse: JoinRoomResponse =
         await this.chatGatewayService.joinGroupChat(
-          +groupChatId,
-          userId,
+          groupChatDto,
           client.handshake.auth.token,
         );
-      client.join(groupChatId);
+      client.join(groupChatDto.groupChatId);
       client.emit('join-room', resPonse);
     } catch (e) {
       client.emit('error', e.message);
