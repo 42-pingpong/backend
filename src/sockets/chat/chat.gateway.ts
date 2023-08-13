@@ -16,8 +16,6 @@ import { FetchDirectMessageDto } from './request/FetchDirectMessage.dto';
 import { FetchGroupMessageDto } from './request/FetchGroupChatMessage.dto';
 import { GroupChatMessageDto } from './request/groupChatMessage.dto';
 import { DirectMessageResponse } from './restApiResponse/directMessageResponse.dto';
-import { FetchDirectMessageResponseDto } from './restApiResponse/FetchDirectMessageResponse.dto';
-import { FetchGroupChatMessageResponseDto } from './restApiResponse/FetchGroupChatMessageResponse.dto';
 import { GroupChatMessageResponse } from './restApiResponse/groupChatMessageResponse.dto';
 
 export interface ChatDTO {
@@ -236,7 +234,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
     if (userId === null) return;
     try {
-      const data: FetchDirectMessageResponseDto =
+      const data: DirectMessageResponse =
         await this.chatGatewayService.fetchDirectMessage(
           dto,
           client.handshake.auth.token,
@@ -256,7 +254,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
     if (userId === null) return;
     try {
-      const data: FetchGroupChatMessageResponseDto =
+      const data: GroupChatMessageResponse =
         await this.chatGatewayService.fetchGroupMessage(
           dto,
           client.handshake.auth.token,

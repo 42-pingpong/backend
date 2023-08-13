@@ -22,7 +22,7 @@ import { DirectMessageDto } from './request/DirectMessage.dto';
 import { DirectMessage } from 'src/entities/chat/directMessage.entity';
 import { GetDirectMessageDto } from './request/getDirectMessage.dto';
 import { GetGroupMessageDto } from './request/getGroupMessage.dto';
-import { GetDirectMessageDtoResponse } from './response/getDirectMessage.dto';
+import { DirectMessageResponse } from './response/directMessage.response';
 
 @Injectable()
 export class ChatService {
@@ -660,7 +660,7 @@ export class ChatService {
    * */
   async getDirectMessage(
     dto: GetDirectMessageDto,
-  ): Promise<GetDirectMessageDtoResponse[]> {
+  ): Promise<DirectMessageResponse[]> {
     return await this.groupChatRepository.manager.transaction(
       async (manager: EntityManager) => {
         return await manager.getRepository(DirectMessage).find({
@@ -691,6 +691,7 @@ export class ChatService {
               nickName: true,
               profile: true,
             },
+            receivedUserId: true,
             messageInfo: {
               sender: {
                 id: true,
