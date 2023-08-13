@@ -5,6 +5,7 @@ import axios from 'axios';
 import { GroupChat } from 'src/entities/chat/groupChat.entity';
 import { CreateGroupChatDto } from './dto/create-chat.dto';
 import { GetGroupChatListDto } from './dto/get-groupchatlist.dto';
+import { JoinGroupChatDto } from './dto/join-group-chat.dto';
 import { BlockUserDto } from './request/BlockUser.dto';
 import { DirectMessageDto } from './request/directMessage.dto';
 import { FetchDirectMessageDto } from './request/FetchDirectMessage.dto';
@@ -13,6 +14,7 @@ import { GroupChatMessageDto } from './request/groupChatMessage.dto';
 import { UnblockUserDto } from './request/unBlockUser.dto';
 import { DirectMessageResponse } from './restApiResponse/directMessageResponse.dto';
 import { GroupChatMessageResponse } from './restApiResponse/groupChatMessageResponse.dto';
+import { JoinRoomResponse } from './restApiResponse/joinRoomResponse.dto';
 
 @Injectable()
 export class ChatGatewayService {
@@ -93,8 +95,8 @@ export class ChatGatewayService {
     groupChatId: number,
     userId: number,
     bearerToken: string,
-  ) {
-    await axios.post(
+  ): Promise<JoinRoomResponse> {
+    const res = await axios.post(
       `${this.restApiUrl}/chat/groupChat/${groupChatId}?userId=${userId}`,
       {
         headers: {
@@ -102,6 +104,7 @@ export class ChatGatewayService {
         },
       },
     );
+    return res.data;
   }
 
   async saveGroupChatMessage(dto: GroupChatMessageDto, bearerToken: string) {

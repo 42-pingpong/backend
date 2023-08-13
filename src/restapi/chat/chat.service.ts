@@ -218,6 +218,33 @@ export class ChatService {
           .update()
           .set({ curParticipants: groupChat.curParticipants + 1 })
           .execute();
+
+        console.log('groupChatId', groupChatId);
+        return await manager.getRepository(GroupChat).findOne({
+          where: { groupChatId: groupChatId },
+          relations: {
+            admin: true,
+            joinedUser: true,
+            owner: true,
+          },
+          select: {
+            admin: {
+              id: true,
+              nickName: true,
+              profile: true,
+            },
+            joinedUser: {
+              id: true,
+              nickName: true,
+              profile: true,
+            },
+            owner: {
+              id: true,
+              nickName: true,
+              profile: true,
+            },
+          },
+        });
       },
     );
   }
