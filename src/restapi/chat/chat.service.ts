@@ -159,13 +159,37 @@ export class ChatService {
               joinedUser: true,
               bannedUser: true,
             },
+            select: {
+              groupChatId: true,
+              levelOfPublicity: true,
+              maxParticipants: true,
+              curParticipants: true,
+              password: true,
+              admin: {
+                id: true,
+                profile: true,
+                nickName: true,
+              },
+              joinedUser: {
+                id: true,
+                profile: true,
+                nickName: true,
+              },
+              owner: {
+                id: true,
+                profile: true,
+                nickName: true,
+              },
+              bannedUser: true,
+            },
           });
         if (!groupChat) {
           throw new NotFoundException('그룹 채팅방이 존재하지 않습니다.');
         }
 
+        console.log(groupChat.password);
         if (groupChat.levelOfPublicity === 'Prot') {
-          if (dto?.password && groupChat?.password !== dto.password) {
+          if (dto.password && groupChat.password !== dto.password) {
             throw new ForbiddenException('비밀번호가 일치하지 않습니다.');
           }
         }
