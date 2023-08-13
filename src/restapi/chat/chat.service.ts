@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { GroupChat } from 'src/entities/chat/groupChat.entity';
-import { EntityManager, Join, Repository } from 'typeorm';
+import { EntityManager, Join, Not, Repository } from 'typeorm';
 import { CreateGroupChatDto } from './dto/create-group-chat.dto';
 import { UpdateGroupChatDto } from './dto/update-group-chat.dto';
 import { User } from 'src/entities/user/user.entity';
@@ -26,6 +26,7 @@ import { GetDirectMessageDtoResponse } from './response/getDirectMessage.dto';
 import { BlockRequestDto } from './request/block.request.dto';
 import { UnBlockRequestDto } from './request/unBlock.request.dto';
 import { BlockUserList } from 'src/entities/user/blockUserList.entity';
+import { GetSendableUserDto } from './request/getSendableUser.dto';
 
 @Injectable()
 export class ChatService {
@@ -813,4 +814,26 @@ export class ChatService {
       blockedUserId: dto.unBlockedUserId,
     });
   }
+
+  //   async getSendableUser(dto: GetSendableUserDto) {
+  //     if (dto.groupChatId) {
+  //       // 그룹 채팅방에서 sender를 mute/block하지 않은 유저를 가져옴
+  //       return await this.groupChatRepository.manager.transaction(
+  //         async (manager: EntityManager) => {
+  //           const groupChat = await manager.getRepository(GroupChat).findOne({
+  //             where: {
+  //               groupChatId: dto.groupChatId,
+  //               mutedUser: {
+  //                 id: Not(dto.userId),
+  //               },
+  //             },
+  //             relations: {
+  //               joinedUser: true,
+  //             },
+  //           });
+  //         },
+  //       );
+  //     } else {
+  //     }
+  //   }
 }

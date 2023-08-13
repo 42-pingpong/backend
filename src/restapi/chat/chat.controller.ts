@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiBody,
@@ -34,6 +35,7 @@ import { GetGroupMessageDto } from './request/getGroupMessage.dto';
 import { GetGroupMessageResponse } from './response/getGroupMessage.dto';
 import { BlockRequestDto } from './request/block.request.dto';
 import { UnBlockRequestDto } from './request/unBlock.request.dto';
+import { GetSendableUserDto } from './request/getSendableUser.dto';
 
 @ApiTags('chat')
 @Controller('chat')
@@ -225,4 +227,15 @@ export class ChatController {
   async unblock(@Body() body: UnBlockRequestDto) {
     await this.chatService.unBlockUser(body);
   }
+
+  //   @Get('sendableUser')
+  //   async getSendableUser(@Query() query: GetSendableUserDto) {
+  //     if (query.senderId && query.groupChatId)
+  //       throw new BadRequestException(
+  //         'senderId와 groupChatId는 동시에 존재할 수 없습니다.',
+  //       );
+
+  //     console.log(query);
+  //     // return await this.chatService.getSendableUser(query);
+  //   }
 }

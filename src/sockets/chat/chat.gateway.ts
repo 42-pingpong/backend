@@ -7,10 +7,17 @@ import { OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 import { ChatGatewayService } from './chat.gateway.service';
 import { CreateGroupChatDto } from './dto/create-chat.dto';
+import { BanUserDto } from './request/banUser.dto';
+import { BlockUserDto } from './request/BlockUser.dto';
 import { DirectMessageDto } from './request/directMessage.dto';
 import { FetchDirectMessageDto } from './request/FetchDirectMessage.dto';
 import { FetchGroupMessageDto } from './request/FetchGroupChatMessage.dto';
 import { GroupChatMessageDto } from './request/groupChatMessage.dto';
+import { KickUserDto } from './request/kickUser.dto';
+import { MuteUserDto } from './request/muteUser.dto';
+import { UnBanUserDto } from './request/unBanUser.dto';
+import { UnblockUserDto } from './request/unBlockUser.dto';
+import { UnmuteUserDto } from './request/unMute.dto';
 import { DirectMessageResponse } from './restApiResponse/directMessageResponse.dto';
 import { FetchDirectMessageResponseDto } from './restApiResponse/FetchDirectMessageResponse.dto';
 import { FetchGroupChatMessageResponseDto } from './restApiResponse/FetchGroupChatMessageResponse.dto';
@@ -172,18 +179,22 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (userId === null) return;
 
     try {
+      //block/mute에 상관없이 메시지를 저장한다.
       const responseBody: GroupChatMessageResponse =
         await this.chatGatewayService.saveGroupChatMessage(
           dto,
           client.handshake.auth.token,
         );
       //sender를 제외한 room의 모든 client에게 메시지를 전달한다.
+      // 2. block/mute 처리된 사용자의 메세지는 전달되면 안됨.
+      // block은 joined-user간 서로에게 메시지를 전달하지 않는다.
+      // mute는 joined-user에게 메시지를 전달하지 않는다.
+      // groupChatId의 joined-user-list를 가져와서, 해당 사용자가 block/mute 처리된 사용자인지 확인한다.
       client
         .to(responseBody.receivedGroupChatId.toString())
         .emit('group-message', responseBody);
-      //offline인 경우 어떻게함?//push notification으로 처리
 
-      //sender에게도 메시지 전달해줘요
+      //sender에게도 메시지 전달
       client.emit('group-message', responseBody);
     } catch (e) {
       client.emit('error', e.message);
@@ -207,7 +218,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           client.handshake.auth.token,
         );
       //client가 socket에 연결되어있는지 확인한다.
-      if (responseBody.receivedUser.chatSocketId) {
+      if (responseBody?.receivedUser?.chatSocketId) {
         //client가 연결되어있다면, 해당 client에게 메시지를 전달한다.
         const socketId = responseBody.receivedUser.chatSocketId;
         delete responseBody.receivedUser;
@@ -259,4 +270,25 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.emit('error', e.message);
     }
   }
+
+  @SubscribeMessage('block-user')
+  async blockUser(client: Socket, dto: BlockUserDto) {}
+
+  @SubscribeMessage('unblock-user')
+  async unblockUser(client: Socket, dto: UnblockUserDto) {}
+
+  @SubscribeMessage('mute-user')
+  async muteUser(client: Socket, dto: MuteUserDto) {}
+
+  @SubscribeMessage('unmute-user')
+  async unmuteUser(client: Socket, dto: UnmuteUserDto) {}
+
+  @SubscribeMessage('ban-user')
+  async banUser(client: Socket, dto: BanUserDto) {}
+
+  @SubscribeMessage('unban-user')
+  async unbanUser(client: Socket, dto: UnBanUserDto) {}
+
+  @SubscribeMessage('kick-user')
+  async kickUser(client: Socket, dto: KickUserDto) {}
 }
