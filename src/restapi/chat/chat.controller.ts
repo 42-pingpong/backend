@@ -187,12 +187,6 @@ export class ChatController {
     return await this.chatService.sendDirectMessage(message);
   }
 
-  @Post('groupChat/mute/:groupChatId')
-  async mute(@Body() body: MuteRequestDto) {
-    // 그룹 채팅방에서 유저를 뮤트하는 메서드
-    await this.chatService.mute(body);
-  }
-
   @ApiOkResponse({
     description: 'Direct Message를 받아옴.',
     type: DirectMessageResponse,
@@ -223,6 +217,18 @@ export class ChatController {
   @Delete('unBlock')
   async unblock(@Body() body: UnBlockRequestDto) {
     await this.chatService.unBlockUser(body);
+  }
+
+  @Post('groupChat/mute/:groupChatId')
+  async mute(@Body() body: MuteRequestDto) {
+    // 그룹 채팅방에서 유저를 뮤트하는 메서드
+    await this.chatService.mute(body);
+  }
+
+  @Post('groupChat/unmute/:groupChatId')
+  async unmute(@Body() body: MuteRequestDto) {
+    // 그룹 채팅방에서 유저를 뮤트해제하는 메서드
+    await this.chatService.unmute(body);
   }
 
   //   @Get('sendableUser')
