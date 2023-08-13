@@ -5,7 +5,6 @@ import axios from 'axios';
 import { GroupChat } from 'src/entities/chat/groupChat.entity';
 import { CreateGroupChatDto } from './dto/create-chat.dto';
 import { GetGroupChatListDto } from './dto/get-groupchatlist.dto';
-import { JoinGroupChatDto } from './dto/join-group-chat.dto';
 import { BlockUserDto } from './request/BlockUser.dto';
 import { DirectMessageDto } from './request/directMessage.dto';
 import { FetchDirectMessageDto } from './request/FetchDirectMessage.dto';
@@ -15,6 +14,7 @@ import { UnblockUserDto } from './request/unBlockUser.dto';
 import { DirectMessageResponse } from './restApiResponse/directMessageResponse.dto';
 import { GroupChatMessageResponse } from './restApiResponse/groupChatMessageResponse.dto';
 import { JoinRoomResponse } from './restApiResponse/joinRoomResponse.dto';
+import { JoinGroupChatDto } from './request/joinGroupChat.dto';
 
 @Injectable()
 export class ChatGatewayService {
@@ -92,12 +92,13 @@ export class ChatGatewayService {
   }
 
   async joinGroupChat(
-    groupChatId: number,
-    userId: number,
+    groupChatDto: JoinGroupChatDto,
     bearerToken: string,
   ): Promise<JoinRoomResponse> {
     const res = await axios.post(
-      `${this.restApiUrl}/chat/groupChat/${groupChatId}?userId=${userId}`,
+      groupChatDto.password
+        ? `${this.restApiUrl}/chat/groupChat/${groupChatDto.groupChatId}?userId=${groupChatDto.userId}&password=${groupChatDto.password}`
+        : `${this.restApiUrl}/chat/groupChat/${groupChatDto.groupChatId}?userId=${groupChatDto.userId}`,
       {
         headers: {
           Authorization: bearerToken,
