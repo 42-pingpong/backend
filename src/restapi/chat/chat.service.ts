@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { GroupChat } from 'src/entities/chat/groupChat.entity';
-import { EntityManager, Join, Not, Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { CreateGroupChatDto } from './dto/create-group-chat.dto';
 import { UpdateGroupChatDto } from './dto/update-group-chat.dto';
 import { User } from 'src/entities/user/user.entity';
@@ -165,22 +165,9 @@ export class ChatService {
         }
 
         if (groupChat.levelOfPublicity === 'Prot') {
-          if (dto.password && groupChat.password !== dto.password) {
+          if (dto?.password && groupChat?.password !== dto.password) {
             throw new ForbiddenException('비밀번호가 일치하지 않습니다.');
           }
-        }
-
-        const isOwner = groupChat.ownerId === dto.userId;
-        if (isOwner) {
-          return;
-        }
-
-        // 그룹 채팅방에 참여한 유저가 admin인지 검증
-        const isAdmin = groupChat.admin.find(
-          (admin) => admin.id === dto.userId,
-        );
-        if (isAdmin) {
-          return;
         }
 
         // 그룹 채팅방에 참여한 유저가 bannedUser인지 검증
@@ -191,11 +178,6 @@ export class ChatService {
           throw new ForbiddenException('참여할 수 없는 그룹 채팅방입니다.');
         }
 
-        // 그룹 채팅방의 최대 참여 인원 조회
-        if (groupChat.curParticipants >= groupChat.maxParticipants) {
-          throw new ForbiddenException();
-        }
-
         const user = await manager.getRepository(User).findOne({
           where: { id: dto.userId },
         });
@@ -203,23 +185,36 @@ export class ChatService {
           throw new NotFoundException('user가 존재하지 않습니다.');
         }
 
-        // 그룹 채팅방에 참여한 유저 추가
-        // save보다 update가 더 빠르다.
-        await manager
-          .getRepository(GroupChat)
-          .createQueryBuilder()
-          .relation(GroupChat, 'joinedUser')
-          .of(groupChat)
-          .add(user);
+        const isOwner = groupChat.ownerId === dto.userId;
+        const isAdmin = groupChat.admin.find(
+          (admin) => admin.id === dto.userId,
+        );
+        const isJoined: User = groupChat.joinedUser.find(
+          (joinedUser) => joinedUser.id === dto.userId,
+        );
 
-        await manager
-          .getRepository(GroupChat)
-          .createQueryBuilder()
-          .update()
-          .set({ curParticipants: groupChat.curParticipants + 1 })
-          .execute();
+        //Owner/Admin/joineduser가 아닌 경우, Join
+        if (!isOwner && !isAdmin && !isJoined) {
+          // 그룹 채팅방의 최대 참여 인원 조회
+          if (groupChat.curParticipants >= groupChat.maxParticipants) {
+            throw new ForbiddenException();
+          }
 
-        console.log('groupChatId', groupChatId);
+          await manager
+            .getRepository(GroupChat)
+            .createQueryBuilder()
+            .relation(GroupChat, 'joinedUser')
+            .of(groupChat)
+            .add(user);
+
+          await manager
+            .getRepository(GroupChat)
+            .createQueryBuilder()
+            .update()
+            .set({ curParticipants: groupChat.curParticipants + 1 })
+            .execute();
+        }
+
         return await manager.getRepository(GroupChat).findOne({
           where: { groupChatId: groupChatId },
           relations: {
