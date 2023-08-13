@@ -75,6 +75,7 @@ export class GameGateway
 
       waitList[0].roomId = roomName;
       waitList[0].play_number = 1;
+      waitList[0].enemy_id = waitList[1].id;
       waitList[1].roomId = roomName;
       waitList[1].play_number = 2;
       waitList[1].enemy_id = waitList[0].id;
@@ -96,15 +97,13 @@ export class GameGateway
     );
 
     if (idx === -1 || enemyIdx === -1) return;
-    console.log('idx 1: ', idx);
-    console.log('enemyIdx 1: ', enemyIdx);
     // 플레이어 목록에 있는 플레이어들에게 방 입장을 알림
     playerList[enemyIdx].socket.emit('join', playerList[enemyIdx].roomId);
     playerList[idx].socket.emit('join', playerList[enemyIdx].roomId);
 
     // 플레이어들에게 플레이어 번호를 알림
-    playerList[enemyIdx].socket.emit('player-number', 1);
-    playerList[idx].socket.emit('player-number', 2);
+    playerList[enemyIdx].socket.emit('player-number', 2);
+    playerList[idx].socket.emit('player-number', 1);
   }
 
   // 방에 입장시 실행
@@ -112,14 +111,11 @@ export class GameGateway
   async handleJoin(client: any) {
     console.log('방 입장~~~');
     const idx = playerList.findIndex((player) => player.socket === client);
-    if (playerList[idx].enemy_id === undefined) return;
     const enemyIdx = playerList.findIndex(
       (player) => player.id === playerList[idx].enemy_id,
     );
 
     if (idx === -1 || enemyIdx === -1) return;
-    console.log('idx 2: ', idx);
-    console.log('enemyIdx 2: ', enemyIdx);
     // 플레이어의 닉네임을 가져옴
     const player1NickName = await this.gameGatewayService.getNickName(
       playerList[enemyIdx].id,
@@ -148,33 +144,18 @@ export class GameGateway
 
     readyState.push(client);
 
-    // if (readyState.length % 2 === 1) return;
-
     const idx = playerList.findIndex((player) => player.socket === client);
-
-    // 0번 먼저 클릭 (enemy없음 idx:0 enemyIdx:-1)
-    // 1번 먼저 클릭 (enemy있음 idx:1 enemyIdx:0)
-
-    // if (playerList[idx].enemy_id === undefined) return;
     const enemyIdx = playerList.findIndex(
-      (player) =>
-        player.roomId === playerList[idx].roomId &&
-        playerList[idx].socket !== client,
+      (player) => player.id === playerList[idx].enemy_id,
     );
-    console.log(idx, enemyIdx);
     if (idx === -1 || enemyIdx === -1) return;
-    // console.log('idx 3: ', idx);
-    // console.log('enemyIdx 3: ', enemyIdx);
 
     // 서버에게 ready상태 알림
     this.server.to(playerList[0].roomId.toString()).emit('ready', true);
 
-    console.log('readyState.length: ', readyState.length);
-    console.log('idx 3: ', idx);
-    console.log('enemyIdx 3: ', enemyIdx);
     if (readyState.length === 2) {
-      readyState[0].emit('start', true);
-      readyState[1].emit('start', true);
+      readyState[idx].emit('start', true);
+      readyState[enemyIdx].emit('start', true);
     }
   }
 
@@ -191,34 +172,42 @@ export class GameGateway
 
   @SubscribeMessage('move')
   handlePaddleMovement(client: Socket, payload: string) {
-    this.server.to(playerList[0].roomId.toString()).emit('move', payload);
+    const idx = playerList.findIndex((player) => player.socket === client);
+    if (client === playerList[idx].socket)
+      this.server.to(playerList[idx].roomId.toString()).emit('move', payload);
   }
 
   @SubscribeMessage('ballX-set')
   handleBallXSet(client: Socket, ballX: number) {
-    if (client === playerList[0].socket)
-      this.server.to(playerList[0].roomId.toString()).emit('ballX', ballX);
+    const idx = playerList.findIndex((player) => player.socket === client);
+    if (client === playerList[idx].socket)
+      this.server.to(playerList[idx].roomId.toString()).emit('ballX', ballX);
   }
 
   @SubscribeMessage('ballY-set')
   handleBallYSet(client: Socket, ballY: number) {
-    if (client === playerList[0].socket)
-      this.server.to(playerList[0].roomId.toString()).emit('ballY', ballY);
+    const idx = playerList.findIndex((player) => player.socket === client);
+    if (client === playerList[idx].socket)
+      this.server.to(playerList[idx].roomId.toString()).emit('ballY', ballY);
   }
 
   @SubscribeMessage('player1Score-set')
   handlePlayer1ScoreSet(client: Socket, player1Score: number) {
-    if (client === playerList[0].socket)
+    const idx = playerList.findIndex((player) => player.socket === client);
+    console.log('player1Score-set', player1Score);
+    if (client === playerList[idx].socket)
       this.server
-        .to(playerList[0].roomId.toString())
+        .to(playerList[idx].roomId.toString())
         .emit('player1Score', player1Score);
   }
 
   @SubscribeMessage('player2Score-set')
   handlePlayer2ScoreSet(client: Socket, player2Score: number) {
-    if (client === playerList[0].socket)
+    const idx = playerList.findIndex((player) => player.socket === client);
+    console.log('player2Score-set', player2Score);
+    if (client === playerList[idx].socket)
       this.server
-        .to(playerList[0].roomId.toString())
+        .to(playerList[idx].roomId.toString())
         .emit('player2Score', player2Score);
   }
 
@@ -248,22 +237,22 @@ export class GameGateway
   @SubscribeMessage('end')
   async handleEnd(client: Socket, payload: CreateGameScoreRequestDto) {
     console.log('게임 끝~~~');
+    console.log('payload', payload);
     if (!client.id) return;
-    if (client.id === playerList[0].socket.id) {
-      await this.gameGatewayService.setHistory(playerList[0].token, payload);
-    } else {
-      await this.gameGatewayService.setHistory(playerList[1].token, payload);
-
-      // console.log(payload.gameId);
-      // console.log(payload.score);
-      // console.log(payload.userId);
-
-      // 모든 플레이어를 방에서 나가도록 함
-      await client.leave(playerList[0].roomId.toString());
-      await client.leave(playerList[1].roomId.toString());
-
-      playerList.splice(0, 2);
-      readyState.splice(0, 2);
+    const idx = playerList.findIndex((player) => player.socket === client);
+    if (idx === -1) return;
+    if (client.id === playerList[idx].socket.id) {
+      await this.gameGatewayService.setHistory(playerList[idx].token, payload);
+      if (playerList[idx])
+        await client.leave(playerList[idx].roomId.toString());
+      playerList.splice(idx, 1);
+      readyState.splice(idx, 1);
     }
   }
+
+  // @SubscribeMessage('room-out')
+  // async handleRoomOut(client: Socket) {
+  //   const idx = playerList.findIndex((player) => player.socket === client);
+  //   if (idx === -1) return;
+  // }
 }
