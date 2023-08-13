@@ -5,5 +5,6 @@ export interface PlayerInfo {
   id: number;
   token: string;
   roomId?: number;
-  number?: number;
+  play_number?: number;
+  enemy_id?: number;
 }

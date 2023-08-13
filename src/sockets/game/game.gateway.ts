@@ -46,8 +46,11 @@ export class GameGateway
   async handleLogin(client: Socket, id: number) {
     // 게임을 찾다가 게임찾기 취소
     if (waitList.length && waitList[0].socket === client) {
-      waitList.splice(0, 1);
-      return;
+      const idx = waitList.findIndex((player) => player.socket === client);
+      if (idx !== -1) {
+        waitList.splice(idx, 1);
+        return;
+      }
     }
 
     // 대기열에 넣음
@@ -57,40 +60,44 @@ export class GameGateway
       token: client.handshake.auth.token,
     });
 
+    if (waitList.length === 1) return;
+
     // 대기열에 2명이 모이면 방을 만듬
     if (waitList.length === 2) {
       const gameInfo: CreateGameDto = {};
+      const idx = waitList.findIndex((player) => player.socket === client);
       const game = await this.gameGatewayService.setGame(
-        waitList[0].token,
+        waitList[idx].token,
         gameInfo,
       );
 
       const roomName = game.gameId;
 
       waitList[0].roomId = roomName;
-      waitList[0].number = 1;
+      waitList[0].play_number = 1;
       waitList[1].roomId = roomName;
-      waitList[1].number = 2;
+      waitList[1].play_number = 2;
+      waitList[1].enemy_id = waitList[0].id;
 
       // 방에 입장
       await waitList[0].socket.join(roomName.toString());
       await waitList[1].socket.join(roomName.toString());
 
-      // 대기열에서 제거, 플레이어 목록에 추가
+      // 플레이어 목록에 추가
       playerList.push(waitList[0]);
       playerList.push(waitList[1]);
 
-      // 플레이어 목록에 있는 플레이어들에게 방 입장을 알림
-      playerList[0].socket.emit('join', roomName);
-      playerList[1].socket.emit('join', roomName);
-
       // 대기열에서 제거
       waitList.splice(0, 2);
-
-      // 플레이어들에게 플레이어 번호를 알림
-      playerList[0].socket.emit('player-number', 1);
-      playerList[1].socket.emit('player-number', 2);
     }
+
+    // 플레이어 목록에 있는 플레이어들에게 방 입장을 알림
+    playerList[0].socket.emit('join', playerList[0].roomId);
+    playerList[1].socket.emit('join', playerList[1].roomId);
+
+    // 플레이어들에게 플레이어 번호를 알림
+    playerList[0].socket.emit('player-number', 1);
+    playerList[1].socket.emit('player-number', 2);
   }
 
   // 방에 입장시 실행
@@ -114,11 +121,13 @@ export class GameGateway
   // 게임 시작 전에 Ready 버튼 클릭시 실행
   @SubscribeMessage('ready')
   handleReady(client: any) {
+    console.log('게임 레디~~~');
     // readyState에 클라이언트가 존재하면 return
     if (readyState.includes(client)) return;
 
     readyState.push(client);
 
+    // 서버에게 ready상태 알림
     this.server.to(playerList[0].roomId.toString()).emit('ready', true);
 
     if (readyState.length === 2) {
@@ -196,7 +205,7 @@ export class GameGateway
 
   @SubscribeMessage('end')
   async handleEnd(client: Socket, payload: CreateGameScoreRequestDto) {
-    console.log('payload', payload);
+    console.log('게임 끝~~~');
     if (!client.id) return;
     if (client.id === playerList[0].socket.id) {
       await this.gameGatewayService.setHistory(playerList[0].token, payload);
