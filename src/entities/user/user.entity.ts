@@ -127,7 +127,7 @@ export class User {
   @OneToMany(() => Request, (request) => request.requestedUser)
   requested: Request[];
 
-  @OneToMany(() => BlockUserList, (blockUserList) => blockUserList.BlockUser)
+  @OneToMany(() => BlockUserList, (blockUserList) => blockUserList.user)
   blockList: BlockUserList[];
 
   @OneToMany(() => BlockUserList, (blockUserList) => blockUserList.BlockedUser)

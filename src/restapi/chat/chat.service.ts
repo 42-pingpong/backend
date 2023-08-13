@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { GroupChat } from 'src/entities/chat/groupChat.entity';
-import { EntityManager, Join, Repository } from 'typeorm';
+import { EntityManager, Join, Not, Repository } from 'typeorm';
 import { CreateGroupChatDto } from './dto/create-group-chat.dto';
 import { UpdateGroupChatDto } from './dto/update-group-chat.dto';
 import { User } from 'src/entities/user/user.entity';
@@ -22,6 +22,9 @@ import { DirectMessageDto } from './request/DirectMessage.dto';
 import { DirectMessage } from 'src/entities/chat/directMessage.entity';
 import { GetDirectMessageDto } from './request/getDirectMessage.dto';
 import { GetGroupMessageDto } from './request/getGroupMessage.dto';
+import { BlockRequestDto } from './request/block.request.dto';
+import { UnBlockRequestDto } from './request/unBlock.request.dto';
+import { BlockUserList } from 'src/entities/user/blockUserList.entity';
 import { DirectMessageResponse } from './response/directMessage.response';
 
 @Injectable()
@@ -29,6 +32,9 @@ export class ChatService {
   constructor(
     @InjectRepository(GroupChat)
     private readonly groupChatRepository: Repository<GroupChat>,
+
+    @InjectRepository(BlockUserList)
+    private readonly blockUserListRepository: Repository<BlockUserList>,
   ) {}
 
   async getGroupChatList() {
@@ -470,6 +476,9 @@ export class ChatService {
     });
   }
 
+  /**
+   * @todo : mute/ban 기능 추가
+   * */
   async sendGroupMessage(messageDto: GroupChatMessageDto) {
     return await this.groupChatRepository.manager.transaction(
       async (manager: EntityManager) => {
@@ -538,6 +547,9 @@ export class ChatService {
     );
   }
 
+  /**
+   * @todo : block 기능 추가
+   * */
   async sendDirectMessage(messageDto: DirectMessageDto) {
     return await this.groupChatRepository.manager.transaction(
       async (manager: EntityManager) => {
@@ -749,4 +761,75 @@ export class ChatService {
       },
     );
   }
+
+  async blockUser(dto: BlockRequestDto) {
+    await this.groupChatRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        // 유저가 존재하는지 검증
+
+        const blockUser = await manager.getRepository(User).findOne({
+          where: {
+            id: dto.userId,
+          },
+        });
+        if (!blockUser) {
+          throw new NotFoundException('차단할 유저가 존재하지 않습니다.');
+        }
+
+        const blockedUser = await manager.getRepository(User).findOne({
+          where: {
+            id: dto.blockedUserId,
+          },
+        });
+        if (!blockedUser) {
+          throw new NotFoundException('차단할 유저가 존재하지 않습니다.');
+        }
+
+        // 이미 차단된 유저인지 검증
+        const isBlockedUser = await manager
+          .getRepository(BlockUserList)
+          .findOne({
+            where: {
+              userId: dto.userId,
+              blockedUserId: dto.blockedUserId,
+            },
+          });
+
+        if (isBlockedUser) {
+          throw new ForbiddenException('이미 차단된 유저입니다.');
+        }
+
+        await manager.getRepository(BlockUserList).insert(dto);
+      },
+    );
+  }
+
+  async unBlockUser(dto: UnBlockRequestDto) {
+    await this.blockUserListRepository.delete({
+      userId: dto.userId,
+      blockedUserId: dto.unBlockedUserId,
+    });
+  }
+
+  //   async getSendableUser(dto: GetSendableUserDto) {
+  //     if (dto.groupChatId) {
+  //       // 그룹 채팅방에서 sender를 mute/block하지 않은 유저를 가져옴
+  //       return await this.groupChatRepository.manager.transaction(
+  //         async (manager: EntityManager) => {
+  //           const groupChat = await manager.getRepository(GroupChat).findOne({
+  //             where: {
+  //               groupChatId: dto.groupChatId,
+  //               mutedUser: {
+  //                 id: Not(dto.userId),
+  //               },
+  //             },
+  //             relations: {
+  //               joinedUser: true,
+  //             },
+  //           });
+  //         },
+  //       );
+  //     } else {
+  //     }
+  //   }
 }

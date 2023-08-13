@@ -9,6 +9,7 @@ import { DirectMessage } from 'src/entities/chat/directMessage.entity';
 import { GroupChat } from 'src/entities/chat/groupChat.entity';
 import { GroupChatMessage } from 'src/entities/chat/groupChatMessage.entity';
 import { MessageInfo } from 'src/entities/chat/messageInfo.entity';
+import { BlockUserList } from 'src/entities/user/blockUserList.entity';
 import { User } from 'src/entities/user/user.entity';
 import { ChatFactory } from 'src/factory/chat.factory';
 import { UserFactory } from 'src/factory/user.factory';
@@ -18,10 +19,12 @@ import { CreateGroupChatDto } from 'src/restapi/chat/dto/create-group-chat.dto';
 import { DeleteAdminDto } from 'src/restapi/chat/dto/delete-admin.dto';
 import { JoinGroupChatDto } from 'src/restapi/chat/dto/join-group-chat.dto';
 import { UpdateGroupChatDto } from 'src/restapi/chat/dto/update-group-chat.dto';
+import { BlockRequestDto } from 'src/restapi/chat/request/block.request.dto';
 import { DirectMessageDto } from 'src/restapi/chat/request/DirectMessage.dto';
 import { GetDirectMessageDto } from 'src/restapi/chat/request/getDirectMessage.dto';
 import { GetGroupMessageDto } from 'src/restapi/chat/request/getGroupMessage.dto';
 import { GroupChatMessageDto } from 'src/restapi/chat/request/groupChatMessage.dto';
+import { UnBlockRequestDto } from 'src/restapi/chat/request/unBlock.request.dto';
 import * as request from 'supertest';
 import { DataSource, In, Repository } from 'typeorm';
 
@@ -33,6 +36,7 @@ describe('Chat', () => {
   let groupMessageRepository: Repository<GroupChatMessage>;
   let dmRepository: Repository<DirectMessage>;
   let msgInfoRepository: Repository<MessageInfo>;
+  let blockRepository: Repository<BlockUserList>;
   let userFactory: UserFactory;
   let chatFactory: ChatFactory;
 
@@ -52,6 +56,7 @@ describe('Chat', () => {
           GroupChatMessage,
           DirectMessage,
           MessageInfo,
+          BlockUserList,
         ]),
       )
       .compile();
@@ -74,6 +79,7 @@ describe('Chat', () => {
     groupMessageRepository = dataSource.getRepository(GroupChatMessage);
     dmRepository = dataSource.getRepository(DirectMessage);
     msgInfoRepository = dataSource.getRepository(MessageInfo);
+    blockRepository = dataSource.getRepository(BlockUserList);
     userFactory = new UserFactory();
     chatFactory = new ChatFactory();
   });
@@ -1022,7 +1028,6 @@ describe('Chat', () => {
       const res = await request(app.getHttpServer())
         .get('/chat/groupMessages')
         .query(qr);
-      console.log(res.body);
       expect(res.status).toBe(200);
       expect(res.body.length).toBe(6);
     });
@@ -1051,6 +1056,59 @@ describe('Chat', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.length).toBe(6);
+    });
+  });
+
+  describe('POST /block , /unBlock', () => {
+    let user2270: User;
+    let user2271: User;
+    let user2272: User;
+    let user2273: User;
+
+    beforeAll(async () => {
+      user2270 = await userRepository.save(userFactory.createUser(2270));
+      user2271 = await userRepository.save(userFactory.createUser(2271));
+      user2272 = await userRepository.save(userFactory.createUser(2272));
+      user2273 = await userRepository.save(userFactory.createUser(2273));
+    });
+
+    afterAll(async () => {
+      await blockRepository.delete({
+        userId: In([user2270.id, user2271.id, user2272.id, user2273.id]),
+      });
+
+      await userRepository.delete({
+        id: In([user2270.id, user2271.id, user2272.id, user2273.id]),
+      });
+    });
+
+    it('user2270이 user2271을 block 하기', async () => {
+      const blockDto = new BlockRequestDto();
+      blockDto.userId = user2270.id;
+      blockDto.blockedUserId = user2271.id;
+      await request(app.getHttpServer()).post(`/chat/block`).send(blockDto);
+
+      const block = await blockRepository.findOne({
+        where: { userId: user2270.id, blockedUserId: user2271.id },
+      });
+      expect(block).toBeDefined();
+      expect(block.blockedUserId).toBe(user2271.id);
+
+      //1번더
+      const res = await request(app.getHttpServer())
+        .post(`/chat/block`)
+        .send(blockDto);
+      expect(res.status).toBe(403);
+
+      //user2270이 user2271을 unblock 하기
+      const unBlockDto = new UnBlockRequestDto();
+      unBlockDto.userId = user2270.id;
+      unBlockDto.unBlockedUserId = user2271.id;
+
+      const res2 = await request(app.getHttpServer())
+        .delete(`/chat/unBlock`)
+        .send(unBlockDto);
+      expect(res2.status).toBe(200);
     });
   });
 
