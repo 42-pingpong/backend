@@ -188,7 +188,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
    * */
   @SubscribeMessage('direct-message')
   async handleDirectMessage(client: Socket, dto: DirectMessageDto) {
-    console.log('direct-message', dto);
     const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
     if (userId === null) return;
     try {
@@ -205,7 +204,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.server.to(socketId).emit('direct-message', responseBody);
         //sender에게도 메시지 전달해줘요
         client.emit('direct-message', responseBody);
-        console.log('direct-message', responseBody);
         //TODO: client가 연결되어있지 않다면, 어떻게 처리할 것인가?
         //TODO: client 알람 처리
       }
