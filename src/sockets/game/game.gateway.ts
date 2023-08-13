@@ -6,9 +6,8 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import { Server } from 'socket.io';
+import { Server, Socket } from 'socket.io';
 import { GameGatewayService } from './game.gateway.servcie';
-import { Socket } from 'socket.io';
 import { CreateGameScoreRequestDto } from 'src/restapi/game/request/create-game-score.dto';
 import { PlayerInfo } from './PlayerInfo';
 import { CreateGameDto } from 'src/restapi/game/request/create-game.dto';
@@ -45,7 +44,7 @@ export class GameGateway
   // game 버튼 클릭시 실행
   @SubscribeMessage('enter-queue')
   async handleLogin(client: Socket, id: number) {
-    // 이미 대기열에 있는지 확인
+    // 게임을 찾다가 게임찾기 취소
     if (waitList.length && waitList[0].socket === client) {
       waitList.splice(0, 1);
       return;
@@ -110,20 +109,13 @@ export class GameGateway
     // 플레이어들에게 닉네임을 알림
     playerList[0].socket.emit('user-name', player1NickName, player2NickName);
     playerList[1].socket.emit('user-name', player1NickName, player2NickName);
-
-    // readyState에 클라이언트를 추가
-    readyState.push(client);
   }
 
   // 게임 시작 전에 Ready 버튼 클릭시 실행
   @SubscribeMessage('ready')
   handleReady(client: any) {
-    // readyState에 클라이언트가 있으면 제거
-    if (readyState.includes(client)) {
-      // 이거 생각해봐야함
-      readyState.splice(readyState.indexOf(client), 1);
-      return;
-    }
+    // readyState에 클라이언트가 존재하면 return
+    if (readyState.includes(client)) return;
 
     readyState.push(client);
 
@@ -217,7 +209,7 @@ export class GameGateway
 
       // 모든 플레이어를 방에서 나가도록 함
       await client.leave(playerList[0].roomId.toString());
-      // client.leave(playerList[1].roomId);
+      await client.leave(playerList[1].roomId.toString());
 
       playerList.splice(0, 2);
       readyState.splice(0, 2);
