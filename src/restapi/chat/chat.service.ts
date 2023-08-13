@@ -625,71 +625,6 @@ export class ChatService {
     );
   }
 
-  async mute(dto: MuteRequestDto) {
-    // 그룹 채팅방에서 유저를 뮤트하는 로직
-    await this.groupChatRepository.manager.transaction(
-      async (manager: EntityManager) => {
-        const groupChat: GroupChat = await manager
-          .getRepository(GroupChat)
-          .findOne({
-            where: {
-              groupChatId: dto.groupChatId,
-            },
-            relations: {
-              admin: true,
-              joinedUser: true,
-              mutedUser: true,
-            },
-          });
-
-        if (!groupChat) {
-          throw new NotFoundException();
-        }
-
-        // userId가 owner인지 검증
-        const isOwnerUser = groupChat.owner.id === dto.userId;
-
-        // userId가 admin인지 검증
-        const isAdminUser = groupChat.admin.find(
-          (admin) => admin.id === dto.requestUserId,
-        );
-
-        if (!isAdminUser && !isOwnerUser) {
-          throw new ForbiddenException('권한이 없습니다.');
-        }
-
-        // mutedUser가 joinedUser인지 검증
-
-        const isJoinedUser = groupChat.joinedUser.find(
-          (user) => user.id === dto.userId,
-        );
-        if (!isJoinedUser) {
-          throw new NotFoundException('참여하지 않은 유저입니다.');
-        }
-
-        // mutedUser가 mutedUser에 이미 존재하는지 검증
-        const isMutedUser = groupChat.mutedUser.find(
-          (user) => user.id === dto.userId,
-        );
-        if (isMutedUser) {
-          throw new ForbiddenException('이미 뮤트된 유저입니다.');
-        }
-
-        // mutedUser를 mutedUser에 추가
-        const user = await manager.getRepository(User).findOne({
-          where: { id: dto.userId },
-        });
-
-        if (!user) {
-          throw new NotFoundException('user가 존재하지 않습니다.');
-        }
-        // db에 저장
-        groupChat.mutedUser.push(user);
-        await manager.save(GroupChat, groupChat);
-      },
-    );
-  }
-
   /**
    * @TODO 에러 핸들링 // 유저가 존재하지 않을 경우
    * */
@@ -834,25 +769,68 @@ export class ChatService {
     });
   }
 
-  //   async getSendableUser(dto: GetSendableUserDto) {
-  //     if (dto.groupChatId) {
-  //       // 그룹 채팅방에서 sender를 mute/block하지 않은 유저를 가져옴
-  //       return await this.groupChatRepository.manager.transaction(
-  //         async (manager: EntityManager) => {
-  //           const groupChat = await manager.getRepository(GroupChat).findOne({
-  //             where: {
-  //               groupChatId: dto.groupChatId,
-  //               mutedUser: {
-  //                 id: Not(dto.userId),
-  //               },
-  //             },
-  //             relations: {
-  //               joinedUser: true,
-  //             },
-  //           });
-  //         },
-  //       );
-  //     } else {
-  //     }
-  //   }
+  async mute(dto: MuteRequestDto) {
+    // 그룹 채팅방에서 유저를 뮤트하는 로직
+    await this.groupChatRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        const groupChat: GroupChat = await manager
+          .getRepository(GroupChat)
+          .findOne({
+            where: {
+              groupChatId: dto.groupChatId,
+            },
+            relations: {
+              admin: true,
+              joinedUser: true,
+              mutedUser: true,
+            },
+          });
+
+        if (!groupChat) {
+          throw new NotFoundException();
+        }
+
+        // userId가 owner인지 검증
+        const isOwnerUser = groupChat.owner.id === dto.userId;
+
+        // userId가 admin인지 검증
+        const isAdminUser = groupChat.admin.find(
+          (admin) => admin.id === dto.requestUserId,
+        );
+
+        if (!isAdminUser && !isOwnerUser) {
+          throw new ForbiddenException('권한이 없습니다.');
+        }
+
+        // mutedUser가 joinedUser인지 검증
+
+        const isJoinedUser = groupChat.joinedUser.find(
+          (user) => user.id === dto.userId,
+        );
+        if (!isJoinedUser) {
+          throw new NotFoundException('참여하지 않은 유저입니다.');
+        }
+
+        // mutedUser가 mutedUser에 이미 존재하는지 검증
+        const isMutedUser = groupChat.mutedUser.find(
+          (user) => user.id === dto.userId,
+        );
+        if (isMutedUser) {
+          throw new ForbiddenException('이미 뮤트된 유저입니다.');
+        }
+
+        // mutedUser를 mutedUser에 추가
+        const user = await manager.getRepository(User).findOne({
+          where: { id: dto.userId },
+        });
+
+        if (!user) {
+          throw new NotFoundException('user가 존재하지 않습니다.');
+        }
+        // db에 저장
+        groupChat.mutedUser.push(user);
+        await manager.save(GroupChat, groupChat);
+      },
+    );
+  }
 }
