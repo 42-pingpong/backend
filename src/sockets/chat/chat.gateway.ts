@@ -16,8 +16,6 @@ import { FetchDirectMessageDto } from './request/FetchDirectMessage.dto';
 import { FetchGroupMessageDto } from './request/FetchGroupChatMessage.dto';
 import { GroupChatMessageDto } from './request/groupChatMessage.dto';
 import { DirectMessageResponse } from './restApiResponse/directMessageResponse.dto';
-import { FetchDirectMessageResponseDto } from './restApiResponse/FetchDirectMessageResponse.dto';
-import { FetchGroupChatMessageResponseDto } from './restApiResponse/FetchGroupChatMessageResponse.dto';
 import { GroupChatMessageResponse } from './restApiResponse/groupChatMessageResponse.dto';
 
 export interface ChatDTO {
@@ -216,6 +214,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         const socketId = responseBody.receivedUser.chatSocketId;
         delete responseBody.receivedUser;
         this.server.to(socketId).emit('direct-message', responseBody);
+        //sender에게도 메시지 전달해줘요
+        client.emit('direct-message', responseBody);
+        console.log('direct-message', responseBody);
         //TODO: client가 연결되어있지 않다면, 어떻게 처리할 것인가?
         //TODO: client 알람 처리
       }
@@ -233,7 +234,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
     if (userId === null) return;
     try {
-      const data: FetchDirectMessageResponseDto =
+      const data: DirectMessageResponse =
         await this.chatGatewayService.fetchDirectMessage(
           dto,
           client.handshake.auth.token,
@@ -253,7 +254,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
     if (userId === null) return;
     try {
-      const data: FetchGroupChatMessageResponseDto =
+      const data: GroupChatMessageResponse =
         await this.chatGatewayService.fetchGroupMessage(
           dto,
           client.handshake.auth.token,
