@@ -567,6 +567,7 @@ export class ChatService {
             messageInfo: {
               sender: true,
             },
+            receivedUser: true,
           },
           select: {
             directMessageId: true,
