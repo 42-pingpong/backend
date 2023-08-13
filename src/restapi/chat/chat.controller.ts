@@ -7,7 +7,6 @@ import {
   Param,
   Delete,
   Query,
-  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiBody,
@@ -33,6 +32,7 @@ import { GetDirectMessageDto } from './request/getDirectMessage.dto';
 import { GetGroupMessageDto } from './request/getGroupMessage.dto';
 import { BlockRequestDto } from './request/block.request.dto';
 import { UnBlockRequestDto } from './request/unBlock.request.dto';
+import { UnMuteRequestDto } from './request/unmute.dto';
 
 @ApiTags('chat')
 @Controller('chat')
@@ -226,19 +226,8 @@ export class ChatController {
   }
 
   @Post('groupChat/unmute/:groupChatId')
-  async unmute(@Body() body: MuteRequestDto) {
+  async unmute(@Body() body: UnMuteRequestDto) {
     // 그룹 채팅방에서 유저를 뮤트해제하는 메서드
     await this.chatService.unmute(body);
   }
-
-  //   @Get('sendableUser')
-  //   async getSendableUser(@Query() query: GetSendableUserDto) {
-  //     if (query.senderId && query.groupChatId)
-  //       throw new BadRequestException(
-  //         'senderId와 groupChatId는 동시에 존재할 수 없습니다.',
-  //       );
-
-  //     console.log(query);
-  //     // return await this.chatService.getSendableUser(query);
-  //   }
 }

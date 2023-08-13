@@ -26,6 +26,7 @@ import { BlockRequestDto } from './request/block.request.dto';
 import { UnBlockRequestDto } from './request/unBlock.request.dto';
 import { BlockUserList } from 'src/entities/user/blockUserList.entity';
 import { DirectMessageResponse } from './response/directMessage.response';
+import { UnMuteRequestDto } from './request/unmute.dto';
 
 @Injectable()
 export class ChatService {
@@ -833,4 +834,6 @@ export class ChatService {
       },
     );
   }
+
+  async unMute(dto: UnMuteRequestDto) {}
 }
