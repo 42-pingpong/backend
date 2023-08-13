@@ -159,6 +159,29 @@ export class ChatService {
               joinedUser: true,
               bannedUser: true,
             },
+            select: {
+              admin: {
+                id: true,
+                profile: true,
+                nickName: true,
+                status: true,
+                email: true,
+              },
+              joinedUser: {
+                id: true,
+                profile: true,
+                nickName: true,
+                status: true,
+                email: true,
+              },
+              owner: {
+                id: true,
+                profile: true,
+                nickName: true,
+                status: true,
+                email: true,
+              },
+            },
           });
         if (!groupChat) {
           throw new NotFoundException('그룹 채팅방이 존재하지 않습니다.');
