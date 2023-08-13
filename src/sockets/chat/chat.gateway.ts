@@ -127,7 +127,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('join-room')
-  async joinChatRoom(client: any, groupChatDto: JoinGroupChatDto) {
+  async joinChatRoom(client: Socket, groupChatDto: JoinGroupChatDto) {
     console.log('join-room', groupChatDto.groupChatId);
     const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
     if (userId === null) return;
@@ -138,8 +138,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           groupChatDto,
           client.handshake.auth.token,
         );
-      client.join(groupChatDto.groupChatId);
-      client.emit('join-room', resPonse);
+      await client.join(groupChatDto.groupChatId.toString());
+      //TODO: 변경된 유저만 전달해야함.
+      client
+        .to(groupChatDto.groupChatId.toString())
+        .emit('join-room', resPonse);
     } catch (e) {
       client.emit('error', e.message);
     }
