@@ -54,6 +54,22 @@ export class UserService {
     }
   }
 
+  async findPublicOne(id: number): Promise<User> {
+    return await this.userRepository.findOne({
+      where: { id: id },
+      select: {
+        id: true,
+        level: true,
+        profile: true,
+        email: true,
+        nickName: true,
+        fullName: true,
+        selfIntroduction: true,
+        status: true,
+      },
+    });
+  }
+
   async create(createUserDto: CreateUserDto): Promise<User> {
     return await this.userRepository.save(createUserDto);
   }

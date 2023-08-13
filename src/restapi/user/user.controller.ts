@@ -42,6 +42,15 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @ApiOperation({
+    summary: 'get user info',
+    description: '유저 정보 조회(공개)',
+  })
+  @Get(':id')
+  async findOne(@Param('id') id: string) {
+    return await this.userService.findPublicOne(+id);
+  }
+
+  @ApiOperation({
     summary: 'get my info(profile)',
     description: '내 정보 조회',
   })
