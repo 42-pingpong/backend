@@ -107,7 +107,7 @@ export class ChatController {
     @Param('groupChatId') groupChatId: string,
     @Query() query: JoinGroupChatDto,
   ) {
-    await this.chatService.joinGroupChat(+groupChatId, query);
+    return await this.chatService.joinGroupChat(+groupChatId, query);
   }
 
   /**

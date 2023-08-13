@@ -236,6 +236,7 @@ describe('Chat', () => {
         .post(`/chat/groupChat/${groupChat.groupChatId}`)
         .query(joinChatDto);
       expect(res.status).toBe(201);
+      console.log(res.body);
 
       const updateGroupChat = await request(app.getHttpServer()).get(
         `/chat/groupChat/${groupChat.groupChatId}`,

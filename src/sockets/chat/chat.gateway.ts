@@ -20,6 +20,7 @@ import { UnblockUserDto } from './request/unBlockUser.dto';
 import { UnmuteUserDto } from './request/unMute.dto';
 import { DirectMessageResponse } from './restApiResponse/directMessageResponse.dto';
 import { GroupChatMessageResponse } from './restApiResponse/groupChatMessageResponse.dto';
+import { JoinRoomResponse } from './restApiResponse/joinRoomResponse.dto';
 
 /**
  * @brief chat gateway
@@ -131,12 +132,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     if (userId === null) return;
 
     try {
-      await this.chatGatewayService.joinGroupChat(
-        +groupChatId,
-        userId,
-        client.handshake.auth.token,
-      );
+      const resPonse: JoinRoomResponse =
+        await this.chatGatewayService.joinGroupChat(
+          +groupChatId,
+          userId,
+          client.handshake.auth.token,
+        );
       client.join(groupChatId);
+      client.emit('join-room', resPonse);
     } catch (e) {
       client.emit('error', e.message);
     }
