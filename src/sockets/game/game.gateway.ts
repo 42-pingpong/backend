@@ -90,32 +90,53 @@ export class GameGateway
       // 대기열에서 제거
       waitList.splice(0, 2);
     }
+    const idx = playerList.findIndex((player) => player.socket === client);
+    const enemyIdx = playerList.findIndex(
+      (player) => player.id === playerList[idx].enemy_id,
+    );
 
+    if (idx === -1 || enemyIdx === -1) return;
+    console.log('idx 1: ', idx);
+    console.log('enemyIdx 1: ', enemyIdx);
     // 플레이어 목록에 있는 플레이어들에게 방 입장을 알림
-    playerList[0].socket.emit('join', playerList[0].roomId);
-    playerList[1].socket.emit('join', playerList[1].roomId);
+    playerList[enemyIdx].socket.emit('join', playerList[enemyIdx].roomId);
+    playerList[idx].socket.emit('join', playerList[enemyIdx].roomId);
 
     // 플레이어들에게 플레이어 번호를 알림
-    playerList[0].socket.emit('player-number', 1);
-    playerList[1].socket.emit('player-number', 2);
+    playerList[enemyIdx].socket.emit('player-number', 1);
+    playerList[idx].socket.emit('player-number', 2);
   }
 
   // 방에 입장시 실행
   @SubscribeMessage('join')
   async handleJoin(client: any) {
+    console.log('방 입장~~~');
+    const idx = playerList.findIndex((player) => player.socket === client);
+    if (playerList[idx].enemy_id === undefined) return;
+    const enemyIdx = playerList.findIndex(
+      (player) => player.id === playerList[idx].enemy_id,
+    );
+
+    if (idx === -1 || enemyIdx === -1) return;
+    console.log('idx 2: ', idx);
+    console.log('enemyIdx 2: ', enemyIdx);
     // 플레이어의 닉네임을 가져옴
     const player1NickName = await this.gameGatewayService.getNickName(
-      playerList[0].id,
-      playerList[0].token,
+      playerList[enemyIdx].id,
+      playerList[enemyIdx].token,
     );
     const player2NickName = await this.gameGatewayService.getNickName(
-      playerList[1].id,
-      playerList[1].token,
+      playerList[idx].id,
+      playerList[idx].token,
     );
 
     // 플레이어들에게 닉네임을 알림
-    playerList[0].socket.emit('user-name', player1NickName, player2NickName);
-    playerList[1].socket.emit('user-name', player1NickName, player2NickName);
+    playerList[enemyIdx].socket.emit(
+      'user-name',
+      player1NickName,
+      player2NickName,
+    );
+    playerList[idx].socket.emit('user-name', player1NickName, player2NickName);
   }
 
   // 게임 시작 전에 Ready 버튼 클릭시 실행
@@ -127,9 +148,30 @@ export class GameGateway
 
     readyState.push(client);
 
+    // if (readyState.length % 2 === 1) return;
+
+    const idx = playerList.findIndex((player) => player.socket === client);
+
+    // 0번 먼저 클릭 (enemy없음 idx:0 enemyIdx:-1)
+    // 1번 먼저 클릭 (enemy있음 idx:1 enemyIdx:0)
+
+    // if (playerList[idx].enemy_id === undefined) return;
+    const enemyIdx = playerList.findIndex(
+      (player) =>
+        player.roomId === playerList[idx].roomId &&
+        playerList[idx].socket !== client,
+    );
+    console.log(idx, enemyIdx);
+    if (idx === -1 || enemyIdx === -1) return;
+    // console.log('idx 3: ', idx);
+    // console.log('enemyIdx 3: ', enemyIdx);
+
     // 서버에게 ready상태 알림
     this.server.to(playerList[0].roomId.toString()).emit('ready', true);
 
+    console.log('readyState.length: ', readyState.length);
+    console.log('idx 3: ', idx);
+    console.log('enemyIdx 3: ', enemyIdx);
     if (readyState.length === 2) {
       readyState[0].emit('start', true);
       readyState[1].emit('start', true);
