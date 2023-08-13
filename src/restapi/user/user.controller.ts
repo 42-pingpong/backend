@@ -45,7 +45,7 @@ export class UserController {
     summary: 'get user info',
     description: '유저 정보 조회(공개)',
   })
-  @Get(':id')
+  @Get('/public/:id')
   async findOne(@Param('id') id: string) {
     return await this.userService.findPublicOne(+id);
   }
