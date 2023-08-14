@@ -104,7 +104,6 @@ export class GameGateway
 
       // 방에 입장
       await waitList[0].socket.join(game.gameId.toString());
-      await waitList[0].socket.join(game.gameId.toString());
       await waitList[1].socket.join(game.gameId.toString());
 
       // 플레이어 목록에 추가
