@@ -7,7 +7,6 @@ import {
   Param,
   Delete,
   Query,
-  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiBody,
@@ -33,6 +32,8 @@ import { GetDirectMessageDto } from './request/getDirectMessage.dto';
 import { GetGroupMessageDto } from './request/getGroupMessage.dto';
 import { BlockRequestDto } from './request/block.request.dto';
 import { UnBlockRequestDto } from './request/unBlock.request.dto';
+import { UnMuteRequestDto } from './request/unmute.dto';
+import { UnBanDto } from './request/unBan.dto';
 
 @ApiTags('chat')
 @Controller('chat')
@@ -139,19 +140,6 @@ export class ChatController {
   }
 
   /**
-   *
-   * @param groupChatId
-   * @param userId
-   * @description
-   * - 그룹 채팅방에서 유저를 차단하는 메서드
-   */
-  @Post('groupChat/:groupChatId/ban')
-  async ban(@Param('groupChatId') groupChatId: string, @Body() body: BanDto) {
-    // 그룹 채팅방에서 유저를 차단하는 메서드
-    await this.chatService.ban(+groupChatId, body);
-  }
-
-  /**
    * @param userId
    * @description
    * - 유저가 참여한 모든 그룹 채팅방의 정보를 반환하는 메서드
@@ -187,12 +175,6 @@ export class ChatController {
     return await this.chatService.sendDirectMessage(message);
   }
 
-  @Post('groupChat/mute/:groupChatId')
-  async mute(@Body() body: MuteRequestDto) {
-    // 그룹 채팅방에서 유저를 뮤트하는 메서드
-    await this.chatService.mute(body);
-  }
-
   @ApiOkResponse({
     description: 'Direct Message를 받아옴.',
     type: DirectMessageResponse,
@@ -225,14 +207,37 @@ export class ChatController {
     await this.chatService.unBlockUser(body);
   }
 
-  //   @Get('sendableUser')
-  //   async getSendableUser(@Query() query: GetSendableUserDto) {
-  //     if (query.senderId && query.groupChatId)
-  //       throw new BadRequestException(
-  //         'senderId와 groupChatId는 동시에 존재할 수 없습니다.',
-  //       );
+  @Post('groupChat/mute/:groupChatId')
+  async mute(@Body() body: MuteRequestDto) {
+    // 그룹 채팅방에서 유저를 뮤트하는 메서드
+    await this.chatService.mute(body);
+  }
 
-  //     console.log(query);
-  //     // return await this.chatService.getSendableUser(query);
-  //   }
+  @Post('groupChat/unmute/:groupChatId')
+  async unmute(@Body() body: UnMuteRequestDto) {
+    // 그룹 채팅방에서 유저를 뮤트해제하는 메서드
+    await this.chatService.unMute(body);
+  }
+
+  /**
+   *
+   * @param groupChatId
+   * @param userId
+   * @description
+   * - 그룹 채팅방에서 유저를 차단하는 메서드
+   */
+  @Post('groupChat/:groupChatId/ban')
+  async ban(@Param('groupChatId') groupChatId: string, @Body() body: BanDto) {
+    // 그룹 채팅방에서 유저를 차단하는 메서드
+    await this.chatService.ban(+groupChatId, body);
+  }
+
+  @Post('groupChat/:groupChatId/unBan')
+  async unBan(
+    @Param('groupChatId') groupChatId: string,
+    @Body() body: UnBanDto,
+  ) {
+    // 그룹 채팅방에서 유저를 차단하는 메서드
+    await this.chatService.unBan(+groupChatId, body);
+  }
 }
