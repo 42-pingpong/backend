@@ -137,6 +137,6 @@ export class User {
   @OneToMany(() => Token, (Token) => Token.owner)
   tokens: Token[];
 
-  @OneToMany(() => MutedUserJoin, (mutedUser) => mutedUser.mutedUser)
-  mutedUsers: MutedUserJoin[];
+  @OneToMany(() => MutedUserJoin, (mutedUsersJoin) => mutedUsersJoin.mutedUser)
+  mutedUsersJoinTable: MutedUserJoin[];
 }

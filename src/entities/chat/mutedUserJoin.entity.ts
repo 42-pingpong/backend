@@ -1,9 +1,24 @@
-import { Column, JoinColumn, ManyToOne } from 'typeorm';
-import { User } from '../user/user.entity';
-import { GroupChat } from './groupChat.entity';
+import {
+  AfterLoad,
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  VirtualColumn,
+} from 'typeorm';
+import { User } from 'src/entities/user/user.entity';
+import { GroupChat } from 'src/entities/chat/groupChat.entity';
 
+@Index(['mutedUserId', 'mutedGroupId'], { unique: true })
+@Entity()
 export class MutedUserJoin {
-  @ManyToOne(() => User, (user) => user.mutedUsers)
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @ManyToOne(() => User, (user) => user.mutedUsersJoinTable)
   @JoinColumn({
     name: 'mutedUserId',
   })
@@ -14,7 +29,7 @@ export class MutedUserJoin {
   })
   mutedUserId: number;
 
-  @ManyToOne(() => GroupChat, (groupChat) => groupChat.mutedUsers)
+  @ManyToOne(() => GroupChat, (groupChat) => groupChat.mutedUsersJoinTable)
   @JoinColumn({
     name: 'mutedGroupId',
   })
@@ -26,7 +41,7 @@ export class MutedUserJoin {
   mutedGroupId: number;
 
   @Column({
-    type: 'timestamp',
+    type: 'timestamp with time zone',
   })
   muteDue: Date;
 }

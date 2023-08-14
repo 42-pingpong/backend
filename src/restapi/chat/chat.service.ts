@@ -27,6 +27,8 @@ import { UnBlockRequestDto } from './request/unBlock.request.dto';
 import { BlockUserList } from 'src/entities/user/blockUserList.entity';
 import { DirectMessageResponse } from './response/directMessage.response';
 import { UnMuteRequestDto } from './request/unmute.dto';
+import { MutedUserJoin } from '../../entities/chat/mutedUserJoin.entity';
+import { UnBanDto } from './request/unBan.dto';
 
 @Injectable()
 export class ChatService {
@@ -36,6 +38,9 @@ export class ChatService {
 
     @InjectRepository(BlockUserList)
     private readonly blockUserListRepository: Repository<BlockUserList>,
+
+    @InjectRepository(MutedUserJoin)
+    private readonly mutedUserJoinRepository: Repository<MutedUserJoin>,
   ) {}
 
   async getGroupChatList() {
@@ -711,71 +716,7 @@ export class ChatService {
     // 그룹 채팅방에서 유저를 뮤트하는 로직
     await this.groupChatRepository.manager.transaction(
       async (manager: EntityManager) => {
-        const groupChat: GroupChat = await manager
-          .getRepository(GroupChat)
-          .findOne({
-            where: {
-              groupChatId: dto.groupChatId,
-            },
-            relations: {
-              admin: true,
-              joinedUser: true,
-              mutedUsers: true,
-            },
-          });
-
-        if (!groupChat) {
-          throw new NotFoundException();
-        }
-
-        // userId가 owner인지 검증
-        const isOwnerUser = groupChat.owner.id === dto.userId;
-
-        // userId가 admin인지 검증
-        const isAdminUser = groupChat.admin.find(
-          (admin) => admin.id === dto.requestUserId,
-        );
-
-        if (!isAdminUser && !isOwnerUser) {
-          throw new ForbiddenException('권한이 없습니다.');
-        }
-
-        // mutedUser가 joinedUser인지 검증
-
-        const isJoinedUser = groupChat.joinedUser.find(
-          (user) => user.id === dto.userId,
-        );
-        if (!isJoinedUser) {
-          throw new NotFoundException('참여하지 않은 유저입니다.');
-        }
-
-        // mutedUser가 mutedUser에 이미 존재하는지 검증
-        const isMutedUser = groupChat.mutedUsers.find(
-          (user) => user.mutedUserId === dto.userId,
-        );
-        if (isMutedUser) {
-          throw new ForbiddenException('이미 뮤트된 유저입니다.');
-        }
-
-        // mutedUser를 mutedUser에 추가
-        const user = await manager.getRepository(User).findOne({
-          where: { id: dto.userId },
-        });
-
-        if (!user) {
-          throw new NotFoundException('user가 존재하지 않습니다.');
-        }
-        // db에 저장
-        await manager.save(GroupChat, groupChat);
-      },
-    );
-  }
-
-  async unMute(dto: UnMuteRequestDto) {
-    await this.groupChatRepository.manager.transaction(
-      async (manager: EntityManager) => {
-        //1. Owner/Admin 이 그룹 채팅방에 존재하는 지 확인
-        const groupChat = await manager.getRepository(GroupChat).findOne({
+        const isAdminOrOwner = await manager.getRepository(GroupChat).findOne({
           where: [
             {
               groupChatId: dto.groupChatId,
@@ -788,11 +729,79 @@ export class ChatService {
           ],
           relations: {
             admin: true,
+            owner: true,
           },
         });
-        if (!groupChat) {
-          throw new NotFoundException('그룹 채팅방이 존재하지 않습니다.');
+        if (!isAdminOrOwner) {
+          throw new ForbiddenException('admin/owner가 아닙니다.');
         }
+
+        const isJoinedUser = await manager.getRepository(GroupChat).findOne({
+          where: {
+            groupChatId: dto.groupChatId,
+            joinedUser: { id: dto.userId },
+          },
+          relations: {
+            joinedUser: true,
+          },
+        });
+        if (!isJoinedUser) {
+          throw new NotFoundException('참여하지 않은 유저입니다.');
+        }
+
+        if (dto.unit === 's') {
+          dto.time = dto.time * 1000;
+        } else if (dto.unit === 'm') {
+          dto.time = dto.time * 1000 * 60;
+        } else if (dto.unit === 'h') {
+          dto.time = dto.time * 1000 * 60 * 60;
+        }
+
+        //upsert 구문
+        await manager.getRepository(MutedUserJoin).upsert(
+          {
+            mutedUserId: dto.userId,
+            mutedGroupId: dto.groupChatId,
+            muteDue: new Date(Date.now() + dto.time).toISOString(),
+          },
+          {
+            conflictPaths: ['mutedUserId', 'mutedGroupId'],
+            skipUpdateIfNoValuesChanged: true,
+          },
+        );
+      },
+    );
+  }
+
+  async unMute(dto: UnMuteRequestDto) {
+    await this.groupChatRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        //1. Owner/Admin 이 그룹 채팅방에 존재하는 지 확인
+        const isAdminOrOwner = await manager.getRepository(GroupChat).findOne({
+          where: [
+            {
+              groupChatId: dto.groupChatId,
+              ownerId: dto.requestUserId,
+            },
+            {
+              groupChatId: dto.groupChatId,
+              admin: {
+                id: dto.requestUserId,
+              },
+            },
+          ],
+          relations: {
+            admin: true,
+          },
+        });
+        if (!isAdminOrOwner) {
+          throw new ForbiddenException('admin/owner가 아닙니다.');
+        }
+
+        await manager.getRepository(MutedUserJoin).delete({
+          mutedUserId: dto.userId,
+          mutedGroupId: dto.groupChatId,
+        });
       },
     );
   }
@@ -860,5 +869,31 @@ export class ChatService {
     );
   }
 
-  async unBan(groupChatId: number, dto: BanDto) {}
+  async unBan(groupChatId: number, dto: UnBanDto) {
+    await this.groupChatRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        const isAdminOrOwner = await manager.getRepository(GroupChat).findOne({
+          where: [
+            {
+              groupChatId: groupChatId,
+              ownerId: dto.requestUserId,
+            },
+            {
+              groupChatId: groupChatId,
+              admin: { id: dto.requestUserId },
+            },
+          ],
+        });
+        if (!isAdminOrOwner) {
+          throw new ForbiddenException('admin/owner가 아닙니다.');
+        }
+
+        await manager
+          .createQueryBuilder(GroupChat, 'groupChat')
+          .relation('bannedUser')
+          .of(groupChatId)
+          .remove(dto.userId);
+      },
+    );
+  }
 }

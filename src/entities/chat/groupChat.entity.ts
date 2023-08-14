@@ -8,9 +8,9 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm';
-import { User } from '../user/user.entity';
-import { GroupChatMessage } from './groupChatMessage.entity';
-import { MutedUserJoin } from './mutedUserJoin.entity';
+import { User } from 'src/entities/user/user.entity';
+import { GroupChatMessage } from 'src/entities/chat/groupChatMessage.entity';
+import { MutedUserJoin } from 'src/entities/chat/mutedUserJoin.entity';
 
 @Entity()
 export class GroupChat {
@@ -49,7 +49,9 @@ export class GroupChat {
   curParticipants: number;
 
   @ManyToOne(() => User, (user) => user.groupChats)
-  @JoinColumn()
+  @JoinColumn({
+    name: 'ownerId',
+  })
   owner: User;
 
   @Column({
@@ -62,9 +64,6 @@ export class GroupChat {
     name: 'BannedGroupChat_user_joinTable',
   })
   bannedUser: User[];
-
-  @OneToMany(() => MutedUserJoin, (mutedUser) => mutedUser.mutedGroup)
-  mutedUsers: MutedUserJoin[];
 
   @ManyToMany(() => User, (user) => user.adminingGroupChats, { cascade: true })
   @JoinTable({
@@ -83,4 +82,7 @@ export class GroupChat {
     (groupChatMessage) => groupChatMessage.receivedGroupChatId,
   )
   groupChatMessages: GroupChatMessage[];
+
+  @OneToMany(() => MutedUserJoin, (mutedUsersJoin) => mutedUsersJoin.mutedGroup)
+  mutedUsersJoinTable: MutedUserJoin[];
 }

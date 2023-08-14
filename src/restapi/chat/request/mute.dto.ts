@@ -37,7 +37,7 @@ export class MuteRequestDto {
 
   @ApiProperty({
     description: 'mute할 시간의 단위',
-    examples: ['s', 'm', 'h', 'd'],
+    examples: ['s', 'm', 'h'],
   })
   @Type(() => String)
   @IsString()
