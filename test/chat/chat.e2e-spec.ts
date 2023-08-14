@@ -28,6 +28,7 @@ import { UnBlockRequestDto } from 'src/restapi/chat/request/unBlock.request.dto'
 import * as request from 'supertest';
 import { DataSource, In, Repository } from 'typeorm';
 import { MuteRequestDto } from '../../src/restapi/chat/request/mute.dto';
+import { MutedUserJoin } from '../../src/entities/chat/mutedUserJoin.entity';
 
 describe('Chat', () => {
   let app: INestApplication;
@@ -90,6 +91,7 @@ describe('Chat', () => {
       const uf = new UserFactory();
 
       const user = uf.createUser(2000);
+
       await userRepository.save(user);
 
       const createChatDto = new CreateGroupChatDto();
@@ -106,6 +108,8 @@ describe('Chat', () => {
       const result = await groupChatRepository.findOne({
         where: { groupChatId: response.body.groupChatId },
       });
+
+      console.log(result);
 
       expect(result).toBeDefined();
       expect(response.status).toBe(201);
@@ -1149,9 +1153,18 @@ describe('Chat', () => {
       await request(app.getHttpServer())
         .post(`/chat/groupChat/${groupChat2280.groupChatId}/admin`)
         .query(addAdminDto);
+
+      addAdminDto.userId = user2280.id;
+      addAdminDto.requestedId = user2283.id;
+      await request(app.getHttpServer())
+        .post(`/chat/groupChat/${groupChat2280.groupChatId}/admin`)
+        .query(addAdminDto);
     });
 
     afterAll(async () => {
+      await groupChatRepository.manager.getRepository(MutedUserJoin).delete({
+        mutedGroupId: groupChat2280.groupChatId,
+      });
       await groupChatRepository.delete({
         groupChatId: groupChat2280.groupChatId,
       });
@@ -1160,30 +1173,76 @@ describe('Chat', () => {
       });
     });
 
-    it('owner가 user를 mute 🅾️', async () => {
+    it('owner가 user를 10초간 mute 🅾️', async () => {
       const muteDto = new MuteRequestDto();
-      muteDto.userId = user2280.id;
-      muteDto.requestUserId = user2282.id;
+      muteDto.userId = user2282.id;
+      muteDto.requestUserId = user2280.id;
       muteDto.groupChatId = groupChat2280.groupChatId;
+      muteDto.unit = 's';
+      muteDto.time = 10;
 
       const res = await request(app.getHttpServer())
         .post(`/chat/groupChat/mute/${groupChat2280.groupChatId}`)
         .send(muteDto);
-      expect(res.status).toBe(201);
+
       const mutedUser = await groupChatRepository.findOne({
         where: { groupChatId: groupChat2280.groupChatId },
         relations: {
-          mutedUser: true,
+          mutedUsersJoinTable: true,
         },
         select: {
-          mutedUser: true,
+          mutedUsersJoinTable: true,
         },
       });
       console.log(mutedUser);
+
+      //UTC time
+      console.log(mutedUser.mutedUsersJoinTable[0].muteDue);
+      console.log(mutedUser.mutedUsersJoinTable[0].muteDue.toLocaleString());
+      expect(res.status).toBe(201);
     });
-    it('admin이 user를 mute 🅾️', async () => {});
-    it('owner가 admin을 mute ❌', async () => {});
-    it('admin이 admin을 mute ❌', async () => {});
+    it('admin이 user를 mute 🅾️', async () => {
+      const muteDto = new MuteRequestDto();
+      muteDto.userId = user2282.id;
+      muteDto.requestUserId = user2281.id;
+      muteDto.groupChatId = groupChat2280.groupChatId;
+      muteDto.unit = 's';
+      muteDto.time = 10;
+
+      const res = await request(app.getHttpServer())
+        .post(`/chat/groupChat/mute/${groupChat2280.groupChatId}`)
+        .send(muteDto);
+
+      expect(res.status).toBe(201);
+    });
+    it('owner가 admin을 mute ❌', async () => {
+      const muteDto = new MuteRequestDto();
+      muteDto.userId = user2281.id;
+      muteDto.requestUserId = user2280.id;
+      muteDto.groupChatId = groupChat2280.groupChatId;
+      muteDto.unit = 's';
+      muteDto.time = 10;
+
+      const res = await request(app.getHttpServer())
+        .post(`/chat/groupChat/mute/${groupChat2280.groupChatId}`)
+        .send(muteDto);
+
+      expect(res.status).toBe(404);
+    });
+    it('admin이 admin을 mute ❌', async () => {
+      const muteDto = new MuteRequestDto();
+      muteDto.userId = user2283.id;
+      muteDto.requestUserId = user2281.id;
+      muteDto.groupChatId = groupChat2280.groupChatId;
+      muteDto.unit = 's';
+      muteDto.time = 10;
+
+      const res = await request(app.getHttpServer())
+        .post(`/chat/groupChat/mute/${groupChat2280.groupChatId}`)
+        .send(muteDto);
+
+      expect(res.status).toBe(404);
+    });
   });
 
   afterAll(async () => {
