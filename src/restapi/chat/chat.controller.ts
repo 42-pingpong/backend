@@ -34,6 +34,7 @@ import { BlockRequestDto } from './request/block.request.dto';
 import { UnBlockRequestDto } from './request/unBlock.request.dto';
 import { UnMuteRequestDto } from './request/unmute.dto';
 import { UnBanDto } from './request/unBan.dto';
+import { KickUserDto } from './request/kickUser.dto';
 
 @ApiTags('chat')
 @Controller('chat')
@@ -239,5 +240,10 @@ export class ChatController {
   ) {
     // 그룹 채팅방에서 유저를 차단하는 메서드
     await this.chatService.unBan(+groupChatId, body);
+  }
+
+  @Post('groupChat/kick')
+  async kick(@Body() body: KickUserDto) {
+    await this.chatService.kickUser(body);
   }
 }
