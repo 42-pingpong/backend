@@ -37,12 +37,12 @@ export class GroupChat {
   password: string;
 
   @Column({
-    type: 'smallint',
+    type: 'int',
   })
   maxParticipants: number;
 
   @Column({
-    type: 'smallint',
+    type: 'int',
     default: 1,
   })
   curParticipants: number;
