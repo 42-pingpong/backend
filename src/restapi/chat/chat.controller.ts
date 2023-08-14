@@ -139,19 +139,6 @@ export class ChatController {
   }
 
   /**
-   *
-   * @param groupChatId
-   * @param userId
-   * @description
-   * - 그룹 채팅방에서 유저를 차단하는 메서드
-   */
-  @Post('groupChat/:groupChatId/ban')
-  async ban(@Param('groupChatId') groupChatId: string, @Body() body: BanDto) {
-    // 그룹 채팅방에서 유저를 차단하는 메서드
-    await this.chatService.ban(+groupChatId, body);
-  }
-
-  /**
    * @param userId
    * @description
    * - 유저가 참여한 모든 그룹 채팅방의 정보를 반환하는 메서드
@@ -228,6 +215,25 @@ export class ChatController {
   @Post('groupChat/unmute/:groupChatId')
   async unmute(@Body() body: UnMuteRequestDto) {
     // 그룹 채팅방에서 유저를 뮤트해제하는 메서드
-    await this.chatService.unmute(body);
+    await this.chatService.unMute(body);
+  }
+
+  /**
+   *
+   * @param groupChatId
+   * @param userId
+   * @description
+   * - 그룹 채팅방에서 유저를 차단하는 메서드
+   */
+  @Post('groupChat/:groupChatId/ban')
+  async ban(@Param('groupChatId') groupChatId: string, @Body() body: BanDto) {
+    // 그룹 채팅방에서 유저를 차단하는 메서드
+    await this.chatService.ban(+groupChatId, body);
+  }
+
+  @Post('groupChat/:groupChatId/unBan')
+  async unBan(@Param('groupChatId') groupChatId: string, @Body() body: BanDto) {
+    // 그룹 채팅방에서 유저를 차단하는 메서드
+    await this.chatService.unBan(+groupChatId, body);
   }
 }

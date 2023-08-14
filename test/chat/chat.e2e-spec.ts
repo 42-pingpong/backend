@@ -27,6 +27,7 @@ import { GroupChatMessageDto } from 'src/restapi/chat/request/groupChatMessage.d
 import { UnBlockRequestDto } from 'src/restapi/chat/request/unBlock.request.dto';
 import * as request from 'supertest';
 import { DataSource, In, Repository } from 'typeorm';
+import { MuteRequestDto } from '../../src/restapi/chat/request/mute.dto';
 
 describe('Chat', () => {
   let app: INestApplication;
@@ -1111,6 +1112,78 @@ describe('Chat', () => {
         .send(unBlockDto);
       expect(res2.status).toBe(200);
     });
+  });
+
+  /**
+   * user 2280~
+   * */
+  describe('POST /chat/groupChat/mute(unMute)/:groupChatId', () => {
+    let user2280: User;
+    let user2281: User;
+    let user2282: User;
+    let user2283: User;
+    let groupChat2280: GroupChat;
+
+    beforeAll(async () => {
+      user2280 = await userRepository.save(userFactory.createUser(2280));
+      user2281 = await userRepository.save(userFactory.createUser(2281));
+      user2282 = await userRepository.save(userFactory.createUser(2282));
+      user2283 = await userRepository.save(userFactory.createUser(2283));
+
+      const createChatDto = new CreateGroupChatDto();
+      createChatDto.levelOfPublicity = 'Pub';
+      createChatDto.chatName = 'test';
+      createChatDto.ownerId = user2280.id;
+      createChatDto.maxParticipants = 10;
+      createChatDto.participants = [user2281.id, user2282.id, user2283.id];
+
+      groupChat2280 = (
+        await request(app.getHttpServer())
+          .post('/chat/groupChat')
+          .send(createChatDto)
+      ).body;
+
+      const addAdminDto = new AddAdminDto();
+      addAdminDto.userId = user2280.id;
+      addAdminDto.requestedId = user2281.id;
+      await request(app.getHttpServer())
+        .post(`/chat/groupChat/${groupChat2280.groupChatId}/admin`)
+        .query(addAdminDto);
+    });
+
+    afterAll(async () => {
+      await groupChatRepository.delete({
+        groupChatId: groupChat2280.groupChatId,
+      });
+      await userRepository.delete({
+        id: In([user2280.id, user2281.id, user2282.id, user2283.id]),
+      });
+    });
+
+    it('owner가 user를 mute 🅾️', async () => {
+      const muteDto = new MuteRequestDto();
+      muteDto.userId = user2280.id;
+      muteDto.requestUserId = user2282.id;
+      muteDto.groupChatId = groupChat2280.groupChatId;
+
+      const res = await request(app.getHttpServer())
+        .post(`/chat/groupChat/mute/${groupChat2280.groupChatId}`)
+        .send(muteDto);
+      expect(res.status).toBe(201);
+      const mutedUser = await groupChatRepository.findOne({
+        where: { groupChatId: groupChat2280.groupChatId },
+        relations: {
+          mutedUser: true,
+        },
+        select: {
+          mutedUser: true,
+        },
+      });
+      console.log(mutedUser);
+    });
+    it('admin이 user를 mute 🅾️', async () => {});
+    it('owner가 admin을 mute ❌', async () => {});
+    it('admin이 admin을 mute ❌', async () => {});
   });
 
   afterAll(async () => {

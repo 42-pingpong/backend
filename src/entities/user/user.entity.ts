@@ -15,6 +15,7 @@ import { GameScore } from '../game/gameScore.entity';
 import { BlockUserList } from './blockUserList.entity';
 import { FriendsWith } from './friendsWith.entity';
 import { Request } from './request.entity';
+import { MutedUserJoin } from '../chat/mutedUserJoin.entity';
 
 @Entity()
 @Unique(['nickName'])
@@ -103,9 +104,6 @@ export class User {
   @ManyToMany(() => GroupChat, (groupChat) => groupChat.bannedUser)
   bannedGroupChats: GroupChat[];
 
-  @ManyToMany(() => GroupChat, (groupChat) => groupChat.mutedUser)
-  mutedGroupChats: GroupChat[];
-
   @ManyToMany(() => GroupChat, (groupChat) => groupChat.admin)
   adminingGroupChats: GroupChat[];
 
@@ -138,4 +136,7 @@ export class User {
 
   @OneToMany(() => Token, (Token) => Token.owner)
   tokens: Token[];
+
+  @OneToMany(() => MutedUserJoin, (mutedUser) => mutedUser.mutedUser)
+  mutedUsers: MutedUserJoin[];
 }

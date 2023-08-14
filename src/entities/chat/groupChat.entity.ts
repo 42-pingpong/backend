@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { User } from '../user/user.entity';
 import { GroupChatMessage } from './groupChatMessage.entity';
+import { MutedUserJoin } from './mutedUserJoin.entity';
 
 @Entity()
 export class GroupChat {
@@ -62,11 +63,8 @@ export class GroupChat {
   })
   bannedUser: User[];
 
-  @ManyToMany(() => User, (user) => user.mutedGroupChats, { cascade: true })
-  @JoinTable({
-    name: 'MutedGroupChat_user_joinTable',
-  })
-  mutedUser: User[];
+  @OneToMany(() => MutedUserJoin, (mutedUser) => mutedUser.mutedGroup)
+  mutedUsers: MutedUserJoin[];
 
   @ManyToMany(() => User, (user) => user.adminingGroupChats, { cascade: true })
   @JoinTable({
