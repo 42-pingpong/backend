@@ -153,13 +153,18 @@ export class ChatService {
         const groupChat: GroupChat = await manager
           .getRepository(GroupChat)
           .findOne({
-            where: { groupChatId },
+            where: { groupChatId: groupChatId },
             relations: {
               admin: true,
               joinedUser: true,
               bannedUser: true,
             },
             select: {
+              groupChatId: true,
+              password: true,
+              curParticipants: true,
+              maxParticipants: true,
+              levelOfPublicity: true,
               admin: {
                 id: true,
                 profile: true,
@@ -183,12 +188,13 @@ export class ChatService {
               },
             },
           });
+
         if (!groupChat) {
           throw new NotFoundException('그룹 채팅방이 존재하지 않습니다.');
         }
 
         if (groupChat.levelOfPublicity === 'Prot') {
-          if (dto?.password && groupChat?.password !== dto.password) {
+          if (!dto.password || groupChat.password !== dto.password) {
             throw new ForbiddenException('비밀번호가 일치하지 않습니다.');
           }
         }
@@ -250,16 +256,22 @@ export class ChatService {
               id: true,
               nickName: true,
               profile: true,
+              status: true,
+              email: true,
             },
             joinedUser: {
               id: true,
               nickName: true,
               profile: true,
+              status: true,
+              email: true,
             },
             owner: {
               id: true,
               nickName: true,
               profile: true,
+              status: true,
+              email: true,
             },
           },
         });
