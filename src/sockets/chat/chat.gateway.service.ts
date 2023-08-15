@@ -16,6 +16,8 @@ import { GroupChatMessageResponse } from './restApiResponse/groupChatMessageResp
 import { JoinRoomResponse } from './restApiResponse/joinRoomResponse.dto';
 import { JoinGroupChatDto } from './request/joinGroupChat.dto';
 import { KickUserDto } from './request/kickUser.dto';
+import { BanDto } from './request/ban.dto';
+import { UnBanUserDto } from './request/unBanUser.dto';
 
 @Injectable()
 export class ChatGatewayService {
@@ -184,6 +186,38 @@ export class ChatGatewayService {
       {
         kickUserId: dto.kickUserId,
         requestUserId: dto.requestUserId,
+      },
+      {
+        headers: {
+          Authorization: bearerToken,
+        },
+      },
+    );
+    return res.data;
+  }
+
+  async banUser(dto: BanDto, bearerToken: string) {
+    const res = await axios.post(
+      `${this.restApiUrl}/chat/groupChat/${dto.groupChatId}/ban`,
+      {
+        userId: dto.userId,
+        bannedId: dto.bannedId,
+      },
+      {
+        headers: {
+          Authorization: bearerToken,
+        },
+      },
+    );
+    return res.data;
+  }
+
+  async unBanUser(dto: UnBanUserDto, bearerToken: string) {
+    const res = await axios.post(
+      `${this.restApiUrl}/chat/groupChat/${dto.groupChatId}/unBan`,
+      {
+        userId: dto.userId,
+        bannedId: dto.bannedId,
       },
       {
         headers: {
