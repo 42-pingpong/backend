@@ -274,14 +274,9 @@ export class GameGateway
       console.log('idx === -1 || enemyIdx === -1');
       return;
     }
+    await this.gameGatewayService.setHistory(playerList[idx].token, payload);
+    await client.leave(playerList[idx].roomId.toString());
     if (playerList[idx].is_host) {
-      await this.gameGatewayService.setHistory(playerList[idx].token, payload);
-      await this.gameGatewayService.setHistory(
-        playerList[enemyIdx].token,
-        payload,
-      );
-      await client.leave(playerList[idx].roomId.toString());
-      await client.leave(playerList[enemyIdx].roomId.toString());
       playerList.splice(Math.max(idx, enemyIdx), 1);
       playerList.splice(Math.min(idx, enemyIdx), 1);
       readyState.splice(Math.max(idx, enemyIdx), 1);
