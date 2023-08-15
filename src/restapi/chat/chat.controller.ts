@@ -209,15 +209,21 @@ export class ChatController {
   }
 
   @Post('groupChat/mute/:groupChatId')
-  async mute(@Body() body: MuteRequestDto) {
+  async mute(
+    @Param('groupChatId') groupChatId: string,
+    @Body() body: MuteRequestDto,
+  ) {
     // 그룹 채팅방에서 유저를 뮤트하는 메서드
-    await this.chatService.mute(body);
+    await this.chatService.mute(body, +groupChatId);
   }
 
   @Post('groupChat/unmute/:groupChatId')
-  async unmute(@Body() body: UnMuteRequestDto) {
+  async unmute(
+    @Param('groupChatId') groupChatId: string,
+    @Body() body: UnMuteRequestDto,
+  ) {
     // 그룹 채팅방에서 유저를 뮤트해제하는 메서드
-    await this.chatService.unMute(body);
+    await this.chatService.unMute(body, +groupChatId);
   }
 
   @Post('groupChat/:groupChatId/ban')

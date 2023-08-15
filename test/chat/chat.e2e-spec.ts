@@ -1187,7 +1187,6 @@ describe('Chat', () => {
       const muteDto = new MuteRequestDto();
       muteDto.userId = user2282.id;
       muteDto.requestUserId = user2280.id;
-      muteDto.groupChatId = groupChat2280.groupChatId;
       muteDto.unit = 's';
       muteDto.time = 10;
 
@@ -1195,7 +1194,7 @@ describe('Chat', () => {
         .post(`/chat/groupChat/mute/${groupChat2280.groupChatId}`)
         .send(muteDto);
 
-      const mutedUser = await groupChatRepository.findOne({
+      await groupChatRepository.findOne({
         where: { groupChatId: groupChat2280.groupChatId },
         relations: {
           mutedUsersJoinTable: true,
@@ -1204,18 +1203,13 @@ describe('Chat', () => {
           mutedUsersJoinTable: true,
         },
       });
-      console.log(mutedUser);
 
-      //UTC time
-      console.log(mutedUser.mutedUsersJoinTable[0].muteDue);
-      console.log(mutedUser.mutedUsersJoinTable[0].muteDue.toLocaleString());
       expect(res.status).toBe(201);
     });
     it('admin이 user를 mute 🅾️', async () => {
       const muteDto = new MuteRequestDto();
       muteDto.userId = user2282.id;
       muteDto.requestUserId = user2281.id;
-      muteDto.groupChatId = groupChat2280.groupChatId;
       muteDto.unit = 's';
       muteDto.time = 10;
 
@@ -1229,7 +1223,6 @@ describe('Chat', () => {
       const muteDto = new MuteRequestDto();
       muteDto.userId = user2281.id;
       muteDto.requestUserId = user2280.id;
-      muteDto.groupChatId = groupChat2280.groupChatId;
       muteDto.unit = 's';
       muteDto.time = 10;
 
@@ -1243,7 +1236,6 @@ describe('Chat', () => {
       const muteDto = new MuteRequestDto();
       muteDto.userId = user2283.id;
       muteDto.requestUserId = user2281.id;
-      muteDto.groupChatId = groupChat2280.groupChatId;
       muteDto.unit = 's';
       muteDto.time = 10;
 

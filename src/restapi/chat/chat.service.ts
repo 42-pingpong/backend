@@ -748,18 +748,18 @@ export class ChatService {
     });
   }
 
-  async mute(dto: MuteRequestDto) {
+  async mute(dto: MuteRequestDto, groupChatId: number) {
     // 그룹 채팅방에서 유저를 뮤트하는 로직
     await this.groupChatRepository.manager.transaction(
       async (manager: EntityManager) => {
         const isAdminOrOwner = await manager.getRepository(GroupChat).findOne({
           where: [
             {
-              groupChatId: dto.groupChatId,
+              groupChatId: groupChatId,
               ownerId: dto.requestUserId,
             },
             {
-              groupChatId: dto.groupChatId,
+              groupChatId: groupChatId,
               admin: { id: dto.requestUserId },
             },
           ],
@@ -774,7 +774,7 @@ export class ChatService {
 
         const isJoinedUser = await manager.getRepository(GroupChat).findOne({
           where: {
-            groupChatId: dto.groupChatId,
+            groupChatId: groupChatId,
             joinedUser: { id: dto.userId },
           },
           relations: {
@@ -797,7 +797,7 @@ export class ChatService {
         await manager.getRepository(MutedUserJoin).upsert(
           {
             mutedUserId: dto.userId,
-            mutedGroupId: dto.groupChatId,
+            mutedGroupId: groupChatId,
             muteDue: new Date(Date.now() + dto.time).toISOString(),
           },
           {
@@ -809,18 +809,18 @@ export class ChatService {
     );
   }
 
-  async unMute(dto: UnMuteRequestDto) {
+  async unMute(dto: UnMuteRequestDto, groupChatId: number) {
     await this.groupChatRepository.manager.transaction(
       async (manager: EntityManager) => {
         //1. Owner/Admin 이 그룹 채팅방에 존재하는 지 확인
         const isAdminOrOwner = await manager.getRepository(GroupChat).findOne({
           where: [
             {
-              groupChatId: dto.groupChatId,
+              groupChatId: groupChatId,
               ownerId: dto.requestUserId,
             },
             {
-              groupChatId: dto.groupChatId,
+              groupChatId: groupChatId,
               admin: {
                 id: dto.requestUserId,
               },
@@ -836,7 +836,7 @@ export class ChatService {
 
         await manager.getRepository(MutedUserJoin).delete({
           mutedUserId: dto.userId,
-          mutedGroupId: dto.groupChatId,
+          mutedGroupId: groupChatId,
         });
       },
     );
