@@ -8,8 +8,7 @@
 
 ## ERD
 
-[ERD cloud](https://www.erdcloud.com/d/MRkJ6ehSYj4tu7nxd)
+![pingpong](https://github.com/42-pingpong/backend/assets/76278794/79a92c3b-ed0c-49a5-8816-2a0cd0bd7863)
 
-<img width="1085" alt="스크린샷 2023-07-27 04 23 16" src="https://github.com/42-pingpong/backend/assets/76278794/0a9512b1-0ad3-4c69-a992-9b7a2379ee3d">
 
 <br>
