@@ -235,8 +235,11 @@ export class ChatController {
     await this.chatService.unBan(+groupChatId, body);
   }
 
-  @Post('groupChat/kick')
-  async kick(@Body() body: KickUserDto) {
-    await this.chatService.kickUser(body);
+  @Post('groupChat/kick/:groupChatId')
+  async kick(
+    @Param('groupChatId') groupChatId: string,
+    @Body() body: KickUserDto,
+  ) {
+    return await this.chatService.kickUser(+groupChatId, body);
   }
 }

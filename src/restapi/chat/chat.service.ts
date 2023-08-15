@@ -933,17 +933,17 @@ export class ChatService {
     );
   }
 
-  async kickUser(dto: KickUserDto) {
-    await this.groupChatRepository.manager.transaction(
+  async kickUser(groupChatId: number, dto: KickUserDto) {
+    return await this.groupChatRepository.manager.transaction(
       async (manager: EntityManager) => {
         const isAdminOrOwner = await manager.getRepository(GroupChat).findOne({
           where: [
             {
-              groupChatId: dto.groupChatId,
+              groupChatId: groupChatId,
               ownerId: dto.requestUserId,
             },
             {
-              groupChatId: dto.groupChatId,
+              groupChatId: groupChatId,
               admin: { id: dto.requestUserId },
             },
           ],
@@ -958,7 +958,7 @@ export class ChatService {
 
         const isJoinedUser = await manager.getRepository(GroupChat).findOne({
           where: {
-            groupChatId: dto.groupChatId,
+            groupChatId: groupChatId,
             joinedUser: { id: dto.kickUserId },
           },
           relations: {
@@ -972,8 +972,20 @@ export class ChatService {
         await manager
           .createQueryBuilder(GroupChat, 'groupChat')
           .relation('joinedUser')
-          .of(dto.groupChatId)
+          .of(groupChatId)
           .remove(dto.kickUserId);
+
+        await manager
+          .createQueryBuilder(GroupChat, 'groupChat')
+          .update()
+          .set({
+            curParticipants: () => 'curParticipants - 1',
+          });
+
+        return {
+          groupChatId: groupChatId,
+          userId: dto.kickUserId,
+        };
       },
     );
   }
