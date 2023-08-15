@@ -18,6 +18,7 @@ import { GroupChat } from '../../src/entities/chat/groupChat.entity';
 import { UserFactory } from '../../src/factory/user.factory';
 import { ChatFactory } from '../../src/factory/chat.factory';
 import { BanDto } from '../../src/sockets/chat/request/ban.dto';
+import { UnBanUserDto } from '../../src/sockets/chat/request/unBanUser.dto';
 
 /**
  * @link https://medium.com/@tozwierz/testing-socket-io-with-jest-on-backend-node-js-f71f7ec7010f
@@ -166,7 +167,6 @@ describe('Socket', () => {
     let groupChat10000: GroupChat;
 
     beforeEach(async () => {
-      console.log('beforeEach');
       user10000 = await datasource
         .getRepository(User)
         .save(userFactory.createUser(10000));
@@ -212,7 +212,6 @@ describe('Socket', () => {
     });
 
     afterEach(async () => {
-      console.log('afterEach');
       ChatSocketClient.removeAllListeners();
       ChatSocketClient.disconnect();
       await datasource
@@ -253,11 +252,10 @@ describe('Socket', () => {
       kickUserDto.requestUserId = user10000.id;
       kickUserDto.kickUserId = user10002.id;
       kickUserDto.groupChatId = groupChat10000.groupChatId;
-      console.log(kickUserDto);
       ChatSocketClient.emit('kick-user', kickUserDto);
     });
 
-    it('ban owner -> joinedUser', (done) => {
+    it('ban/unBan owner -> joinedUser', (done) => {
       ChatSocketClient.connect();
       ChatSocketClient.on('ban-user', (data) => {
         expect(data.groupChatId).toBe(groupChat10000.groupChatId);
@@ -274,7 +272,17 @@ describe('Socket', () => {
       dto.userId = user10000.id;
       dto.bannedId = user10002.id;
       ChatSocketClient.emit('ban-user', dto);
+
+      ChatSocketClient.on('unBan-user', (data) => {
+        expect(data.groupChatId).toBe(groupChat10000.groupChatId);
+        expect(data.userId).toBe(user10002.id);
+        done();
+      });
+      const unbandto = new UnBanUserDto();
+      unbandto.groupChatId = groupChat10000.groupChatId;
+      unbandto.userId = user10000.id;
+      unbandto.bannedId = user10002.id;
+      ChatSocketClient.emit('unBan-user', unbandto);
     });
-    // it('unban', (done) => {});
   });
 });
