@@ -8,8 +8,9 @@ import {
   OneToMany,
   JoinColumn,
 } from 'typeorm';
-import { User } from '../user/user.entity';
-import { GroupChatMessage } from './groupChatMessage.entity';
+import { User } from 'src/entities/user/user.entity';
+import { GroupChatMessage } from 'src/entities/chat/groupChatMessage.entity';
+import { MutedUserJoin } from 'src/entities/chat/mutedUserJoin.entity';
 
 @Entity()
 export class GroupChat {
@@ -32,22 +33,25 @@ export class GroupChat {
     type: 'varchar',
     length: 100,
     nullable: true,
+    select: false,
   })
   password: string;
 
   @Column({
-    type: 'smallint',
+    type: 'int',
   })
   maxParticipants: number;
 
   @Column({
-    type: 'smallint',
+    type: 'int',
     default: 1,
   })
   curParticipants: number;
 
   @ManyToOne(() => User, (user) => user.groupChats)
-  @JoinColumn()
+  @JoinColumn({
+    name: 'ownerId',
+  })
   owner: User;
 
   @Column({
@@ -78,4 +82,7 @@ export class GroupChat {
     (groupChatMessage) => groupChatMessage.receivedGroupChatId,
   )
   groupChatMessages: GroupChatMessage[];
+
+  @OneToMany(() => MutedUserJoin, (mutedUsersJoin) => mutedUsersJoin.mutedGroup)
+  mutedUsersJoinTable: MutedUserJoin[];
 }

@@ -47,4 +47,14 @@ export class CreateGroupChatDto {
   @Type(() => Number)
   @IsNumber()
   ownerId: number;
+
+  @ApiProperty({
+    type: Number,
+    isArray: true,
+    description: '채팅방 참여자Id',
+    example: [1, 2, 3],
+  })
+  @IsOptional()
+  @IsNumber({}, { each: true })
+  participants?: number[];
 }

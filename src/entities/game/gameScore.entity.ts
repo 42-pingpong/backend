@@ -1,6 +1,7 @@
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -9,6 +10,7 @@ import { User } from '../user/user.entity';
 import { GameInfo } from './gameInfo.entity';
 
 @Entity()
+@Index(['userId'])
 export class GameScore {
   @PrimaryGeneratedColumn()
   id: number;
@@ -20,10 +22,18 @@ export class GameScore {
   score: number;
 
   @ManyToOne(() => User, (user) => user.gameScores)
-  @JoinColumn()
+  @JoinColumn({ name: 'userId' })
+  user: User;
+  @Column({
+    type: 'int',
+  })
   userId: number;
 
   @ManyToOne(() => GameInfo, (gameInfo) => gameInfo.gameScores)
-  @JoinColumn()
+  @JoinColumn({ name: 'gameId' })
+  game: GameInfo;
+  @Column({
+    type: 'int',
+  })
   gameId: number;
 }

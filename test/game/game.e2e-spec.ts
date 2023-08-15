@@ -176,9 +176,73 @@ describe('Game -/game (e2e)', () => {
   });
 
   describe('GET /game/history/:userId', () => {
-    it.todo('');
-    it.todo('');
-    it.todo('');
-    it.todo('');
+    let user3020: User;
+    let user3021: User;
+    let user3022: User;
+    let gameInfo: GameInfo;
+    const createGameScoreDto = new CreateGameScoreRequestDto();
+
+    beforeAll(async () => {
+      user3020 = await userRepository.save(factory.createUser(3020));
+      user3021 = await userRepository.save(factory.createUser(3021));
+      user3022 = await userRepository.save(factory.createUser(3022));
+      const gameInfoDto = new GameInfo();
+      let id = (await gameInfoRepository.insert(gameInfoDto)).identifiers[0]
+        .gameId;
+
+      createGameScoreDto.gameId = id;
+      createGameScoreDto.score = 3;
+      createGameScoreDto.userId = user3020.id;
+
+      await request(app.getHttpServer())
+        .post('/game/score')
+        .send(createGameScoreDto);
+
+      createGameScoreDto.score = 5;
+      createGameScoreDto.userId = user3021.id;
+      await request(app.getHttpServer())
+        .post('/game/score')
+        .send(createGameScoreDto);
+
+      //game 2
+      id = (await gameInfoRepository.insert(gameInfoDto)).identifiers[0].gameId;
+      console.log(id);
+      createGameScoreDto.gameId = id;
+      createGameScoreDto.score = 5;
+      createGameScoreDto.userId = user3021.id;
+
+      await request(app.getHttpServer())
+        .post('/game/score')
+        .send(createGameScoreDto);
+
+      createGameScoreDto.score = 3;
+      createGameScoreDto.userId = user3022.id;
+      await request(app.getHttpServer())
+        .post('/game/score')
+        .send(createGameScoreDto);
+    });
+
+    afterAll(async () => {
+      await gameScoreRepository.delete({});
+      await gameInfoRepository.delete({});
+      await userRepository.delete({
+        id: user3020.id,
+      });
+      await userRepository.delete({
+        id: user3021.id,
+      });
+    });
+
+    it('History정보 요청한 유저가 없음.', async () => {
+      await request(app.getHttpServer()).get(`/game/history/9999`).expect(404);
+    });
+
+    it('정상요청', async () => {
+      const res = await request(app.getHttpServer())
+        .get(`/game/history/${user3020.id}`)
+        .expect(200);
+      console.log(res.body[0]);
+      console.log(res.body[0].gameScores);
+    });
   });
 });

@@ -5,12 +5,22 @@ import { appDatabase } from 'src/datasource/appdatabase';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GroupChat } from 'src/entities/chat/groupChat.entity';
 import { AppConfigModule } from 'src/config/app.config';
+import { GroupChatMessage } from 'src/entities/chat/groupChatMessage.entity';
+import { MessageInfo } from 'src/entities/chat/messageInfo.entity';
+import { BlockUserList } from 'src/entities/user/blockUserList.entity';
+import { MutedUserJoin } from 'src/entities/chat/mutedUserJoin.entity';
 
 @Module({
   imports: [
     AppConfigModule,
     appDatabase,
-    TypeOrmModule.forFeature([GroupChat]),
+    TypeOrmModule.forFeature([
+      GroupChat,
+      GroupChatMessage,
+      MessageInfo,
+      BlockUserList,
+      MutedUserJoin,
+    ]),
   ],
   controllers: [ChatController],
   providers: [ChatService],

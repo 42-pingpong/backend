@@ -3,36 +3,25 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
-import {
-  OnGatewayInit,
-  OnGatewayConnection,
-  OnGatewayDisconnect,
-} from '@nestjs/websockets';
+import { OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 import { ChatGatewayService } from './chat.gateway.service';
 import { CreateGroupChatDto } from './dto/create-chat.dto';
-
-export interface ChatDTO {
-  roomId: string;
-  id?: number;
-  nickname: string;
-  text: string;
-}
-
-export interface ChatRoomDTO {
-  log?: ChatDTO[];
-  chatName: string;
-  password?: string;
-  levelOfPublicity: string;
-  currentParticipants: number;
-  maxParticipants: number;
-  ownerId?: number;
-  roomId: string;
-}
-
-let roomId = 1;
-
-const ChatRoomList: ChatRoomDTO[] = [];
+import { BanUserDto } from './request/banUser.dto';
+import { BlockUserDto } from './request/BlockUser.dto';
+import { DirectMessageDto } from './request/directMessage.dto';
+import { FetchDirectMessageDto } from './request/FetchDirectMessage.dto';
+import { FetchGroupMessageDto } from './request/FetchGroupChatMessage.dto';
+import { GroupChatMessageDto } from './request/groupChatMessage.dto';
+import { KickUserDto } from './request/kickUser.dto';
+import { MuteUserDto } from './request/muteUser.dto';
+import { UnBanUserDto } from './request/unBanUser.dto';
+import { UnblockUserDto } from './request/unBlockUser.dto';
+import { UnmuteUserDto } from './request/unMute.dto';
+import { DirectMessageResponse } from './restApiResponse/directMessageResponse.dto';
+import { GroupChatMessageResponse } from './restApiResponse/groupChatMessageResponse.dto';
+import { JoinRoomResponse } from './restApiResponse/joinRoomResponse.dto';
+import { JoinGroupChatDto } from './request/joinGroupChat.dto';
 
 /**
  * @brief chat gateway
@@ -71,33 +60,30 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
    */
   @SubscribeMessage('connect')
   async handleConnection(client: any, ...args: any[]) {
-    if (client.handshake.headers.authorization !== undefined) {
-      console.log('chat socket handleConnection', client.id);
-      const userId = this.chatGatewayService.getSub(
-        client.handshake.headers.authorization,
-      );
+    console.log('chat socket handleConnection', client.id);
+    const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
+    if (userId === null) return;
 
-      //GroupChat을 위한 코드
-      //클라이언트 연결 시, 클라이언트가 속한 채팅방의 정보를 받아 room에 join한다.
-      const joinedGroupChatList =
-        await this.chatGatewayService.getJoinedGroupChatList(
-          userId,
-          client.handshake.headers.authorization,
-        );
-
-      for (const groupChat of joinedGroupChatList) {
-        client.join(groupChat.groupChatId.toString());
-      }
-
-      //Direct Message를 위한 코드
-      //클라이언트의 chatSocketId를 저장한다.
-      //비동기로 처리해서 빠르게 처리.
-      this.chatGatewayService.login(
+    //GroupChat을 위한 코드
+    //클라이언트 연결 시, 클라이언트가 속한 채팅방의 정보를 받아 room에 join한다.
+    const joinedGroupChatList =
+      await this.chatGatewayService.getJoinedGroupChatList(
         userId,
-        client.id,
-        client.handshake.headers.authorization,
+        client.handshake.auth.token,
       );
+
+    for (const groupChat of joinedGroupChatList) {
+      client.join(groupChat.groupChatId.toString());
     }
+
+    //Direct Message를 위한 코드
+    //클라이언트의 chatSocketId를 저장한다.
+    //비동기로 처리해서 빠르게 처리.
+    await this.chatGatewayService.login(
+      userId,
+      client.id,
+      client.handshake.auth.token,
+    );
   }
 
   /**
@@ -121,6 +107,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
    * */
   @SubscribeMessage('group-chat-list')
   async getChatRoomList(client: any) {
+    const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
+    if (userId === null) return;
     return await this.chatGatewayService.getGroupChatList();
   }
 
@@ -132,23 +120,32 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('create-room')
   async createChatRoom(client: any, payload: CreateGroupChatDto) {
     console.log('create-room', payload);
+    const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
+    if (userId === null) return;
     const chat = await this.chatGatewayService.createGroupChat(payload);
     this.server.emit('group-chat-update', chat);
   }
 
   @SubscribeMessage('join-room')
-  async joinChatRoom(client: any, roomId: string) {
-    console.log('join-room', roomId);
-    const userId = this.chatGatewayService.getSub(
-      client.handshake.headers.authorization,
-    );
+  async joinChatRoom(client: Socket, groupChatDto: JoinGroupChatDto) {
+    console.log('join-room', groupChatDto.groupChatId);
+    const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
+    if (userId === null) return;
 
-    await this.chatGatewayService.joinGroupChat(
-      +roomId,
-      userId,
-      client.handshake.headers.authorization,
-    );
-    client.join(roomId);
+    try {
+      const resPonse: JoinRoomResponse =
+        await this.chatGatewayService.joinGroupChat(
+          groupChatDto,
+          client.handshake.auth.token,
+        );
+      await client.join(groupChatDto.groupChatId.toString());
+      //TODO: 변경된 유저만 전달해야함.
+      client
+        .to(groupChatDto.groupChatId.toString())
+        .emit('join-room', resPonse);
+    } catch (e) {
+      client.emit('error', e.message);
+    }
   }
 
   @SubscribeMessage('leave-room')
@@ -156,11 +153,149 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     client.leave(roomId);
   }
 
-  @SubscribeMessage('chat-message')
-  handleMessage(client: Socket, ...payload: ChatDTO[]): any {
-    client.broadcast.to(payload[0].roomId).emit('chat-message', payload[0]);
-    // const room = ChatRoomList.find((data) => data.roomId === payload[0].roomId);
-    // room.log.push(payload[0]);
-    return payload[0];
+  /**
+   * @description
+   * - 클라이언트가 그룹채팅방에서 메시지를 보냈을 때 실행된다.
+   * - 메시지를 저장하고, 그룹채팅방에 속한 모든 클라이언트에게 메시지를 전달한다.
+   * */
+  @SubscribeMessage('group-message')
+  async handleMessage(client: Socket, dto: GroupChatMessageDto) {
+    //TODO: 로그인 하지 않은 사용자는 메시지를 어떻게 처리할 것인가?
+    const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
+    if (userId === null) return;
+
+    try {
+      //block/mute에 상관없이 메시지를 저장한다.
+      const responseBody: GroupChatMessageResponse =
+        await this.chatGatewayService.saveGroupChatMessage(
+          dto,
+          client.handshake.auth.token,
+        );
+      //sender를 제외한 room의 모든 client에게 메시지를 전달한다.
+      // 2. block/mute 처리된 사용자의 메세지는 전달되면 안됨.
+      // block은 joined-user간 서로에게 메시지를 전달하지 않는다.
+      // mute는 joined-user에게 메시지를 전달하지 않는다.
+      // groupChatId의 joined-user-list를 가져와서, 해당 사용자가 block/mute 처리된 사용자인지 확인한다.
+      client
+        .to(responseBody.receivedGroupChatId.toString())
+        .emit('group-message', responseBody);
+
+      //sender에게도 메시지 전달
+      client.emit('group-message', responseBody);
+    } catch (e) {
+      client.emit('error', e.message);
+    }
   }
+
+  /**
+   * @description
+   * - 클라이언트가 1:1 채팅방에서 메시지를 보냈을 때 실행된다.
+   * - 메시지를 저장하고, 해당 클라이언트에게 메시지를 전달한다.
+   * */
+  @SubscribeMessage('direct-message')
+  async handleDirectMessage(client: Socket, dto: DirectMessageDto) {
+    const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
+    if (userId === null) return;
+    try {
+      const responseBody: DirectMessageResponse =
+        await this.chatGatewayService.saveDirectMessage(
+          dto,
+          client.handshake.auth.token,
+        );
+      //client가 socket에 연결되어있는지 확인한다.
+      if (responseBody?.receivedUser?.chatSocketId) {
+        //client가 연결되어있다면, 해당 client에게 메시지를 전달한다.
+        const socketId = responseBody.receivedUser.chatSocketId;
+        delete responseBody.receivedUser;
+        this.server.to(socketId).emit('direct-message', responseBody);
+        //sender에게도 메시지 전달해줘요
+        client.emit('direct-message', responseBody);
+        //TODO: client가 연결되어있지 않다면, 어떻게 처리할 것인가?
+        //TODO: client 알람 처리
+      }
+    } catch (e) {
+      client.emit('error', e.message);
+    }
+  }
+
+  /**
+   * @description
+   * - DM을 가져온다.
+   * */
+  @SubscribeMessage('fetch-direct-message')
+  async fetchDirectMessage(client: Socket, dto: FetchDirectMessageDto) {
+    const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
+    if (userId === null) return;
+    try {
+      const data: DirectMessageResponse =
+        await this.chatGatewayService.fetchDirectMessage(
+          dto,
+          client.handshake.auth.token,
+        );
+      client.emit('fetch-direct-message', data);
+    } catch (e) {
+      client.emit('error', e.message);
+    }
+  }
+
+  /**
+   * @description
+   * - 그룹채팅방의 메시지를 가져온다.
+   * */
+  @SubscribeMessage('fetch-group-message')
+  async fetchGroupMessage(client: Socket, dto: FetchGroupMessageDto) {
+    const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
+    if (userId === null) return;
+    try {
+      const data: GroupChatMessageResponse =
+        await this.chatGatewayService.fetchGroupMessage(
+          dto,
+          client.handshake.auth.token,
+        );
+      client.emit('fetch-group-message', data);
+    } catch (e) {
+      client.emit('error', e.message);
+    }
+  }
+
+  @SubscribeMessage('block-user')
+  async blockUser(client: Socket, dto: BlockUserDto) {
+    console.log('block-user', dto);
+    const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
+    if (userId === null) return;
+    try {
+      await this.chatGatewayService.blockUser(dto, client.handshake.auth.token);
+    } catch (e) {
+      client.emit('error', e.message);
+    }
+  }
+
+  @SubscribeMessage('unblock-user')
+  async unblockUser(client: Socket, dto: UnblockUserDto) {
+    const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
+    if (userId === null) return;
+    try {
+      await this.chatGatewayService.unBlockUser(
+        dto,
+        client.handshake.auth.token,
+      );
+    } catch (e) {
+      client.emit('error', e.message);
+    }
+  }
+
+  @SubscribeMessage('mute-user')
+  async muteUser(client: Socket, dto: MuteUserDto) {}
+
+  @SubscribeMessage('unmute-user')
+  async unmuteUser(client: Socket, dto: UnmuteUserDto) {}
+
+  @SubscribeMessage('ban-user')
+  async banUser(client: Socket, dto: BanUserDto) {}
+
+  @SubscribeMessage('unban-user')
+  async unbanUser(client: Socket, dto: UnBanUserDto) {}
+
+  @SubscribeMessage('kick-user')
+  async kickUser(client: Socket, dto: KickUserDto) {}
 }

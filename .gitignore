@@ -2,6 +2,7 @@
 .env.dev
 .env.test
 
+/.idea/
 /uploads
 
 # Logs

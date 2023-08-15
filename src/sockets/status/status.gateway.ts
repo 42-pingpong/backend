@@ -9,7 +9,6 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { UseGuards } from '@nestjs/common';
-import { AccessTokenGuard } from 'src/restapi/auth/Guards/accessToken.guard';
 import { ApiTags } from '@nestjs/swagger';
 import { StatusService } from './status.service';
 import { FriendRequestJobData } from 'src/interface/user.jobdata';
@@ -17,6 +16,7 @@ import { GetFriendResponse } from 'src/restapi/user/response/get-friend.response
 import { CreateUserDto } from 'src/restapi/user/dto/create-user.dto';
 import { RequestAcceptDto } from './dto/request-accept.dto';
 import { RequestRejectDto } from './dto/request-reject.dto';
+import { WsAccessTokenGuard } from '../guards/WsAccessTokenGuard.guard';
 
 export interface ChangeStatusData {
   friendList: GetFriendResponse[];
@@ -57,9 +57,11 @@ export class StatusGateway
    * 로그인시 유저의 상태정보를 업데이트한다.
    */
   @SubscribeMessage('connect')
-  @UseGuards(AccessTokenGuard)
+  @UseGuards(WsAccessTokenGuard)
   async handleConnection(@ConnectedSocket() client: any) {
+    console.log(client.handshake.auth.token);
     const sub = this.statusService.getSub(client.handshake.auth.token);
+    console.log('sub: ??', sub);
     if (sub == null) {
       return;
     }

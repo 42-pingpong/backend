@@ -10,6 +10,7 @@ import { BlockUserList } from 'src/entities/user/blockUserList.entity';
 import { Token } from 'src/entities/auth/token.entity';
 import { FriendsWith } from 'src/entities/user/friendsWith.entity';
 import { Request } from 'src/entities/user/request.entity';
+import { MutedUserJoin } from 'src/entities/chat/mutedUserJoin.entity';
 
 export default registerAs('database', () => ({
   host:
@@ -19,6 +20,7 @@ export default registerAs('database', () => ({
   password: process.env.POSTGRES_PASSWORD,
   database: process.env.POSTGRES_DB,
   entities: [
+    MutedUserJoin,
     User,
     GroupChat,
     GroupChatMessage,
@@ -43,6 +45,6 @@ export default registerAs('database', () => ({
     process.env.NODE_ENV === 'development' ||
     process.env.NODE_ENV === 'e2e' ||
     process.env.NODE_ENV === 'test'
-      ? false
+      ? true
       : false,
 }));

@@ -5,7 +5,16 @@ import axios from 'axios';
 import { GroupChat } from 'src/entities/chat/groupChat.entity';
 import { CreateGroupChatDto } from './dto/create-chat.dto';
 import { GetGroupChatListDto } from './dto/get-groupchatlist.dto';
-import { JoinGroupChatDto } from './dto/join-group-chat.dto';
+import { BlockUserDto } from './request/BlockUser.dto';
+import { DirectMessageDto } from './request/directMessage.dto';
+import { FetchDirectMessageDto } from './request/FetchDirectMessage.dto';
+import { FetchGroupMessageDto } from './request/FetchGroupChatMessage.dto';
+import { GroupChatMessageDto } from './request/groupChatMessage.dto';
+import { UnblockUserDto } from './request/unBlockUser.dto';
+import { DirectMessageResponse } from './restApiResponse/directMessageResponse.dto';
+import { GroupChatMessageResponse } from './restApiResponse/groupChatMessageResponse.dto';
+import { JoinRoomResponse } from './restApiResponse/joinRoomResponse.dto';
+import { JoinGroupChatDto } from './request/joinGroupChat.dto';
 
 @Injectable()
 export class ChatGatewayService {
@@ -27,19 +36,21 @@ export class ChatGatewayService {
     } else return payload.sub;
   }
 
-  login(userId: number, clientId: string, bearerToken: string) {
-    axios.patch(
-      `${this.restApiUrl}/user/${userId}`,
-      {
-        status: 'online',
-        chatSocketId: clientId,
-      },
-      {
-        headers: {
-          Authorization: bearerToken,
+  async login(userId: number, clientId: string, bearerToken: string) {
+    try {
+      await axios.patch(
+        `${this.restApiUrl}/user/${userId}`,
+        {
+          status: 'online',
+          chatSocketId: clientId,
         },
-      },
-    );
+        {
+          headers: {
+            Authorization: bearerToken,
+          },
+        },
+      );
+    } catch (error) {}
   }
 
   async getJoinedGroupChatList(
@@ -51,7 +62,7 @@ export class ChatGatewayService {
       {
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${bearerToken}`,
+          Authorization: bearerToken,
         },
       },
     );
@@ -81,17 +92,88 @@ export class ChatGatewayService {
   }
 
   async joinGroupChat(
-    groupChatId: number,
-    userId: number,
+    groupChatDto: JoinGroupChatDto,
     bearerToken: string,
-  ) {
-    const joinGroupChat = new JoinGroupChatDto();
-    joinGroupChat.userId = userId;
-    await axios.post(`${this.restApiUrl}/chat/groupChat/${groupChatId}`, {
-      headers: {
-        Authorization: `Bearer ${bearerToken}`,
+  ): Promise<JoinRoomResponse> {
+    const res = await axios.post(
+      groupChatDto.password
+        ? `${this.restApiUrl}/chat/groupChat/${groupChatDto.groupChatId}?userId=${groupChatDto.userId}&password=${groupChatDto.password}`
+        : `${this.restApiUrl}/chat/groupChat/${groupChatDto.groupChatId}?userId=${groupChatDto.userId}`,
+      {
+        headers: {
+          Authorization: bearerToken,
+        },
       },
-      params: joinGroupChat,
+    );
+    return res.data;
+  }
+
+  async saveGroupChatMessage(dto: GroupChatMessageDto, bearerToken: string) {
+    const res = await axios.post(
+      `${this.restApiUrl}/chat/groupChat/messages/send`,
+      dto,
+      {
+        headers: {
+          Authorization: bearerToken,
+        },
+      },
+    );
+    return res.data;
+  }
+
+  async saveDirectMessage(dto: DirectMessageDto, bearerToken: string) {
+    const res = await axios.post(`${this.restApiUrl}/chat/messages`, dto, {
+      headers: {
+        Authorization: bearerToken,
+      },
+    });
+    return res.data;
+  }
+
+  async fetchGroupMessage(
+    dto: FetchGroupMessageDto,
+    bearerToken: string,
+  ): Promise<GroupChatMessageResponse> {
+    const res = await axios.get(
+      `${this.restApiUrl}/chat/groupMessages?groupChatId=${dto.groupChatId}&userId=${dto.userId}`,
+      {
+        headers: {
+          Authorization: bearerToken,
+        },
+      },
+    );
+    return res.data;
+  }
+
+  async fetchDirectMessage(
+    dto: FetchDirectMessageDto,
+    bearerToken: string,
+  ): Promise<DirectMessageResponse> {
+    const res = await axios.get(
+      `${this.restApiUrl}/chat/directMessages?userId=${dto.userId}&targetId=${dto.targetId}`,
+      {
+        headers: {
+          Authorization: bearerToken,
+        },
+      },
+    );
+
+    return res.data;
+  }
+
+  async blockUser(dto: BlockUserDto, bearerToken: string) {
+    await axios.post(`${this.restApiUrl}/chat/block`, dto, {
+      headers: {
+        Authorization: bearerToken,
+      },
+    });
+  }
+
+  async unBlockUser(dto: UnblockUserDto, bearerToken: string) {
+    await axios.post(`${this.restApiUrl}/chat/unBlock`, dto, {
+      headers: {
+        Authorization: bearerToken,
+      },
     });
   }
 }

@@ -712,7 +712,7 @@ describe('User -/user (e2e)', () => {
       req1 = await requestRepository.save({
         requestingUserId: user51.id,
         requestedUserId: user50.id,
-        status: InvitationStatus.NOTALARMED,
+        status: InvitationStatus.PENDING,
         requestType: RequestType.FRIEND,
       });
 
@@ -720,7 +720,7 @@ describe('User -/user (e2e)', () => {
       req2 = await requestRepository.save({
         requestingUserId: user52.id,
         requestedUserId: user50.id,
-        status: InvitationStatus.NOTALARMED,
+        status: InvitationStatus.PENDING,
         requestType: RequestType.FRIEND,
       });
     });
