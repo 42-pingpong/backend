@@ -180,6 +180,8 @@ export class GameGateway
       console.log('게임 시작~~~');
       readyState[idx].emit('start', true);
       readyState[enemyIdx].emit('start', true);
+      readyState.splice(Math.max(idx, enemyIdx), 1);
+      readyState.splice(Math.min(idx, enemyIdx), 1);
     }
   }
 
@@ -276,17 +278,49 @@ export class GameGateway
     }
     await this.gameGatewayService.setHistory(playerList[idx].token, payload);
     await client.leave(playerList[idx].roomId.toString());
+    console.log('쁘쁘쁘쁘쁘쁘쁘쁘쁘쁘쁘쁘쁘쁘');
     if (playerList[idx].is_host) {
       playerList.splice(Math.max(idx, enemyIdx), 1);
       playerList.splice(Math.min(idx, enemyIdx), 1);
-      readyState.splice(Math.max(idx, enemyIdx), 1);
-      readyState.splice(Math.min(idx, enemyIdx), 1);
     }
   }
 
-  // @SubscribeMessage('room-out')
-  // async handleRoomOut(client: Socket) {
-  //   const idx = playerList.findIndex((player) => player.socket === client);
-  //   if (idx === -1) return;
-  // }
+  @SubscribeMessage('room-out')
+  async handleRoomOut(client: Socket, payload: CreateGameScoreRequestDto) {
+    console.log('hihi');
+    const idx = playerList.findIndex((player) => player.socket === client);
+    const enemyIdx = playerList.findIndex(
+      (player) => player.id === playerList[idx].enemy_id,
+    );
+    console.log('런~~~', playerList[idx].id);
+
+    if (idx === -1 || enemyIdx === -1) {
+      console.log('idx === -1 || enemyIdx === -1');
+      return;
+    }
+
+    client.emit('room-out');
+    playerList[enemyIdx].socket.emit('end-room-out', { winner: true });
+
+    // await this.gameGatewayService.setHistory(playerList[idx].token, payload);
+    // await client.leave(playerList[idx].roomId.toString());
+
+    // playerList.splice(Math.max(idx, enemyIdx), 1);
+    // playerList.splice(Math.min(idx, enemyIdx), 1);
+
+    // if (readyState.includes(playerList[idx].socket))
+    //   readyState.splice(Math.max(idx, enemyIdx), 1);
+    // if (readyState.includes(playerList[enemyIdx].socket))
+    //   readyState.splice(Math.min(idx, enemyIdx), 1);
+    console.log('idx', idx);
+    console.log('enemyIdx', enemyIdx);
+    if (playerList.length === 0) {
+      console.log('playerList.length === 0');
+      return;
+    }
+    if (readyState.length === 0) {
+      console.log('readyState.length === 0');
+      return;
+    }
+  }
 }
