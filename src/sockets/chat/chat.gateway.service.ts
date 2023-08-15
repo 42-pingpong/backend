@@ -15,6 +15,7 @@ import { DirectMessageResponse } from './restApiResponse/directMessageResponse.d
 import { GroupChatMessageResponse } from './restApiResponse/groupChatMessageResponse.dto';
 import { JoinRoomResponse } from './restApiResponse/joinRoomResponse.dto';
 import { JoinGroupChatDto } from './request/joinGroupChat.dto';
+import { KickUserDto } from './request/kickUser.dto';
 
 @Injectable()
 export class ChatGatewayService {
@@ -175,5 +176,21 @@ export class ChatGatewayService {
         Authorization: bearerToken,
       },
     });
+  }
+
+  async kickUser(dto: KickUserDto, bearerToken: string) {
+    const res = await axios.post(
+      `${this.restApiUrl}/chat/groupChat/kick/${dto.groupChatId}`,
+      {
+        kickUserId: dto.kickUserId,
+        requestUserId: dto.requestUserId,
+      },
+      {
+        headers: {
+          Authorization: bearerToken,
+        },
+      },
+    );
+    return res.data;
   }
 }

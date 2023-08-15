@@ -284,6 +284,22 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
+  @SubscribeMessage('kick-user')
+  async kickUser(client: Socket, dto: KickUserDto) {
+    console.log(dto);
+    try {
+      const kickedUser = await this.chatGatewayService.kickUser(
+        dto,
+        client.handshake.auth.token,
+      );
+
+      //group 내 모든 유저들에게 groupId / kickedUserId 전달.
+      this.server.in(dto.groupChatId.toString()).emit('kick-user', kickedUser);
+    } catch (e) {
+      client.emit('error', e.message);
+    }
+  }
+
   @SubscribeMessage('mute-user')
   async muteUser(client: Socket, dto: MuteUserDto) {}
 
@@ -295,7 +311,4 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('unban-user')
   async unbanUser(client: Socket, dto: UnBanUserDto) {}
-
-  @SubscribeMessage('kick-user')
-  async kickUser(client: Socket, dto: KickUserDto) {}
 }

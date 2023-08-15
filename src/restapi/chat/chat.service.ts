@@ -29,6 +29,7 @@ import { DirectMessageResponse } from './response/directMessage.response';
 import { UnMuteRequestDto } from './request/unmute.dto';
 import { MutedUserJoin } from '../../entities/chat/mutedUserJoin.entity';
 import { UnBanDto } from './request/unBan.dto';
+import { KickUserDto } from './request/kickUser.dto';
 
 @Injectable()
 export class ChatService {
@@ -928,6 +929,63 @@ export class ChatService {
           .relation('bannedUser')
           .of(groupChatId)
           .remove(dto.userId);
+      },
+    );
+  }
+
+  async kickUser(groupChatId: number, dto: KickUserDto) {
+    return await this.groupChatRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        const isAdminOrOwner = await manager.getRepository(GroupChat).findOne({
+          where: [
+            {
+              groupChatId: groupChatId,
+              ownerId: dto.requestUserId,
+            },
+            {
+              groupChatId: groupChatId,
+              admin: { id: dto.requestUserId },
+            },
+          ],
+          relations: {
+            admin: true,
+            owner: true,
+          },
+        });
+        if (!isAdminOrOwner) {
+          throw new ForbiddenException('admin/owner가 아닙니다.');
+        }
+
+        const isJoinedUser = await manager.getRepository(GroupChat).findOne({
+          where: {
+            groupChatId: groupChatId,
+            joinedUser: { id: dto.kickUserId },
+          },
+          relations: {
+            joinedUser: true,
+          },
+        });
+        if (!isJoinedUser) {
+          throw new NotFoundException('참여하지 않은 유저입니다.');
+        }
+
+        await manager
+          .createQueryBuilder(GroupChat, 'groupChat')
+          .relation('joinedUser')
+          .of(groupChatId)
+          .remove(dto.kickUserId);
+
+        await manager
+          .createQueryBuilder(GroupChat, 'groupChat')
+          .update()
+          .set({
+            curParticipants: () => 'curParticipants - 1',
+          });
+
+        return {
+          groupChatId: groupChatId,
+          userId: dto.kickUserId,
+        };
       },
     );
   }
