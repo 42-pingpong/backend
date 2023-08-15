@@ -148,11 +148,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @SubscribeMessage('leave-room')
-  leaveChatRoom(client: any, roomId: string) {
-    client.leave(roomId);
-  }
-
   /**
    * @description
    * - 클라이언트가 그룹채팅방에서 메시지를 보냈을 때 실행된다.
@@ -286,7 +281,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('kick-user')
   async kickUser(client: Socket, dto: KickUserDto) {
-    console.log(dto);
     try {
       const kickedUser = await this.chatGatewayService.kickUser(
         dto,
@@ -316,11 +310,29 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('unban-user')
-  async unbanUser(client: Socket, dto: UnBanUserDto) {}
+  async unbanUser(client: Socket, dto: UnBanUserDto) {
+    try {
+      const unbannedUser = await this.chatGatewayService.unBanUser(
+        dto,
+        client.handshake.auth.token,
+      );
+      //group 내 모든 유저들에게 groupId / bannedUserId 전달.
+      this.server
+        .in(dto.groupChatId.toString())
+        .emit('unban-user', unbannedUser);
+    } catch (e) {
+      client.emit('error', e.message);
+    }
+  }
 
   @SubscribeMessage('mute-user')
   async muteUser(client: Socket, dto: MuteUserDto) {}
 
   @SubscribeMessage('unmute-user')
   async unmuteUser(client: Socket, dto: UnmuteUserDto) {}
+
+  @SubscribeMessage('leave-room')
+  leaveChatRoom(client: any, roomId: string) {
+    client.leave(roomId);
+  }
 }

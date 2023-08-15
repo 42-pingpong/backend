@@ -920,17 +920,17 @@ export class ChatService {
   }
 
   async unBan(groupChatId: number, dto: UnBanDto) {
-    await this.groupChatRepository.manager.transaction(
+    return await this.groupChatRepository.manager.transaction(
       async (manager: EntityManager) => {
         const isAdminOrOwner = await manager.getRepository(GroupChat).findOne({
           where: [
             {
               groupChatId: groupChatId,
-              ownerId: dto.requestUserId,
+              ownerId: dto.userId,
             },
             {
               groupChatId: groupChatId,
-              admin: { id: dto.requestUserId },
+              admin: { id: dto.userId },
             },
           ],
         });
@@ -942,7 +942,11 @@ export class ChatService {
           .createQueryBuilder(GroupChat, 'groupChat')
           .relation('bannedUser')
           .of(groupChatId)
-          .remove(dto.userId);
+          .remove(dto.bannedId);
+        return {
+          groupChatId: groupChatId,
+          userId: dto.bannedId,
+        };
       },
     );
   }
