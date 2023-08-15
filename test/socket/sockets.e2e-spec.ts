@@ -13,12 +13,16 @@ import { RestapiModule } from 'src/restapi/restapi.module';
 import { User } from 'src/entities/user/user.entity';
 import { Token } from 'src/entities/auth/token.entity';
 import { ChatModule } from 'src/sockets/chat/chat.module';
+import { KickUserDto } from '../../src/sockets/chat/request/kickUser.dto';
+import { GroupChat } from '../../src/entities/chat/groupChat.entity';
+import { UserFactory } from '../../src/factory/user.factory';
+import { ChatFactory } from '../../src/factory/chat.factory';
 
 /**
  * @link https://medium.com/@tozwierz/testing-socket-io-with-jest-on-backend-node-js-f71f7ec7010f
  * */
 
-describe('Status-Socket', () => {
+describe('Socket', () => {
   let socketApp: INestApplication;
   let restApp: INestApplication;
   let datasource: DataSource;
@@ -26,6 +30,13 @@ describe('Status-Socket', () => {
   let ChatSocketClient;
   let GameSocketClient;
   let accToken;
+  let user10000: User;
+  let user10001: User;
+  let user10002: User;
+  let user10003: User;
+  let groupChat10000: GroupChat;
+  const userFactory = new UserFactory();
+  const chatFactory = new ChatFactory();
 
   beforeAll(async () => {
     const moduleFixture = await Test.createTestingModule({
@@ -70,6 +81,33 @@ describe('Status-Socket', () => {
 
     await restApp.listen(10050);
     datasource = moduleFixture2.get<DataSource>(DataSource);
+
+    user10000 = await datasource
+      .getRepository(User)
+      .save(userFactory.createUser(10000));
+
+    user10001 = await datasource
+      .getRepository(User)
+      .save(userFactory.createUser(10001));
+    user10002 = await datasource
+      .getRepository(User)
+      .save(userFactory.createUser(10002));
+    user10003 = await datasource
+      .getRepository(User)
+      .save(userFactory.createUser(10003));
+    groupChat10000 = await datasource
+      .getRepository(GroupChat)
+      .save(chatFactory.createPubChat(user10000.id, 10001));
+    await datasource
+      .createQueryBuilder(GroupChat, 'groupChat')
+      .relation('admin')
+      .of(groupChat10000)
+      .add(user10001);
+    await datasource
+      .createQueryBuilder(GroupChat, 'groupChat')
+      .relation('joinedUser')
+      .of(groupChat10000)
+      .add([user10002, user10003]);
   });
 
   beforeEach(async () => {
@@ -78,7 +116,7 @@ describe('Status-Socket', () => {
     const res = await request(restApp.getHttpServer())
       .get('/api/fakeauth/login')
       .query({
-        id: 10000,
+        id: user10000.id,
       });
 
     accToken = res.headers['location'].split('accessToken=')[1];
@@ -135,8 +173,8 @@ describe('Status-Socket', () => {
     StatusSocketClient.disconnect();
     ChatSocketClient.removeAllListeners();
     ChatSocketClient.disconnect();
-    await datasource.getRepository(Token).delete({ ownerId: 10000 });
-    await datasource.getRepository(User).delete({ id: 10000 });
+    // await datasource.getRepository(Token).delete({ ownerId: 10000 });
+    // await datasource.getRepository(User).delete({ id: 10000 });
   });
 
   afterAll(async () => {
@@ -155,5 +193,23 @@ describe('Status-Socket', () => {
     it.todo('requesting user에게 reject 알람 확인');
   });
 
-  describe('Chat', () => {});
+  describe('Chat', () => {
+    it('kick', (done) => {
+      ChatSocketClient.connect();
+      ChatSocketClient.on('kick-user', (data) => {
+        console.log(data);
+        done();
+      });
+      ChatSocketClient.on('error', (data) => {
+        console.log(data);
+        done();
+      });
+      const kickUserDto = new KickUserDto();
+      kickUserDto.requestUserId = 10000;
+      kickUserDto.kickUserId = 10002;
+      kickUserDto.groupChatId = groupChat10000.groupChatId;
+      console.log(kickUserDto);
+      ChatSocketClient.emit('kick-user', kickUserDto);
+    });
+  });
 });
