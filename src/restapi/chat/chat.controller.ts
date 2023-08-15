@@ -223,7 +223,7 @@ export class ChatController {
   @Post('groupChat/:groupChatId/ban')
   async ban(@Param('groupChatId') groupChatId: string, @Body() body: BanDto) {
     // 그룹 채팅방에서 유저를 차단하는 메서드
-    await this.chatService.ban(+groupChatId, body);
+    return await this.chatService.ban(+groupChatId, body);
   }
 
   @Post('groupChat/:groupChatId/unBan')

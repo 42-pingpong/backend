@@ -7,7 +7,6 @@ import { OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 import { ChatGatewayService } from './chat.gateway.service';
 import { CreateGroupChatDto } from './dto/create-chat.dto';
-import { BanUserDto } from './request/banUser.dto';
 import { BlockUserDto } from './request/BlockUser.dto';
 import { DirectMessageDto } from './request/directMessage.dto';
 import { FetchDirectMessageDto } from './request/FetchDirectMessage.dto';
@@ -22,6 +21,7 @@ import { DirectMessageResponse } from './restApiResponse/directMessageResponse.d
 import { GroupChatMessageResponse } from './restApiResponse/groupChatMessageResponse.dto';
 import { JoinRoomResponse } from './restApiResponse/joinRoomResponse.dto';
 import { JoinGroupChatDto } from './request/joinGroupChat.dto';
+import { BanDto } from './request/ban.dto';
 
 /**
  * @brief chat gateway
@@ -300,15 +300,27 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
+  @SubscribeMessage('ban-user')
+  async banUser(client: Socket, dto: BanDto) {
+    try {
+      const bannedUser = await this.chatGatewayService.banUser(
+        dto,
+        client.handshake.auth.token,
+      );
+      //group 내 모든 유저들에게 groupId / bannedUserId 전달.
+
+      this.server.in(dto.groupChatId.toString()).emit('ban-user', bannedUser);
+    } catch (e) {
+      client.emit('error', e.message);
+    }
+  }
+
+  @SubscribeMessage('unban-user')
+  async unbanUser(client: Socket, dto: UnBanUserDto) {}
+
   @SubscribeMessage('mute-user')
   async muteUser(client: Socket, dto: MuteUserDto) {}
 
   @SubscribeMessage('unmute-user')
   async unmuteUser(client: Socket, dto: UnmuteUserDto) {}
-
-  @SubscribeMessage('ban-user')
-  async banUser(client: Socket, dto: BanUserDto) {}
-
-  @SubscribeMessage('unban-user')
-  async unbanUser(client: Socket, dto: UnBanUserDto) {}
 }
