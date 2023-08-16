@@ -14,7 +14,6 @@ import { CreateGameDto } from 'src/restapi/game/request/create-game.dto';
 
 const waitList: PlayerInfo[] = [];
 const playerList: PlayerInfo[] = [];
-const readyState = [];
 
 @WebSocketGateway({
   namespace: 'game',
@@ -159,11 +158,8 @@ export class GameGateway
   @SubscribeMessage('ready')
   handleReady(client: any) {
     console.log('게임 레디~~~');
-    // readyState에 클라이언트가 존재하면 return
-    if (readyState.includes(client)) return;
-
-    readyState.push(client);
-
+    // readyState에 클라이언트가 존재하면 return (매칭 -> 취소)
+    // if (readyState.includes(client)) return;
     const idx = playerList.findIndex((player) => player.socket === client);
     const enemyIdx = playerList.findIndex(
       (player) => player.id === playerList[idx].enemy_id,
@@ -173,15 +169,18 @@ export class GameGateway
       return;
     }
 
+    playerList[idx].ready_status = true;
+    // readyState.push(client);
+
     // 서버에게 ready상태 알림
     this.server.to(playerList[0].roomId.toString()).emit('ready', true);
 
-    if (readyState.length === 2) {
+    if (playerList[idx].ready_status && playerList[enemyIdx].ready_status) {
       console.log('게임 시작~~~');
-      readyState[idx].emit('start', true);
-      readyState[enemyIdx].emit('start', true);
-      readyState.splice(Math.max(idx, enemyIdx), 1);
-      readyState.splice(Math.min(idx, enemyIdx), 1);
+      playerList[idx].socket.emit('start', true);
+      playerList[enemyIdx].socket.emit('start', true);
+      // playerList.splice(Math.max(idx, enemyIdx), 1);
+      // playerList.splice(Math.min(idx, enemyIdx), 1);
     }
   }
 
@@ -264,10 +263,6 @@ export class GameGateway
   async handleEnd(client: Socket, payload: CreateGameScoreRequestDto) {
     console.log('게임 끝~~~');
     console.log('payload', payload);
-    if (!client.id) {
-      console.log('!client.id');
-      return;
-    }
     const idx = playerList.findIndex((player) => player.socket === client);
     const enemyIdx = playerList.findIndex(
       (player) => player.id === playerList[idx].enemy_id,
@@ -277,11 +272,12 @@ export class GameGateway
       return;
     }
     await this.gameGatewayService.setHistory(playerList[idx].token, payload);
-    await client.leave(playerList[idx].roomId.toString());
-    console.log('쁘쁘쁘쁘쁘쁘쁘쁘쁘쁘쁘쁘쁘쁘');
     if (playerList[idx].is_host) {
+      await client.leave(playerList[idx].roomId.toString());
+      await client.leave(playerList[enemyIdx].roomId.toString());
       playerList.splice(Math.max(idx, enemyIdx), 1);
       playerList.splice(Math.min(idx, enemyIdx), 1);
+      return;
     }
   }
 
@@ -316,10 +312,6 @@ export class GameGateway
     console.log('enemyIdx', enemyIdx);
     if (playerList.length === 0) {
       console.log('playerList.length === 0');
-      return;
-    }
-    if (readyState.length === 0) {
-      console.log('readyState.length === 0');
       return;
     }
   }

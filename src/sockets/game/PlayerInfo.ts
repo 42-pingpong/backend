@@ -8,4 +8,5 @@ export interface PlayerInfo {
   roomId?: number;
   play_number?: number;
   enemy_id?: number;
+  ready_status?: boolean;
 }
