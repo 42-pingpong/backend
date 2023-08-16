@@ -158,8 +158,6 @@ export class GameGateway
   @SubscribeMessage('ready')
   handleReady(client: any) {
     console.log('게임 레디~~~');
-    // readyState에 클라이언트가 존재하면 return (매칭 -> 취소)
-    // if (readyState.includes(client)) return;
     const idx = playerList.findIndex((player) => player.socket === client);
     const enemyIdx = playerList.findIndex(
       (player) => player.id === playerList[idx].enemy_id,
@@ -168,6 +166,9 @@ export class GameGateway
       console.log('idx === -1 || enemyIdx === -1');
       return;
     }
+    // readyState에 클라이언트가 존재하면 return (매칭 -> 취소)
+    // if (readyState.includes(client)) return;
+    if (playerList[idx].ready_status) return;
 
     playerList[idx].ready_status = true;
     // readyState.push(client);
