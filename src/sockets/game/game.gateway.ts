@@ -323,4 +323,44 @@ export class GameGateway
       return;
     }
   }
+  /**
+   *
+   * @param client 소켓
+   * @param id 나
+   * @param targetId 상대방 Id
+   * @description
+   * - go-pingpong 을 보낸 클라이언트만 들어옵니다
+   *
+   * - 나의 id와 상대방의 id를 받아서
+   * - 상대방의 socketId를 가져와서
+   * - 상대방에게 invite 이벤트를 emit
+   *
+   * - 상대방은 invite 이벤트를 받고(emit할때 내 게임소켓 아이디 보내야 함) 응답을 서버로 보냄
+   * - yes면 go-pingpong 이벤트를 emit
+   * - 아니면 뭐 ... 유감
+   */
+  @SubscribeMessage('invite-pingpong')
+  async handleInvitePingpong(client: Socket, id: number, targetId: number) {
+    {
+      // id: 나, targetID: 상대방
+      // targetId로 유저 정보 가져와서 GameSocketId 로 invite event emit(게임 초대 받았음)
+    }
+  }
+
+  /**
+   *
+   * @param client
+   * @param id info 채우라고 들고왔어여
+   * @param isHost 호스트인지 아닌지 (초대 한 애가 보내게 할게요)
+   * @description
+   * - 이 이벤트에는 두 명 다 들어옵니다
+   *
+   * - 들어온 경우: 초대를 잘 받았고, 수락했음
+   * - PlayerInfo 두 개 만들고, 초대 먼저 보냈던 친구만 isHost true로 보낼게요
+   * - set game , info 마저 채우기, room에 join, playerNumber(host1) emit
+   *
+   * - 하면 플레이어쪽에서 게임 페이지로 보내면서 join으로 쏘옥
+   */
+  @SubscribeMessage('go-pingpong')
+  async handleGoPingpong(client: Socket, id: number, isHost: boolean) {}
 }
