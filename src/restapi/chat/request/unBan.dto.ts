@@ -8,5 +8,5 @@ export class UnBanDto {
 
   @Type(() => Number)
   @IsNumber()
-  requestUserId: number;
+  bannedId: number;
 }
