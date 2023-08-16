@@ -19,7 +19,10 @@ import { UserFactory } from '../../src/factory/user.factory';
 import { ChatFactory } from '../../src/factory/chat.factory';
 import { BanDto } from '../../src/sockets/chat/request/ban.dto';
 import { UnBanUserDto } from '../../src/sockets/chat/request/unBanUser.dto';
-
+import { MuteUserDto } from '../../src/sockets/chat/request/muteUser.dto';
+import { SocketClient } from './SocketClient';
+import { SocketClientOption } from './SocketClient';
+import { MutedUserJoin } from '../../src/entities/chat/mutedUserJoin.entity';
 /**
  * @link https://medium.com/@tozwierz/testing-socket-io-with-jest-on-backend-node-js-f71f7ec7010f
  * */
@@ -29,7 +32,6 @@ describe('Socket', () => {
   let restApp: INestApplication;
   let datasource: DataSource;
   let StatusSocketClient;
-  let ChatSocketClient;
   let GameSocketClient;
   let accToken;
 
@@ -81,61 +83,32 @@ describe('Socket', () => {
     datasource = moduleFixture2.get<DataSource>(DataSource);
   });
 
-  beforeEach(async () => {
-    // Do not hardcode server port and address, square brackets are used for IPv6
-    StatusSocketClient = io(
-      `ws://[${restApp.getHttpServer().address().address}]:10051/status`,
-      {
-        transports: ['websocket'],
-        forceNew: true,
-        autoConnect: false,
-        auth: (cb) => {
-          const token = 'Bearer ' + accToken;
-          cb({ token });
-        },
-      },
-    );
-
-    ChatSocketClient = io(
-      `ws://[${restApp.getHttpServer().address().address}]:10051/chat`,
-      {
-        transports: ['websocket'],
-        forceNew: true,
-        autoConnect: false,
-        auth: (cb) => {
-          const token = 'Bearer ' + accToken;
-          cb({ token });
-        },
-      },
-    );
-
-    // StatusSocketClient = io(
-    //   `ws://[${restApp.getHttpServer().address().address}]:10051/status`,
-    //   {
-    //     transports: ['websocket'],
-    //     forceNew: true,
-    //     autoConnect: false,
-    //     auth: (cb) => {
-    //       const token = 'Bearer ' + accToken;
-    //       cb({ token });
-    //     },
-    //   },
-    // );
-  });
-
-  afterEach(async () => {
-    StatusSocketClient.removeAllListeners();
-    StatusSocketClient.disconnect();
-    ChatSocketClient.removeAllListeners();
-    ChatSocketClient.disconnect();
-  });
-
   afterAll(async () => {
     await socketApp.close();
     await restApp.close();
   });
 
   describe('Status', () => {
+    beforeEach(async () => {
+      // Do not hardcode server port and address, square brackets are used for IPv6
+
+      StatusSocketClient = io(
+        `ws://[${restApp.getHttpServer().address().address}]:10051/status`,
+        {
+          transports: ['websocket'],
+          forceNew: true,
+          autoConnect: false,
+          auth: (cb) => {
+            const token = 'Bearer ' + accToken;
+            cb({ token });
+          },
+        },
+      );
+    });
+    afterEach(async () => {
+      StatusSocketClient.removeAllListeners();
+      StatusSocketClient.disconnect();
+    });
     it.todo('connect');
     it.todo('disconnect');
     it.todo('request-friend');
@@ -147,23 +120,29 @@ describe('Socket', () => {
   });
 
   describe('Chat', () => {
+    let accToken;
     /**
      * owner
      * */
     let user10000: User;
+    let ChatSocketClient;
     /**
      * admin
      * */
     let user10001: User;
+    let user10001ChatSocketClient;
     /**
      * joinedUser
      */
     let user10002: User;
+    let user10002ChatSocketClient;
 
     /**
      * joinedUser
      */
     let user10003: User;
+    let user10003ChatSocketClient;
+
     let groupChat10000: GroupChat;
 
     beforeEach(async () => {
@@ -183,21 +162,7 @@ describe('Socket', () => {
       groupChat10000 = await datasource
         .getRepository(GroupChat)
         .save(chatFactory.createPubChat(user10000.id, 10001));
-      // Setup
-      //10000번 유저로 로그인
-      const res = await request(restApp.getHttpServer())
-        .get('/api/fakeauth/login')
-        .query({
-          id: user10000.id,
-        });
 
-      accToken = res.headers['location'].split('accessToken=')[1];
-
-      //login
-      await request(restApp.getHttpServer())
-        .get('/api/user/me')
-        .set('Authorization', 'Bearer ' + accToken)
-        .expect(200);
       await datasource
         .createQueryBuilder(GroupChat, 'groupChat')
         .relation('admin')
@@ -209,11 +174,120 @@ describe('Socket', () => {
         .relation('joinedUser')
         .of(groupChat10000)
         .add([user10002, user10003]);
+
+      // Setup
+      //10000번 유저로 로그인
+      const res = await request(restApp.getHttpServer())
+        .get('/api/fakeauth/login')
+        .query({
+          id: user10000.id,
+        });
+      accToken = res.headers['location'].split('accessToken=')[1];
+      ChatSocketClient = io(
+        `ws://[${restApp.getHttpServer().address().address}]:10051/chat`,
+        {
+          transports: ['websocket'],
+          forceNew: true,
+          autoConnect: false,
+          auth: (cb) => {
+            const token = 'Bearer ' + accToken;
+            cb({ token });
+          },
+        },
+      );
+      //login
+      await request(restApp.getHttpServer())
+        .get('/api/user/me')
+        .set('Authorization', 'Bearer ' + accToken)
+        .expect(200);
+      accToken = res.headers['location'].split('accessToken=')[1];
+
+      let tmpToken;
+      //10001번 유저로 로그인
+      const res2 = await request(restApp.getHttpServer())
+        .get('/api/fakeauth/login')
+        .query({
+          id: user10001.id,
+        });
+      const tmpToken1 = res2.headers['location'].split('accessToken=')[1];
+      await request(restApp.getHttpServer())
+        .get('/api/user/me')
+        .set('Authorization', 'Bearer ' + tmpToken1)
+        .expect(200);
+
+      user10001ChatSocketClient = io(
+        `ws://[${restApp.getHttpServer().address().address}]:10051/chat`,
+        {
+          transports: ['websocket'],
+          forceNew: true,
+          autoConnect: false,
+          auth: (cb) => {
+            const token = 'Bearer ' + tmpToken1;
+            cb({ token });
+          },
+        },
+      );
+
+      //10002번 유저로 로그인
+      const res3 = await request(restApp.getHttpServer())
+        .get('/api/fakeauth/login')
+        .query({
+          id: user10002.id,
+        });
+      const tmpToken2 = res3.headers['location'].split('accessToken=')[1];
+
+      await request(restApp.getHttpServer())
+        .get('/api/user/me')
+        .set('Authorization', 'Bearer ' + tmpToken2)
+        .expect(200);
+      user10002ChatSocketClient = io(
+        `ws://[${restApp.getHttpServer().address().address}]:10051/chat`,
+        {
+          transports: ['websocket'],
+          forceNew: true,
+          autoConnect: false,
+          auth: (cb) => {
+            const token = 'Bearer ' + tmpToken2;
+            cb({ token });
+          },
+        },
+      );
+
+      //10003번 유저로 로그인
+      const res4 = await request(restApp.getHttpServer())
+        .get('/api/fakeauth/login')
+        .query({
+          id: user10003.id,
+        });
+      const tmpToken3: string =
+        res4.headers['location'].split('accessToken=')[1];
+      await request(restApp.getHttpServer())
+        .get('/api/user/me')
+        .set('Authorization', 'Bearer ' + tmpToken3)
+        .expect(200);
+      user10003ChatSocketClient = io(
+        `ws://[${restApp.getHttpServer().address().address}]:10051/chat`,
+        {
+          transports: ['websocket'],
+          forceNew: true,
+          autoConnect: false,
+          auth: (cb) => {
+            const token = 'Bearer ' + tmpToken3;
+            cb({ token });
+          },
+        },
+      );
     });
 
     afterEach(async () => {
       ChatSocketClient.removeAllListeners();
       ChatSocketClient.disconnect();
+      user10001ChatSocketClient.removeAllListeners();
+      user10001ChatSocketClient.disconnect();
+      user10002ChatSocketClient.removeAllListeners();
+      user10002ChatSocketClient.disconnect();
+      user10003ChatSocketClient.removeAllListeners();
+      user10003ChatSocketClient.disconnect();
       await datasource
         .createQueryBuilder(GroupChat, 'groupChat')
         .relation('admin')
@@ -225,6 +299,11 @@ describe('Socket', () => {
         .relation('joinedUser')
         .of(groupChat10000)
         .remove([user10002, user10003]);
+
+      await datasource
+        .createQueryBuilder(MutedUserJoin, 'mj')
+        .delete()
+        .execute();
 
       await datasource
         .createQueryBuilder(GroupChat, 'groupChat')
@@ -255,13 +334,35 @@ describe('Socket', () => {
       ChatSocketClient.emit('kick-user', kickUserDto);
     });
 
-    it('ban/unBan owner -> joinedUser', (done) => {
+    it('ban', (done) => {
       ChatSocketClient.connect();
       ChatSocketClient.on('ban-user', (data) => {
         expect(data.groupChatId).toBe(groupChat10000.groupChatId);
         expect(data.userId).toBe(user10002.id);
         done();
       });
+      ChatSocketClient.on('error', (data) => {
+        expect(data).toBeNull();
+        done();
+      });
+
+      const dto = new BanDto();
+
+      dto.groupChatId = groupChat10000.groupChatId;
+      dto.userId = user10000.id;
+      dto.bannedId = user10002.id;
+      ChatSocketClient.emit('ban-user', dto);
+    });
+
+    it('unBan', (done) => {
+      ChatSocketClient.connect();
+
+      ChatSocketClient.on('unban-user', (data) => {
+        expect(data.groupChatId).toBe(groupChat10000.groupChatId);
+        expect(data.userId).toBe(user10002.id);
+        done();
+      });
+
       ChatSocketClient.on('error', (data) => {
         expect(data).toBeNull();
         done();
@@ -273,16 +374,47 @@ describe('Socket', () => {
       dto.bannedId = user10002.id;
       ChatSocketClient.emit('ban-user', dto);
 
-      ChatSocketClient.on('unBan-user', (data) => {
-        expect(data.groupChatId).toBe(groupChat10000.groupChatId);
-        expect(data.userId).toBe(user10002.id);
-        done();
-      });
       const unbandto = new UnBanUserDto();
       unbandto.groupChatId = groupChat10000.groupChatId;
       unbandto.userId = user10000.id;
       unbandto.bannedId = user10002.id;
-      ChatSocketClient.emit('unBan-user', unbandto);
+      ChatSocketClient.emit('unban-user', unbandto);
+    });
+
+    it('mute/unmute', (done) => {
+      user10002ChatSocketClient.connect();
+      console.log(user10002ChatSocketClient.connected);
+      console.log(ChatSocketClient.connected);
+      console.log(ChatSocketClient.io._readyState);
+      console.log(user10002ChatSocketClient.io._readyState);
+
+      ChatSocketClient.connect();
+      console.log(ChatSocketClient.io._readyState);
+      console.log(user10002ChatSocketClient.io._readyState);
+      user10002ChatSocketClient.on('connect', () => {
+        console.log('connect');
+      });
+
+      ChatSocketClient.on('error', (data) => {
+        console.log(data);
+        expect(data).toBeNull();
+        done();
+      });
+      const dto = new MuteUserDto();
+
+      user10002ChatSocketClient.on('mute-user', (data) => {
+        console.log(data);
+        done();
+      });
+
+      dto.groupChatId = groupChat10000.groupChatId;
+      dto.requestUserId = user10000.id;
+      dto.userId = user10002.id;
+      dto.unit = 'm';
+      dto.time = 1;
+      ChatSocketClient.emit('mute-user', dto);
+      user10002ChatSocketClient.removeAllListeners();
+      user10002ChatSocketClient.disconnect();
     });
   });
 });
