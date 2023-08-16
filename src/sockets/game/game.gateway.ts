@@ -276,15 +276,16 @@ export class GameGateway
       return;
     }
 
-    console.log('쁘쁘쁘 전', playerList[idx].roomId, payload.userId);
-
     const getRoomId = playerList[idx].roomId.toString();
     console.log(getRoomId);
 
     await this.gameGatewayService.setHistory(playerList[idx].token, payload);
     await client.leave(getRoomId);
-    console.log('쁘쁘쁘쁘쁘쁘쁘쁘쁘쁘쁘쁘쁘쁘');
-    playerList.splice(idx, 1);
+    if (playerList.length === 0) return;
+    if (playerList[idx].is_host) {
+      playerList.splice(Math.max(idx, enemyIdx), 1);
+      playerList.splice(Math.min(idx, enemyIdx), 1);
+    }
   }
 
   @SubscribeMessage('room-out')
