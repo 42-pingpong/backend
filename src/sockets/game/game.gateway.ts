@@ -263,6 +263,10 @@ export class GameGateway
   async handleEnd(client: Socket, payload: CreateGameScoreRequestDto) {
     console.log('게임 끝~~~');
     console.log('payload', payload);
+    if (!client.id) {
+      console.log('!client.id');
+      return;
+    }
     const idx = playerList.findIndex((player) => player.socket === client);
     const enemyIdx = playerList.findIndex(
       (player) => player.id === playerList[idx].enemy_id,
@@ -271,14 +275,16 @@ export class GameGateway
       console.log('idx === -1 || enemyIdx === -1');
       return;
     }
+
+    console.log('쁘쁘쁘 전', playerList[idx].roomId, payload.userId);
+
+    const getRoomId = playerList[idx].roomId.toString();
+    console.log(getRoomId);
+
     await this.gameGatewayService.setHistory(playerList[idx].token, payload);
-    if (playerList[idx].is_host) {
-      await client.leave(playerList[idx].roomId.toString());
-      await client.leave(playerList[enemyIdx].roomId.toString());
-      playerList.splice(Math.max(idx, enemyIdx), 1);
-      playerList.splice(Math.min(idx, enemyIdx), 1);
-      return;
-    }
+    await client.leave(getRoomId);
+    console.log('쁘쁘쁘쁘쁘쁘쁘쁘쁘쁘쁘쁘쁘쁘');
+    playerList.splice(idx, 1);
   }
 
   @SubscribeMessage('room-out')
