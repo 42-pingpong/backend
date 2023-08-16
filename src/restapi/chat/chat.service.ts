@@ -30,6 +30,7 @@ import { UnMuteRequestDto } from './request/unmute.dto';
 import { MutedUserJoin } from '../../entities/chat/mutedUserJoin.entity';
 import { UnBanDto } from './request/unBan.dto';
 import { KickUserDto } from './request/kickUser.dto';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class ChatService {
@@ -61,6 +62,9 @@ export class ChatService {
   }
 
   async createGroupChat(createChatDto: CreateGroupChatDto) {
+    // 비밀번호 해싱
+    const hashedPassword = await bcrypt.hash(createChatDto.password, 10);
+
     // 그룹 채팅방을 생성하고 저장하는 로직
     return await this.groupChatRepository.manager.transaction(
       async (manager: EntityManager) => {
@@ -68,6 +72,9 @@ export class ChatService {
           createChatDto['curParticipants'] =
             1 + createChatDto.participants.length;
         }
+
+        createChatDto.password = hashedPassword;
+
         const result = await manager.insert(GroupChat, createChatDto);
 
         if (createChatDto.participants != undefined) {
@@ -201,7 +208,15 @@ export class ChatService {
         }
 
         if (groupChat.levelOfPublicity === 'Prot') {
-          if (!dto.password || groupChat.password !== dto.password) {
+          if (!dto.password) {
+            throw new ForbiddenException('비밀번호가 일치하지 않습니다.');
+          }
+
+          const isPasswordMatch = await bcrypt.compare(
+            dto.password,
+            groupChat.password,
+          );
+          if (!isPasswordMatch) {
             throw new ForbiddenException('비밀번호가 일치하지 않습니다.');
           }
         }
