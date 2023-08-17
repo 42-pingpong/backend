@@ -101,7 +101,7 @@ export class User {
   @OneToMany(() => GroupChat, (groupChat) => groupChat.owner)
   groupChats: GroupChat[];
 
-  @ManyToMany(() => GroupChat, (groupChat) => groupChat.bannedUser)
+  @ManyToMany(() => GroupChat, (groupChat) => groupChat.bannedUsers)
   bannedGroupChats: GroupChat[];
 
   @ManyToMany(() => GroupChat, (groupChat) => groupChat.admin)
@@ -138,5 +138,5 @@ export class User {
   tokens: Token[];
 
   @OneToMany(() => MutedUserJoin, (mutedUsersJoin) => mutedUsersJoin.mutedUser)
-  mutedUsersJoinTable: MutedUserJoin[];
+  mutedUsers: MutedUserJoin[];
 }
