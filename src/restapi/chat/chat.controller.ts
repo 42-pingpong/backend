@@ -214,7 +214,7 @@ export class ChatController {
     @Body() body: MuteRequestDto,
   ) {
     // 그룹 채팅방에서 유저를 뮤트하는 메서드
-    await this.chatService.mute(body, +groupChatId);
+    return await this.chatService.mute(body, +groupChatId);
   }
 
   @Post('groupChat/unmute/:groupChatId')
@@ -223,7 +223,7 @@ export class ChatController {
     @Body() body: UnMuteRequestDto,
   ) {
     // 그룹 채팅방에서 유저를 뮤트해제하는 메서드
-    await this.chatService.unMute(body, +groupChatId);
+    return await this.chatService.unMute(body, +groupChatId);
   }
 
   @Post('groupChat/:groupChatId/ban')

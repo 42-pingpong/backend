@@ -750,7 +750,7 @@ export class ChatService {
 
   async mute(dto: MuteRequestDto, groupChatId: number) {
     // 그룹 채팅방에서 유저를 뮤트하는 로직
-    await this.groupChatRepository.manager.transaction(
+    return await this.groupChatRepository.manager.transaction(
       async (manager: EntityManager) => {
         const isAdminOrOwner = await manager.getRepository(GroupChat).findOne({
           where: [
@@ -780,7 +780,14 @@ export class ChatService {
           relations: {
             joinedUser: true,
           },
+          select: {
+            joinedUser: {
+              id: true,
+              chatSocketId: true,
+            },
+          },
         });
+
         if (!isJoinedUser) {
           throw new NotFoundException('참여하지 않은 유저입니다.');
         }
@@ -805,12 +812,18 @@ export class ChatService {
             skipUpdateIfNoValuesChanged: true,
           },
         );
+        return {
+          groupChatId: groupChatId,
+          userId: isJoinedUser.joinedUser[0].id,
+          chatSocketId: isJoinedUser.joinedUser[0].chatSocketId,
+          muteFor: dto.time,
+        };
       },
     );
   }
 
   async unMute(dto: UnMuteRequestDto, groupChatId: number) {
-    await this.groupChatRepository.manager.transaction(
+    return await this.groupChatRepository.manager.transaction(
       async (manager: EntityManager) => {
         //1. Owner/Admin 이 그룹 채팅방에 존재하는 지 확인
         const isAdminOrOwner = await manager.getRepository(GroupChat).findOne({
@@ -838,6 +851,21 @@ export class ChatService {
           mutedUserId: dto.userId,
           mutedGroupId: groupChatId,
         });
+
+        const user = await manager.getRepository(User).findOne({
+          where: {
+            id: dto.userId,
+          },
+          select: {
+            id: true,
+            chatSocketId: true,
+          },
+        });
+        return {
+          groupChatId: groupChatId,
+          userId: user.id,
+          chatSocketId: user.chatSocketId,
+        };
       },
     );
   }
