@@ -1199,10 +1199,10 @@ describe('Chat', () => {
       await groupChatRepository.findOne({
         where: { groupChatId: groupChat2280.groupChatId },
         relations: {
-          mutedUsersJoinTable: true,
+          mutedUsers: true,
         },
         select: {
-          mutedUsersJoinTable: true,
+          mutedUsers: true,
         },
       });
 
@@ -1321,18 +1321,28 @@ describe('Chat', () => {
       await request(app.getHttpServer())
         .post(`/chat/groupChat/${groupChat3000.groupChatId}/ban`)
         .send(banDto);
+
+      const muteDto = new MuteRequestDto();
+      muteDto.requestUserId = user3000.id;
+      muteDto.userId = user3002.id;
+      muteDto.unit = 's';
+      muteDto.time = 10;
+
+      await request(app.getHttpServer())
+        .post(`/chat/groupChat/mute/${groupChat3000.groupChatId}`)
+        .send(muteDto);
     });
 
     afterAll(async () => {
-      // await groupChatRepository.manager.getRepository(MutedUserJoin).delete({
-      //   mutedGroupId: groupChat3000.groupChatId,
-      // });
-      // await groupChatRepository.delete({
-      //   groupChatId: groupChat3000.groupChatId,
-      // });
-      // await userRepository.delete({
-      //   id: In([user3000.id, user3001.id, user3002.id, user3003.id]),
-      // });
+      await groupChatRepository.manager.getRepository(MutedUserJoin).delete({
+        mutedGroupId: groupChat3000.groupChatId,
+      });
+      await groupChatRepository.delete({
+        groupChatId: groupChat3000.groupChatId,
+      });
+      await userRepository.delete({
+        id: In([user3000.id, user3001.id, user3002.id, user3003.id]),
+      });
     });
 
     it('By Owner ', async () => {
@@ -1340,9 +1350,13 @@ describe('Chat', () => {
       dto.userId = user3000.id;
 
       const res = await request(app.getHttpServer())
-        .get(`/chat/groupChat/${groupChat3000.groupChatId}/banList`)
+        .get(`/chat/groupChat/${groupChat3000.groupChatId}/banMuteList`)
         .query(dto);
       console.log(res.body);
+      console.log(res.body[0].bannedUsers);
+      console.log(res.body[0].mutedUsers);
+      expect(res.body[0].bannedUsers.length).toBe(3);
+      expect(res.body[0].mutedUsers.length).toBe(1);
     });
     // it.todo('By Admin ', async () => {});
     // it.todo('By Joined User Should Be Forbidden', async () => {});
