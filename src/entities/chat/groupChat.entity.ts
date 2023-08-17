@@ -63,7 +63,7 @@ export class GroupChat {
   @JoinTable({
     name: 'BannedGroupChat_user_joinTable',
   })
-  bannedUser: User[];
+  bannedUsers: User[];
 
   @ManyToMany(() => User, (user) => user.adminingGroupChats, { cascade: true })
   @JoinTable({
@@ -84,5 +84,5 @@ export class GroupChat {
   groupChatMessages: GroupChatMessage[];
 
   @OneToMany(() => MutedUserJoin, (mutedUsersJoin) => mutedUsersJoin.mutedGroup)
-  mutedUsersJoinTable: MutedUserJoin[];
+  mutedUsers: MutedUserJoin[];
 }

@@ -18,7 +18,7 @@ export class MutedUserJoin {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => User, (user) => user.mutedUsersJoinTable)
+  @ManyToOne(() => User, (user) => user.mutedUsers)
   @JoinColumn({
     name: 'mutedUserId',
   })
@@ -29,7 +29,7 @@ export class MutedUserJoin {
   })
   mutedUserId: number;
 
-  @ManyToOne(() => GroupChat, (groupChat) => groupChat.mutedUsersJoinTable)
+  @ManyToOne(() => GroupChat, (groupChat) => groupChat.mutedUsers)
   @JoinColumn({
     name: 'mutedGroupId',
   })

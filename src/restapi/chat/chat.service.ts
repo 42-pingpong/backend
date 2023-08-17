@@ -30,6 +30,9 @@ import { UnMuteRequestDto } from './request/unmute.dto';
 import { MutedUserJoin } from '../../entities/chat/mutedUserJoin.entity';
 import { UnBanDto } from './request/unBan.dto';
 import { KickUserDto } from './request/kickUser.dto';
+import { GetBanMuteListDto } from './request/getBanMuteList.dto';
+import { GetMuteOffsetDto } from './request/getMuteOffset.dto';
+import { BanMuteList } from './response/BanMuteList.dto';
 
 @Injectable()
 export class ChatService {
@@ -164,7 +167,7 @@ export class ChatService {
             relations: {
               admin: true,
               joinedUser: true,
-              bannedUser: true,
+              bannedUsers: true,
             },
             select: {
               groupChatId: true,
@@ -207,7 +210,7 @@ export class ChatService {
         }
 
         // 그룹 채팅방에 참여한 유저가 bannedUser인지 검증
-        const isBanned = groupChat.bannedUser.find(
+        const isBanned = groupChat.bannedUsers.find(
           (bannedUser) => bannedUser.id === dto.userId,
         );
         if (isBanned) {
@@ -748,18 +751,18 @@ export class ChatService {
     });
   }
 
-  async mute(dto: MuteRequestDto) {
+  async mute(dto: MuteRequestDto, groupChatId: number) {
     // 그룹 채팅방에서 유저를 뮤트하는 로직
-    await this.groupChatRepository.manager.transaction(
+    return await this.groupChatRepository.manager.transaction(
       async (manager: EntityManager) => {
         const isAdminOrOwner = await manager.getRepository(GroupChat).findOne({
           where: [
             {
-              groupChatId: dto.groupChatId,
+              groupChatId: groupChatId,
               ownerId: dto.requestUserId,
             },
             {
-              groupChatId: dto.groupChatId,
+              groupChatId: groupChatId,
               admin: { id: dto.requestUserId },
             },
           ],
@@ -774,13 +777,20 @@ export class ChatService {
 
         const isJoinedUser = await manager.getRepository(GroupChat).findOne({
           where: {
-            groupChatId: dto.groupChatId,
+            groupChatId: groupChatId,
             joinedUser: { id: dto.userId },
           },
           relations: {
             joinedUser: true,
           },
+          select: {
+            joinedUser: {
+              id: true,
+              chatSocketId: true,
+            },
+          },
         });
+
         if (!isJoinedUser) {
           throw new NotFoundException('참여하지 않은 유저입니다.');
         }
@@ -797,7 +807,7 @@ export class ChatService {
         await manager.getRepository(MutedUserJoin).upsert(
           {
             mutedUserId: dto.userId,
-            mutedGroupId: dto.groupChatId,
+            mutedGroupId: groupChatId,
             muteDue: new Date(Date.now() + dto.time).toISOString(),
           },
           {
@@ -805,22 +815,28 @@ export class ChatService {
             skipUpdateIfNoValuesChanged: true,
           },
         );
+        return {
+          groupChatId: groupChatId,
+          userId: isJoinedUser.joinedUser[0].id,
+          chatSocketId: isJoinedUser.joinedUser[0].chatSocketId,
+          muteFor: dto.time,
+        };
       },
     );
   }
 
-  async unMute(dto: UnMuteRequestDto) {
-    await this.groupChatRepository.manager.transaction(
+  async unMute(dto: UnMuteRequestDto, groupChatId: number) {
+    return await this.groupChatRepository.manager.transaction(
       async (manager: EntityManager) => {
         //1. Owner/Admin 이 그룹 채팅방에 존재하는 지 확인
         const isAdminOrOwner = await manager.getRepository(GroupChat).findOne({
           where: [
             {
-              groupChatId: dto.groupChatId,
+              groupChatId: groupChatId,
               ownerId: dto.requestUserId,
             },
             {
-              groupChatId: dto.groupChatId,
+              groupChatId: groupChatId,
               admin: {
                 id: dto.requestUserId,
               },
@@ -836,8 +852,23 @@ export class ChatService {
 
         await manager.getRepository(MutedUserJoin).delete({
           mutedUserId: dto.userId,
-          mutedGroupId: dto.groupChatId,
+          mutedGroupId: groupChatId,
         });
+
+        const user = await manager.getRepository(User).findOne({
+          where: {
+            id: dto.userId,
+          },
+          select: {
+            id: true,
+            chatSocketId: true,
+          },
+        });
+        return {
+          groupChatId: groupChatId,
+          userId: user.id,
+          chatSocketId: user.chatSocketId,
+        };
       },
     );
   }
@@ -898,7 +929,7 @@ export class ChatService {
         //4.
         await manager
           .createQueryBuilder(GroupChat, 'groupChat')
-          .relation('bannedUser')
+          .relation('bannedUsers')
           .of(groupChatId)
           .add(dto.bannedId);
 
@@ -940,7 +971,7 @@ export class ChatService {
 
         await manager
           .createQueryBuilder(GroupChat, 'groupChat')
-          .relation('bannedUser')
+          .relation('bannedUsers')
           .of(groupChatId)
           .remove(dto.bannedId);
         return {
@@ -1007,4 +1038,56 @@ export class ChatService {
       },
     );
   }
+
+  async getBanMuteList(groupChatId: number, dto: GetBanMuteListDto) {
+    return await this.groupChatRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        const isOwnerOrAdmin = await manager.getRepository(GroupChat).findOne({
+          where: [
+            {
+              groupChatId: groupChatId,
+              ownerId: dto.userId,
+            },
+            {
+              groupChatId: groupChatId,
+              admin: { id: dto.userId },
+            },
+          ],
+        });
+
+        if (!isOwnerOrAdmin) {
+          throw new ForbiddenException('admin/owner가 아닙니다.');
+        }
+
+        return await manager.getRepository(GroupChat).find({
+          where: {
+            groupChatId: groupChatId,
+          },
+          relations: {
+            bannedUsers: true,
+            mutedUsers: {
+              mutedUser: true,
+            },
+          },
+          select: {
+            bannedUsers: {
+              id: true,
+              nickName: true,
+              profile: true,
+            },
+            mutedUsers: {
+              mutedUser: {
+                id: true,
+                nickName: true,
+                profile: true,
+              },
+              muteDue: true,
+            },
+          },
+        });
+      },
+    );
+  }
+
+  async getMuteOffset(groupChatId: number, dto: GetMuteOffsetDto) {}
 }

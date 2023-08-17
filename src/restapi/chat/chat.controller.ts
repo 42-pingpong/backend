@@ -7,12 +7,16 @@ import {
   Param,
   Delete,
   Query,
+  Req,
+  ForbiddenException,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBody,
   ApiCreatedResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
 import { ChatService } from './chat.service';
@@ -35,6 +39,11 @@ import { UnBlockRequestDto } from './request/unBlock.request.dto';
 import { UnMuteRequestDto } from './request/unmute.dto';
 import { UnBanDto } from './request/unBan.dto';
 import { KickUserDto } from './request/kickUser.dto';
+import { GetBanMuteListDto } from './request/getBanMuteList.dto';
+import { GetMuteOffsetDto } from './request/getMuteOffset.dto';
+import { Request } from 'express';
+import { AccessTokenGuard } from '../auth/Guards/accessToken.guard';
+import { BanMuteList } from './response/BanMuteList.dto';
 
 @ApiTags('chat')
 @Controller('chat')
@@ -64,6 +73,13 @@ export class ChatController {
    * @description
    * - 그룹 채팅방의 정보를 반환하는 메서드
    */
+  @ApiOperation({
+    summary: '그룹 채팅방의 정보를 반환하는 메서드',
+  })
+  @ApiParam({
+    name: 'groupChatId',
+    description: '그룹 채팅방의 id',
+  })
   @Get('groupChat/:groupChatId')
   async getGroupChat(@Param('groupChatId') groupChatId: string) {
     // 그룹 채팅방의 정보를 반환하는 메서드
@@ -208,24 +224,42 @@ export class ChatController {
     await this.chatService.unBlockUser(body);
   }
 
+  @ApiOperation({
+    summary: '그룹 채팅방에서 유저를 차단하는 메서드',
+  })
   @Post('groupChat/mute/:groupChatId')
-  async mute(@Body() body: MuteRequestDto) {
+  async mute(
+    @Param('groupChatId') groupChatId: string,
+    @Body() body: MuteRequestDto,
+  ) {
     // 그룹 채팅방에서 유저를 뮤트하는 메서드
-    await this.chatService.mute(body);
+    return await this.chatService.mute(body, +groupChatId);
   }
 
+  @ApiOperation({
+    summary: '그룹 채팅방에서 유저를 뮤트해제하는 메서드',
+  })
   @Post('groupChat/unmute/:groupChatId')
-  async unmute(@Body() body: UnMuteRequestDto) {
+  async unmute(
+    @Param('groupChatId') groupChatId: string,
+    @Body() body: UnMuteRequestDto,
+  ) {
     // 그룹 채팅방에서 유저를 뮤트해제하는 메서드
-    await this.chatService.unMute(body);
+    return await this.chatService.unMute(body, +groupChatId);
   }
 
+  @ApiOperation({
+    summary: '그룹 채팅방에서 유저를 차단하는 메서드',
+  })
   @Post('groupChat/:groupChatId/ban')
   async ban(@Param('groupChatId') groupChatId: string, @Body() body: BanDto) {
     // 그룹 채팅방에서 유저를 차단하는 메서드
     return await this.chatService.ban(+groupChatId, body);
   }
 
+  @ApiOperation({
+    summary: '그룹 채팅방에서 유저를 차단해제하는 메서드',
+  })
   @Post('groupChat/:groupChatId/unBan')
   async unBan(
     @Param('groupChatId') groupChatId: string,
@@ -241,5 +275,43 @@ export class ChatController {
     @Body() body: KickUserDto,
   ) {
     return await this.chatService.kickUser(+groupChatId, body);
+  }
+
+  @ApiOperation({
+    summary: '그룹 채팅방의 밴/뮤트 유저 리스트를 반환하는 메서드',
+    description: '그룹 채팅방의 밴/뮤트 유저 리스트를 반환하는 메서드',
+  })
+  @ApiOkResponse({
+    description: '그룹 채팅방의 밴/뮤트 유저 리스트를 반환하는 메서드',
+    type: BanMuteList,
+    isArray: true,
+  })
+  // @UseGuards(AccessTokenGuard)
+  @Get('groupChat/:groupChatId/banMuteList')
+  async getBanMuteList(
+    @Req() req: Request,
+    @Param('groupChatId') groupChatId: string,
+    @Query() dto: GetBanMuteListDto,
+  ) {
+    // if (+req.user.sub !== dto.userId) {
+    //   throw new ForbiddenException('권한이 없습니다.');
+    // }
+    return await this.chatService.getBanMuteList(+groupChatId, dto);
+  }
+
+  @ApiOperation({
+    summary: '유저의 그룹채팅방 내에서 mute offset을 반환하는 메서드',
+  })
+  // @UseGuards(AccessTokenGuard)
+  @Get('groupChat/:groupChatId/muteOffset')
+  async getMuteOffset(
+    @Req() req: Request,
+    @Param('groupChatId') groupChatId: string,
+    @Query() dto: GetMuteOffsetDto,
+  ) {
+    // if (+req.user.sub !== dto.userId) {
+    //   throw new ForbiddenException('권한이 없습니다.');
+    // }
+    return await this.chatService.getMuteOffset(+groupChatId, dto);
   }
 }

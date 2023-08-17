@@ -18,6 +18,8 @@ import { JoinGroupChatDto } from './request/joinGroupChat.dto';
 import { KickUserDto } from './request/kickUser.dto';
 import { BanDto } from './request/ban.dto';
 import { UnBanUserDto } from './request/unBanUser.dto';
+import { MuteUserDto } from './request/muteUser.dto';
+import { UnmuteUserDto } from './request/unMute.dto';
 
 @Injectable()
 export class ChatGatewayService {
@@ -218,6 +220,40 @@ export class ChatGatewayService {
       {
         userId: dto.userId,
         bannedId: dto.bannedId,
+      },
+      {
+        headers: {
+          Authorization: bearerToken,
+        },
+      },
+    );
+    return res.data;
+  }
+
+  async muteUser(dto: MuteUserDto, bearerToken: string) {
+    const res = await axios.post(
+      `${this.restApiUrl}/chat/groupChat/mute/${dto.groupChatId}`,
+      {
+        userId: dto.userId,
+        requestUserId: dto.requestUserId,
+        time: dto.time,
+        unit: dto.unit,
+      },
+      {
+        headers: {
+          Authorization: bearerToken,
+        },
+      },
+    );
+    return res.data;
+  }
+
+  async unMuteUser(dto: UnmuteUserDto, bearerToken: string) {
+    const res = await axios.post(
+      `${this.restApiUrl}/chat/groupChat/unmute/${dto.groupChatId}`,
+      {
+        userId: dto.userId,
+        requestUserId: dto.requestUserId,
       },
       {
         headers: {
