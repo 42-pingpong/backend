@@ -30,6 +30,8 @@ import { UnMuteRequestDto } from './request/unmute.dto';
 import { MutedUserJoin } from '../../entities/chat/mutedUserJoin.entity';
 import { UnBanDto } from './request/unBan.dto';
 import { KickUserDto } from './request/kickUser.dto';
+import { GetBanMuteListDto } from './request/getBanMuteList.dto';
+import { GetMuteOffsetDto } from './request/getMuteOffset.dto';
 
 @Injectable()
 export class ChatService {
@@ -1035,4 +1037,54 @@ export class ChatService {
       },
     );
   }
+
+  async getBanMuteList(groupChatId: number, dto: GetBanMuteListDto) {
+    return await this.groupChatRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        const isOwnerOrAdmin = await manager.getRepository(GroupChat).findOne({
+          where: [
+            {
+              groupChatId: groupChatId,
+              ownerId: dto.userId,
+            },
+            {
+              groupChatId: groupChatId,
+              admin: { id: dto.userId },
+            },
+          ],
+        });
+
+        if (!isOwnerOrAdmin) {
+          throw new ForbiddenException('admin/owner가 아닙니다.');
+        }
+
+        return await manager.getRepository(GroupChat).find({
+          where: {
+            groupChatId: groupChatId,
+          },
+          relations: {
+            bannedUser: true,
+            mutedUsersJoinTable: true,
+          },
+          select: {
+            bannedUser: {
+              id: true,
+              nickName: true,
+              profile: true,
+            },
+            mutedUsersJoinTable: {
+              mutedUser: {
+                id: true,
+                nickName: true,
+                profile: true,
+              },
+              muteDue: true,
+            },
+          },
+        });
+      },
+    );
+  }
+
+  async getMuteOffset(groupChatId: number, dto: GetMuteOffsetDto) {}
 }
