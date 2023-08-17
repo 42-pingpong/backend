@@ -1,0 +1,50 @@
+version: '3.0'
+
+services:
+  nestjs:
+    build: .
+    container_name: nestjs
+    env_file:
+      - .env
+    ports:
+      - "$NEST_PORT:$NEST_PORT"
+    volumes:
+      - type: bind
+        source: .
+        target: /app
+    working_dir: /app
+    environment:
+      - TZ=Asia/Seoul
+    networks:
+      - intra
+    depends_on:
+      - docdb
+      - rdb
+
+  docdb:
+    container_name: docdb
+    image: redis:7.0-alpine
+    ports:
+      - "6379:6379" 
+    networks:
+      - intra
+
+  rdb:
+    container_name: rdb
+    image: postgres
+    ports:
+      - "5432:5432" #http://localhost:5555
+    environment:
+      TZ: Asia/Seoul
+      PGTZ: Asia/Seoul
+      POSTGRES_USER: "$POSTGRES_USER"
+      POSTGRES_PASSWORD: "$POSTGRES_PASSWORD"
+      POSTGRES_DB: "$POSTGRES_DB"
+    volumes:
+      - "$VOLUMEPATH/postgres:/var/lib/postgresql/data"
+    networks:
+      - intra
+
+networks:
+  intra:
+    driver: bridge
