@@ -43,6 +43,7 @@ import { GetBanMuteListDto } from './request/getBanMuteList.dto';
 import { GetMuteOffsetDto } from './request/getMuteOffset.dto';
 import { Request } from 'express';
 import { AccessTokenGuard } from '../auth/Guards/accessToken.guard';
+import { BanMuteList } from './response/BanMuteList.dto';
 
 @ApiTags('chat')
 @Controller('chat')
@@ -280,8 +281,13 @@ export class ChatController {
     summary: '그룹 채팅방의 밴/뮤트 유저 리스트를 반환하는 메서드',
     description: '그룹 채팅방의 밴/뮤트 유저 리스트를 반환하는 메서드',
   })
+  @ApiOkResponse({
+    description: '그룹 채팅방의 밴/뮤트 유저 리스트를 반환하는 메서드',
+    type: BanMuteList,
+    isArray: true,
+  })
   // @UseGuards(AccessTokenGuard)
-  @Get('groupChat/:groupChatId/banList')
+  @Get('groupChat/:groupChatId/banMuteList')
   async getBanMuteList(
     @Req() req: Request,
     @Param('groupChatId') groupChatId: string,

@@ -32,6 +32,7 @@ import { UnBanDto } from './request/unBan.dto';
 import { KickUserDto } from './request/kickUser.dto';
 import { GetBanMuteListDto } from './request/getBanMuteList.dto';
 import { GetMuteOffsetDto } from './request/getMuteOffset.dto';
+import { BanMuteList } from './response/BanMuteList.dto';
 
 @Injectable()
 export class ChatService {
@@ -166,7 +167,7 @@ export class ChatService {
             relations: {
               admin: true,
               joinedUser: true,
-              bannedUser: true,
+              bannedUsers: true,
             },
             select: {
               groupChatId: true,
@@ -209,7 +210,7 @@ export class ChatService {
         }
 
         // 그룹 채팅방에 참여한 유저가 bannedUser인지 검증
-        const isBanned = groupChat.bannedUser.find(
+        const isBanned = groupChat.bannedUsers.find(
           (bannedUser) => bannedUser.id === dto.userId,
         );
         if (isBanned) {
@@ -928,7 +929,7 @@ export class ChatService {
         //4.
         await manager
           .createQueryBuilder(GroupChat, 'groupChat')
-          .relation('bannedUser')
+          .relation('bannedUsers')
           .of(groupChatId)
           .add(dto.bannedId);
 
@@ -970,7 +971,7 @@ export class ChatService {
 
         await manager
           .createQueryBuilder(GroupChat, 'groupChat')
-          .relation('bannedUser')
+          .relation('bannedUsers')
           .of(groupChatId)
           .remove(dto.bannedId);
         return {
@@ -1063,16 +1064,18 @@ export class ChatService {
             groupChatId: groupChatId,
           },
           relations: {
-            bannedUser: true,
-            mutedUsersJoinTable: true,
+            bannedUsers: true,
+            mutedUsers: {
+              mutedUser: true,
+            },
           },
           select: {
-            bannedUser: {
+            bannedUsers: {
               id: true,
               nickName: true,
               profile: true,
             },
-            mutedUsersJoinTable: {
+            mutedUsers: {
               mutedUser: {
                 id: true,
                 nickName: true,
