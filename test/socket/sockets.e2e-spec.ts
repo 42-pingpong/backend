@@ -295,7 +295,7 @@ describe('Socket', () => {
     it('ban', (done) => {
       ChatSocketClient.connect();
       ChatSocketClient.on('ban-user', (data) => {
-        console.log(data)
+        console.log(data);
         expect(data.groupChatId).toBe(groupChat10000.groupChatId);
         expect(data.userId).toBe(user10002.id);
         done();
@@ -317,7 +317,7 @@ describe('Socket', () => {
       ChatSocketClient.connect();
 
       ChatSocketClient.on('unban-user', (data) => {
-        console.log(data)
+        console.log(data);
         expect(data.groupChatId).toBe(groupChat10000.groupChatId);
         expect(data.userId).toBe(user10002.id);
         done();
@@ -383,7 +383,7 @@ describe('Socket', () => {
         done();
       });
 
-      const dto = new UnmuteUserDto()
+      const dto = new UnmuteUserDto();
       dto.groupChatId = groupChat10000.groupChatId;
       dto.requestUserId = user10000.id;
       dto.userId = user10002.id;
