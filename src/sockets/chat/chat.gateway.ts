@@ -27,6 +27,7 @@ import { UnMuteUserResponseDto } from './restApiResponse/unMuteUserResponse.dto'
 import { KickUserResponseDto } from './restApiResponse/kickUserResponse.dto';
 import { BanUserResponseDto } from './restApiResponse/banUserResponse.dto';
 import { UnBanUserResponseDto } from './restApiResponse/unBanUserResponse.dto';
+import { goPingPongDto } from './request/goPingPong.dto';
 
 /**
  * @brief chat gateway
@@ -357,6 +358,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     } catch (e) {
       client.emit('error', e.message);
     }
+  }
+
+  @SubscribeMessage('go-pingpong')
+  goPingPong(client: any, dto: goPingPongDto) {
+    console.log(dto);
+    this.server.to(dto.groupChatId.toString()).emit('go-pingpong', dto);
   }
 
   @SubscribeMessage('leave-room')
