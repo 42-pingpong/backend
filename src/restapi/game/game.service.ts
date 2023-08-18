@@ -113,4 +113,22 @@ export class GameService {
       },
     );
   }
+
+  async getGameSocketId(userId: number) {
+    return await this.gameInfoRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        const user = await manager.getRepository(User).findOne({
+          where: {
+            id: userId,
+          },
+        });
+
+        if (!user) {
+          throw new NotFoundException('유저가 존재하지 않습니다.');
+        }
+
+        return await user.gameSocketId;
+      },
+    );
+  }
 }

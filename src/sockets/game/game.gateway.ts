@@ -36,8 +36,19 @@ export class GameGateway
 
   // game socket 연결시 실행
   @SubscribeMessage('connect')
-  handleConnection(client: any, ...args: any[]) {
-    console.log('Game Socket Connection');
+  async handleConnection(client: any, ...args: any[]) {
+    const sub = this.gameGatewayService.getSub(client.handshake.auth.token);
+    if (sub == null) {
+      console.log('sub == null');
+      return;
+    }
+
+    // status online으로 변경하고 socketId 저장
+    await this.gameGatewayService.login(
+      sub,
+      client.id,
+      client.handshake.auth.token,
+    );
   }
 
   // game 버튼 클릭시 실행

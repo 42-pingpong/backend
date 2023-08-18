@@ -16,6 +16,15 @@ export class GameGatewayService {
     this.restApiUrl = configService.get('url.restApiUrl');
   }
 
+  getSub(auth: string): number {
+    if (auth == undefined) return null;
+    auth = auth.split(' ')[1];
+    const payload = this.jwtService.decode(auth);
+    if (payload == null) {
+      return null;
+    } else return payload.sub;
+  }
+
   // get은 header에 token을 넣어서 보내야함, 또 json을 보내지 않아서 Content-Type을 설정하지 않아도 됨
   async getNickName(userId: number, bearerToken: string): Promise<string> {
     const response = await axios.get(`${this.restApiUrl}/user/nick/${userId}`, {
@@ -45,5 +54,32 @@ export class GameGatewayService {
         Authorization: `Bearer ${bearerToken}`,
       },
     });
+  }
+
+  async login(userId: number, clientId: string, bearerToken: string) {
+    try {
+      await axios.patch(
+        `${this.restApiUrl}/user/${userId}`,
+        {
+          status: 'online',
+          gameSocketId: clientId,
+        },
+        {
+          headers: {
+            Authorization: bearerToken,
+          },
+        },
+      );
+    } catch (error) {}
+  }
+
+  // get은 header에 token을 넣어서 보내야함, 또 json을 보내지 않아서 Content-Type을 설정하지 않아도 됨
+  async getGameSocketId(userId: number, bearerToken: string): Promise<string> {
+    const response = await axios.get(`${this.restApiUrl}/socketId/${userId}`, {
+      headers: {
+        Authorization: `Bearer ${bearerToken}`,
+      },
+    });
+    return await response.data;
   }
 }
