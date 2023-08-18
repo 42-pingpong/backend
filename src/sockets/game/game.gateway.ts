@@ -379,20 +379,24 @@ export class GameGateway
    * - 하면 플레이어쪽에서 게임 페이지로 보내면서 join으로 쏘옥
    */
   @SubscribeMessage('go-pingpong')
-  async handleGoPingpongEnter(client: Socket, id: number, isHost: boolean) {
+  async handleGoPingpongEnter(client: Socket, dto: PlayerInfo) {
     playerList.push({
       socket: client,
-      id: id,
+      id: dto.id,
       token: client.handshake.auth.token,
-      is_host: isHost,
-      play_number: 1,
-      enemy_id: 2,
+      is_host: dto.is_host,
+      play_number: dto.play_number,
+      enemy_id: dto.enemy_id,
     });
     const idx = playerList.findIndex((player) => player.socket === client);
+    console.log('playerList.length', playerList.length);
     if ((playerList.length %= 2)) {
       const enemyIdx = playerList.findIndex(
         (player) => player.id === playerList[idx].enemy_id,
       );
+      console.log('idx', idx);
+      console.log('enemyIdx', enemyIdx);
+
       if (idx === -1 || enemyIdx === -1) {
         console.log('idx === -1 || enemyIdx === -1');
         return;
