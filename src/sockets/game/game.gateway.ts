@@ -380,6 +380,7 @@ export class GameGateway
    */
   @SubscribeMessage('go-pingpong')
   async handleGoPingpongEnter(client: Socket, dto: PlayerInfo) {
+    console.log('dto', dto);
     playerList.push({
       socket: client,
       id: dto.id,
@@ -389,8 +390,7 @@ export class GameGateway
       enemy_id: dto.enemy_id,
     });
     const idx = playerList.findIndex((player) => player.socket === client);
-    console.log('playerList.length', playerList.length);
-    if ((playerList.length %= 2)) {
+    if (playerList.length % 2 === 0) {
       const enemyIdx = playerList.findIndex(
         (player) => player.id === playerList[idx].enemy_id,
       );
