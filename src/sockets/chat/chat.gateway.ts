@@ -7,7 +7,6 @@ import { OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 import { ChatGatewayService } from './chat.gateway.service';
 import { CreateGroupChatDto } from './dto/create-chat.dto';
-import { BanUserDto } from './request/banUser.dto';
 import { BlockUserDto } from './request/BlockUser.dto';
 import { DirectMessageDto } from './request/directMessage.dto';
 import { FetchDirectMessageDto } from './request/FetchDirectMessage.dto';
@@ -22,6 +21,12 @@ import { DirectMessageResponse } from './restApiResponse/directMessageResponse.d
 import { GroupChatMessageResponse } from './restApiResponse/groupChatMessageResponse.dto';
 import { JoinRoomResponse } from './restApiResponse/joinRoomResponse.dto';
 import { JoinGroupChatDto } from './request/joinGroupChat.dto';
+import { BanDto } from './request/ban.dto';
+import { MuteUserResponseDto } from './restApiResponse/muteUserResponse.dto';
+import { UnMuteUserResponseDto } from './restApiResponse/unMuteUserResponse.dto';
+import { KickUserResponseDto } from './restApiResponse/kickUserResponse.dto';
+import { BanUserResponseDto } from './restApiResponse/banUserResponse.dto';
+import { UnBanUserResponseDto } from './restApiResponse/unBanUserResponse.dto';
 
 /**
  * @brief chat gateway
@@ -60,8 +65,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
    */
   @SubscribeMessage('connect')
   async handleConnection(client: any, ...args: any[]) {
-    console.log('chat socket handleConnection', client.id);
     const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
+
     if (userId === null) return;
 
     //GroupChat을 위한 코드
@@ -97,7 +102,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
    * */
   @SubscribeMessage('chat-logout')
   handleDisconnect(client: any, ...args: any[]) {
-    console.log('handleDisconnect', args);
     return 'Goodbye world!';
   }
 
@@ -119,7 +123,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
    **/
   @SubscribeMessage('create-room')
   async createChatRoom(client: any, payload: CreateGroupChatDto) {
-    console.log('create-room', payload);
     const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
     if (userId === null) return;
     const chat = await this.chatGatewayService.createGroupChat(payload);
@@ -128,7 +131,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('join-room')
   async joinChatRoom(client: Socket, groupChatDto: JoinGroupChatDto) {
-    console.log('join-room', groupChatDto.groupChatId);
     const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
     if (userId === null) return;
 
@@ -139,18 +141,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           client.handshake.auth.token,
         );
       await client.join(groupChatDto.groupChatId.toString());
-      //TODO: 변경된 유저만 전달해야함.
-      client
+      this.server
         .to(groupChatDto.groupChatId.toString())
         .emit('join-room', resPonse);
     } catch (e) {
       client.emit('error', e.message);
     }
-  }
-
-  @SubscribeMessage('leave-room')
-  leaveChatRoom(client: any, roomId: string) {
-    client.leave(roomId);
   }
 
   /**
@@ -260,7 +256,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('block-user')
   async blockUser(client: Socket, dto: BlockUserDto) {
-    console.log('block-user', dto);
     const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
     if (userId === null) return;
     try {
@@ -284,18 +279,88 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  @SubscribeMessage('mute-user')
-  async muteUser(client: Socket, dto: MuteUserDto) {}
+  @SubscribeMessage('kick-user')
+  async kickUser(client: Socket, dto: KickUserDto) {
+    try {
+      const kickedUser: KickUserResponseDto =
+        await this.chatGatewayService.kickUser(
+          dto,
+          client.handshake.auth.token,
+        );
 
-  @SubscribeMessage('unmute-user')
-  async unmuteUser(client: Socket, dto: UnmuteUserDto) {}
+      //group 내 모든 유저들에게 groupId / kickedUserId 전달.
+      this.server.in(dto.groupChatId.toString()).emit('kick-user', kickedUser);
+    } catch (e) {
+      client.emit('error', e.message);
+    }
+  }
 
   @SubscribeMessage('ban-user')
-  async banUser(client: Socket, dto: BanUserDto) {}
+  async banUser(client: Socket, dto: BanDto) {
+    try {
+      const bannedUser: BanUserResponseDto =
+        await this.chatGatewayService.banUser(dto, client.handshake.auth.token);
+      //group 내 모든 유저들에게 groupId / bannedUserId 전달.
+      //ban-user room 에 보내고
+      this.server.in(dto.groupChatId.toString()).emit('ban-user', bannedUser);
+      //ban-user leave
+    } catch (e) {
+      client.emit('error', e.message);
+    }
+  }
 
   @SubscribeMessage('unban-user')
-  async unbanUser(client: Socket, dto: UnBanUserDto) {}
+  async unbanUser(client: Socket, dto: UnBanUserDto) {
+    try {
+      const unbannedUser: UnBanUserResponseDto =
+        await this.chatGatewayService.unBanUser(
+          dto,
+          client.handshake.auth.token,
+        );
 
-  @SubscribeMessage('kick-user')
-  async kickUser(client: Socket, dto: KickUserDto) {}
+      //group 내 모든 유저들에게 groupId / bannedUserId 전달.
+      this.server
+        .in(dto.groupChatId.toString())
+        .emit('unban-user', unbannedUser);
+    } catch (e) {
+      client.emit('error', e.message);
+    }
+  }
+
+  @SubscribeMessage('mute-user')
+  async muteUser(client: Socket, dto: MuteUserDto) {
+    try {
+      const mutedUser: MuteUserResponseDto =
+        await this.chatGatewayService.muteUser(
+          dto,
+          client.handshake.auth.token,
+        );
+
+      this.server.to(dto.groupChatId.toString()).emit('mute-user', mutedUser);
+    } catch (e) {
+      client.emit('error', e.message);
+    }
+  }
+
+  @SubscribeMessage('unmute-user')
+  async unmuteUser(client: Socket, dto: UnmuteUserDto) {
+    try {
+      const unmutedUser: UnMuteUserResponseDto =
+        await this.chatGatewayService.unMuteUser(
+          dto,
+          client.handshake.auth.token,
+        );
+
+      this.server
+        .to(dto.groupChatId.toString())
+        .emit('unmute-user', unmutedUser);
+    } catch (e) {
+      client.emit('error', e.message);
+    }
+  }
+
+  @SubscribeMessage('leave-room')
+  leaveChatRoom(client: any, roomId: string) {
+    client.leave(roomId);
+  }
 }

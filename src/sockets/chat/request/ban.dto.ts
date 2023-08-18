@@ -1,4 +1,4 @@
-export class UnBanUserDto {
+export class BanDto {
   groupChatId: number;
   userId: number;
   bannedId: number;

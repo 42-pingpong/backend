@@ -2,20 +2,20 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsNumber } from 'class-validator';
 
-export class BanDto {
+export class GetMuteOffsetDto {
   @ApiProperty({
-    description: 'ban을 요청하는 유저 아이디',
-    example: 101234,
+    description: '유저의 id',
+    example: 1,
   })
   @Type(() => Number)
   @IsNumber()
   userId: number;
 
   @ApiProperty({
-    description: 'ban을 당하는 유저 아이디',
-    example: 101235,
+    description: '그룹 채팅방의 id',
+    example: 1,
   })
   @Type(() => Number)
   @IsNumber()
-  bannedId: number;
+  groupChatId: number;
 }
