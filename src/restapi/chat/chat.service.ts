@@ -219,9 +219,6 @@ export class ChatService {
             throw new ForbiddenException('비밀번호가 일치하지 않습니다.');
           }
 
-          // const salt = await bcrypt.genSalt(10);
-          // const hashedPassword = await bcrypt.hash(dto.password, salt);
-
           const isPasswordMatch = await bcrypt.compare(
             dto.password,
             groupChat.password,
