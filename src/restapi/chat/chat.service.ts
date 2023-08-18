@@ -63,7 +63,6 @@ export class ChatService {
 
   async createGroupChat(createChatDto: CreateGroupChatDto) {
     // 비밀번호 해싱
-    const hashedPassword = await bcrypt.hash(createChatDto.password, 10);
 
     // 그룹 채팅방을 생성하고 저장하는 로직
     return await this.groupChatRepository.manager.transaction(
@@ -73,7 +72,15 @@ export class ChatService {
             1 + createChatDto.participants.length;
         }
 
-        createChatDto.password = hashedPassword;
+        if (createChatDto.password) {
+          const salt = await bcrypt.genSalt(10);
+          const hashedPassword = await bcrypt.hash(
+            createChatDto.password,
+            salt,
+          );
+
+          createChatDto.password = hashedPassword;
+        }
 
         const result = await manager.insert(GroupChat, createChatDto);
 
@@ -212,8 +219,11 @@ export class ChatService {
             throw new ForbiddenException('비밀번호가 일치하지 않습니다.');
           }
 
+          const salt = await bcrypt.genSalt(10);
+          const hashedPassword = await bcrypt.hash(dto.password, salt);
+
           const isPasswordMatch = await bcrypt.compare(
-            dto.password,
+            hashedPassword,
             groupChat.password,
           );
           if (!isPasswordMatch) {
