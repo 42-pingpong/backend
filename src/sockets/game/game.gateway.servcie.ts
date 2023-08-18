@@ -80,6 +80,7 @@ export class GameGatewayService {
         Authorization: `Bearer ${bearerToken}`,
       },
     });
+    console.log('response.data', response.data);
     return await response.data;
   }
 }

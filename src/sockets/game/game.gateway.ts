@@ -11,6 +11,7 @@ import { GameGatewayService } from './game.gateway.servcie';
 import { CreateGameScoreRequestDto } from 'src/restapi/game/request/create-game-score.dto';
 import { PlayerInfo } from './PlayerInfo';
 import { CreateGameDto } from 'src/restapi/game/request/create-game.dto';
+import e from 'express';
 
 const waitList: PlayerInfo[] = [];
 const playerList: PlayerInfo[] = [];
@@ -42,7 +43,6 @@ export class GameGateway
       console.log('sub == null');
       return;
     }
-
     // status online으로 변경하고 socketId 저장
     await this.gameGatewayService.login(
       sub,
@@ -355,9 +355,15 @@ export class GameGateway
     {
       // id: 나, targetID: 상대방
       // targetId로 유저 정보 가져와서 GameSocketId 로 invite event emit(게임 초대 받았음)
+      const targetSocketId = await this.gameGatewayService.getGameSocketId(
+        targetId,
+        client.handshake.auth.token,
+      );
+      if (targetSocketId) {
+        client.to(targetSocketId).emit('go-pingpong');
+      }
     }
   }
-
   /**
    *
    * @param client
@@ -373,5 +379,137 @@ export class GameGateway
    * - 하면 플레이어쪽에서 게임 페이지로 보내면서 join으로 쏘옥
    */
   @SubscribeMessage('go-pingpong')
-  async handleGoPingpong(client: Socket, id: number, isHost: boolean) {}
+  async handleGoPingpongEnter(client: Socket, id: number, isHost: boolean) {
+    playerList.push({
+      socket: client,
+      id: id,
+      token: client.handshake.auth.token,
+      is_host: isHost,
+      play_number: 1,
+      enemy_id: 2,
+    });
+    const idx = playerList.findIndex((player) => player.socket === client);
+    if ((playerList.length %= 2)) {
+      const enemyIdx = playerList.findIndex(
+        (player) => player.id === playerList[idx].enemy_id,
+      );
+      if (idx === -1 || enemyIdx === -1) {
+        console.log('idx === -1 || enemyIdx === -1');
+        return;
+      }
+      const gameInfo: CreateGameDto = {};
+      const game = await this.gameGatewayService.setGame(
+        playerList[idx].token,
+        gameInfo,
+      );
+
+      playerList[idx].roomId = game.gameId;
+      playerList[enemyIdx].roomId = game.gameId;
+
+      await playerList[idx].socket.join(game.gameId.toString());
+      await playerList[enemyIdx].socket.join(game.gameId.toString());
+
+      playerList[idx].socket.emit('join', playerList[idx].roomId);
+      playerList[enemyIdx].socket.emit('join', playerList[idx].roomId);
+
+      playerList[idx].socket.emit('player-number', 1);
+      playerList[enemyIdx].socket.emit('player-number', 2);
+    }
+  }
+
+  // @SubscribeMessage('go-pingpong-setup')
+  // async handleGoPingpongSetup(client: Socket, id: number) {
+  //   const idx = playerList.findIndex((player) => player.socket === client);
+  //   if ((playerList.length %= 2)) {
+  //     const enemyIdx = playerList.findIndex(
+  //       (player) => player.id === playerList[idx].enemy_id,
+  //     );
+  //     if (idx === -1 || enemyIdx === -1) {
+  //       console.log('idx === -1 || enemyIdx === -1');
+  //       return;
+  //     }
+  //     const gameInfo: CreateGameDto = {};
+  //     const game = await this.gameGatewayService.setGame(
+  //       playerList[idx].token,
+  //       gameInfo,
+  //     );
+
+  //     playerList[idx].roomId = game.gameId;
+  //     playerList[enemyIdx].roomId = game.gameId;
+
+  //     await playerList[idx].socket.join(game.gameId.toString());
+  //     await playerList[enemyIdx].socket.join(game.gameId.toString());
+
+  //     playerList[idx].socket.emit('join', playerList[idx].roomId);
+  //     playerList[enemyIdx].socket.emit('join', playerList[idx].roomId);
+
+  //     playerList[idx].socket.emit('player-number', 1);
+  //     playerList[enemyIdx].socket.emit('player-number', 2);
+  //   }
+  // }
+
+  // @SubscribeMessage('go-pingpong-join')
+  // async handleGoPingpongJoin(client: Socket, id: number) {
+  //   const idx = playerList.findIndex((player) => player.socket === client);
+  //   const enemyIdx = playerList.findIndex(
+  //     (player) => player.id === playerList[idx].enemy_id,
+  //   );
+  //   if (idx === -1 || enemyIdx === -1) {
+  //     console.log('idx === -1 || enemyIdx === -1');
+  //     return;
+  //   }
+
+  //   // 플레이어의 닉네임을 가져옴
+  //   if (playerList[idx].is_host) {
+  //     const player1NickName = await this.gameGatewayService.getNickName(
+  //       playerList[idx].id,
+  //       playerList[idx].token,
+  //     );
+  //     const player2NickName = await this.gameGatewayService.getNickName(
+  //       playerList[enemyIdx].id,
+  //       playerList[enemyIdx].token,
+  //     );
+
+  //     // 플레이어들에게 닉네임을 알림
+  //     playerList[idx].socket.emit(
+  //       'user-name',
+  //       player1NickName,
+  //       player2NickName,
+  //     );
+  //     playerList[enemyIdx].socket.emit(
+  //       'user-name',
+  //       player1NickName,
+  //       player2NickName,
+  //     );
+  //     console.log('player1NickName', player1NickName);
+  //     console.log('player2NickName', player2NickName);
+  //   }
+  // }
+
+  // @SubscribeMessage('go-pingpong-ready')
+  // handleGoPingpongReady(client: Socket, id: number) {
+  //   const idx = playerList.findIndex((player) => player.socket === client);
+  //   const enemyIdx = playerList.findIndex(
+  //     (player) => player.id === playerList[idx].enemy_id,
+  //   );
+  //   if (idx === -1 || enemyIdx === -1) {
+  //     console.log('idx === -1 || enemyIdx === -1');
+  //     return;
+  //   }
+
+  //   if (playerList[idx].ready_status) return;
+
+  //   playerList[idx].ready_status = true;
+
+  //   this.server.to(playerList[idx].roomId.toString()).emit('ready', true);
+
+  //   if (playerList[idx].ready_status && playerList[enemyIdx].ready_status) {
+  //     console.log('게임 시작~~~');
+  //     playerList[idx].socket.emit('start', true);
+  //     playerList[enemyIdx].socket.emit('start', true);
+  //   }
+  // }
+
+  // @SubscribeMessage('go-pingpong-start')
+  // async handleGoPingpongStart(client: Socket, id: number) {}
 }
