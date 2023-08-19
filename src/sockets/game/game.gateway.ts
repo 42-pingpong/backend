@@ -125,11 +125,8 @@ export class GameGateway
       (player) => player.id === playerList[idx].enemy_id,
     );
 
-    let player1NickName;
-    let player2NickName;
-
     if (idx !== -1 && enemyIdx !== -1 && playerList[idx].is_host) {
-      [player1NickName, player2NickName] = await Promise.all([
+      const [player1NickName, player2NickName] = await Promise.all([
         this.gameGatewayService.getNickName(
           playerList[idx].id,
           playerList[idx].token,
@@ -139,9 +136,7 @@ export class GameGateway
           playerList[enemyIdx].token,
         ),
       ]);
-    }
 
-    if (player1NickName && player2NickName) {
       // 플레이어들에게 닉네임을 알림
       playerList[idx].socket.emit(
         'user-name',
