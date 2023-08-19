@@ -321,40 +321,26 @@ export class GameGateway
   async handleGoPingpongEnter(client: Socket, payload: any) {
     console.log('payload', payload);
 
-    // host 일때
-    if (payload[1] == true) {
-      playerList.push({
-        socket: client,
-        id: payload[0].userId,
-        token: client.handshake.auth.token,
-        is_host: payload[1],
-        play_number: payload[2],
-        enemy_id: payload[0].targetUserId,
-      });
-    } else {
-      playerList.push({
-        socket: client,
-        id: payload[0].targetUserId,
-        token: client.handshake.auth.token,
-        is_host: payload[1],
-        play_number: payload[2],
-        enemy_id: payload[0].userId,
-      });
-    }
+    const isHost = payload[1];
+    const userId = isHost ? payload[0].userId : payload[0].targetUserId;
+    const targetUserId = isHost ? payload[0].targetUserId : payload[0].userId;
+    const playNumber = payload[2];
+
+    playerList.push({
+      socket: client,
+      id: userId,
+      token: client.handshake.auth.token,
+      is_host: isHost,
+      play_number: playNumber,
+      enemy_id: targetUserId,
+    });
+
     if (playerList.length % 2 === 0) {
       // console.log('playerList', playerList);
       const idx = playerList.findIndex((player) => player.socket === client);
       const enemyIdx = playerList.findIndex(
         (player) => player.id === playerList[idx].enemy_id,
       );
-      console.log('idx', idx);
-      console.log('playerList[idx].play_number', playerList[idx].play_number);
-      console.log('enemyIdx', enemyIdx);
-      console.log(
-        'playerList[enemyIdx].play_number',
-        playerList[enemyIdx].play_number,
-      );
-
       if (idx === -1 || enemyIdx === -1) {
         console.log('idx === -1 || enemyIdx === -1');
         return;
@@ -368,8 +354,10 @@ export class GameGateway
       playerList[idx].roomId = game.gameId;
       playerList[enemyIdx].roomId = game.gameId;
 
-      await playerList[idx].socket.join(game.gameId.toString());
-      await playerList[enemyIdx].socket.join(game.gameId.toString());
+      await Promise.all([
+        playerList[idx].socket.join(game.gameId.toString()),
+        playerList[enemyIdx].socket.join(game.gameId.toString()),
+      ]);
 
       playerList[idx].socket.emit('join', playerList[idx].roomId);
       playerList[enemyIdx].socket.emit('join', playerList[idx].roomId);
