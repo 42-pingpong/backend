@@ -190,7 +190,7 @@ export class GameGateway
     playerList[idx].ready_status = true;
 
     // 서버에게 ready상태 알림
-    this.server.to(playerList[0].roomId.toString()).emit('ready', true);
+    this.server.to(playerList[idx].roomId.toString()).emit('ready', true);
 
     if (playerList[idx].ready_status && playerList[enemyIdx].ready_status) {
       console.log('게임 시작~~~');
