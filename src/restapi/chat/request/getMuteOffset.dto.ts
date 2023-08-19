@@ -2,9 +2,9 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsNumber } from 'class-validator';
 
-export class UnMuteRequestDto {
+export class GetMuteOffsetDto {
   @ApiProperty({
-    description: 'unmute할 유저의 id',
+    description: '유저의 id',
     example: 1,
   })
   @Type(() => Number)
@@ -12,10 +12,10 @@ export class UnMuteRequestDto {
   userId: number;
 
   @ApiProperty({
-    description: 'unmute 요청한 유저의 id, owner/admin',
-    example: 3,
+    description: '그룹 채팅방의 id',
+    example: 1,
   })
   @Type(() => Number)
   @IsNumber()
-  requestUserId: number;
+  groupChatId: number;
 }

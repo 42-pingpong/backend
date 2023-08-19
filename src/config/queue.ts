@@ -3,7 +3,7 @@ import { registerAs } from '@nestjs/config';
 export default registerAs('queue', () => ({
   redisHost:
     process.env.NODE_ENV === 'development'
-      ? 'redis'
+      ? process.env.REDIS_HOST
       : process.env.NODE_ENV === 'test'
       ? 'localhost'
       : process.env.REDIS_HOST,

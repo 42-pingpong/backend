@@ -29,6 +29,8 @@ import * as request from 'supertest';
 import { DataSource, In, Repository } from 'typeorm';
 import { MuteRequestDto } from '../../src/restapi/chat/request/mute.dto';
 import { MutedUserJoin } from '../../src/entities/chat/mutedUserJoin.entity';
+import { BanDto } from '../../src/restapi/chat/dto/ban.dto';
+import { GetBanMuteListDto } from '../../src/restapi/chat/request/getBanMuteList.dto';
 
 describe('Chat', () => {
   let app: INestApplication;
@@ -1187,7 +1189,6 @@ describe('Chat', () => {
       const muteDto = new MuteRequestDto();
       muteDto.userId = user2282.id;
       muteDto.requestUserId = user2280.id;
-      muteDto.groupChatId = groupChat2280.groupChatId;
       muteDto.unit = 's';
       muteDto.time = 10;
 
@@ -1195,27 +1196,22 @@ describe('Chat', () => {
         .post(`/chat/groupChat/mute/${groupChat2280.groupChatId}`)
         .send(muteDto);
 
-      const mutedUser = await groupChatRepository.findOne({
+      await groupChatRepository.findOne({
         where: { groupChatId: groupChat2280.groupChatId },
         relations: {
-          mutedUsersJoinTable: true,
+          mutedUsers: true,
         },
         select: {
-          mutedUsersJoinTable: true,
+          mutedUsers: true,
         },
       });
-      console.log(mutedUser);
 
-      //UTC time
-      console.log(mutedUser.mutedUsersJoinTable[0].muteDue);
-      console.log(mutedUser.mutedUsersJoinTable[0].muteDue.toLocaleString());
       expect(res.status).toBe(201);
     });
     it('admin이 user를 mute 🅾️', async () => {
       const muteDto = new MuteRequestDto();
       muteDto.userId = user2282.id;
       muteDto.requestUserId = user2281.id;
-      muteDto.groupChatId = groupChat2280.groupChatId;
       muteDto.unit = 's';
       muteDto.time = 10;
 
@@ -1229,7 +1225,6 @@ describe('Chat', () => {
       const muteDto = new MuteRequestDto();
       muteDto.userId = user2281.id;
       muteDto.requestUserId = user2280.id;
-      muteDto.groupChatId = groupChat2280.groupChatId;
       muteDto.unit = 's';
       muteDto.time = 10;
 
@@ -1243,7 +1238,6 @@ describe('Chat', () => {
       const muteDto = new MuteRequestDto();
       muteDto.userId = user2283.id;
       muteDto.requestUserId = user2281.id;
-      muteDto.groupChatId = groupChat2280.groupChatId;
       muteDto.unit = 's';
       muteDto.time = 10;
 
@@ -1254,6 +1248,129 @@ describe('Chat', () => {
       expect(res.status).toBe(404);
     });
   });
+
+  /**
+   * user 3000
+   * */
+  describe('GET /chat/groupChat/:groupChatId/banList', () => {
+    let user3000: User;
+    let user3001: User;
+    let user3002: User;
+    let user3003: User;
+    let groupChat3000: GroupChat;
+
+    let bannedUser3004: User;
+    let bannedUser3005: User;
+    let bannedUser3006: User;
+
+    beforeAll(async () => {
+      user3000 = await userRepository.save(userFactory.createUser(3000));
+      user3001 = await userRepository.save(userFactory.createUser(3001));
+      user3002 = await userRepository.save(userFactory.createUser(3002));
+      user3003 = await userRepository.save(userFactory.createUser(3003));
+      bannedUser3004 = await userRepository.save(userFactory.createUser(3004));
+      bannedUser3005 = await userRepository.save(userFactory.createUser(3005));
+      bannedUser3006 = await userRepository.save(userFactory.createUser(3006));
+
+      const createChatDto = new CreateGroupChatDto();
+      createChatDto.levelOfPublicity = 'Pub';
+      createChatDto.chatName = 'test';
+      createChatDto.ownerId = user3000.id;
+      createChatDto.maxParticipants = 10;
+      createChatDto.participants = [
+        user3001.id,
+        user3002.id,
+        user3003.id,
+        bannedUser3004.id,
+        bannedUser3005.id,
+        bannedUser3006.id,
+      ];
+
+      groupChat3000 = (
+        await request(app.getHttpServer())
+          .post('/chat/groupChat')
+          .send(createChatDto)
+      ).body;
+
+      const addAdminDto = new AddAdminDto();
+      addAdminDto.userId = user3000.id;
+      addAdminDto.requestedId = user3001.id;
+      await request(app.getHttpServer())
+        .post(`/chat/groupChat/${groupChat3000.groupChatId}/admin`)
+        .query(addAdminDto);
+
+      addAdminDto.userId = user3000.id;
+      addAdminDto.requestedId = user3003.id;
+      await request(app.getHttpServer())
+        .post(`/chat/groupChat/${groupChat3000.groupChatId}/admin`)
+        .query(addAdminDto);
+
+      const banDto = new BanDto();
+      banDto.userId = user3000.id;
+      banDto.bannedId = bannedUser3004.id;
+      await request(app.getHttpServer())
+        .post(`/chat/groupChat/${groupChat3000.groupChatId}/ban`)
+        .send(banDto);
+
+      banDto.bannedId = bannedUser3005.id;
+      await request(app.getHttpServer())
+        .post(`/chat/groupChat/${groupChat3000.groupChatId}/ban`)
+        .send(banDto);
+
+      banDto.bannedId = bannedUser3006.id;
+      await request(app.getHttpServer())
+        .post(`/chat/groupChat/${groupChat3000.groupChatId}/ban`)
+        .send(banDto);
+
+      const muteDto = new MuteRequestDto();
+      muteDto.requestUserId = user3000.id;
+      muteDto.userId = user3002.id;
+      muteDto.unit = 's';
+      muteDto.time = 10;
+
+      await request(app.getHttpServer())
+        .post(`/chat/groupChat/mute/${groupChat3000.groupChatId}`)
+        .send(muteDto);
+    });
+
+    afterAll(async () => {
+      await groupChatRepository.manager.getRepository(MutedUserJoin).delete({
+        mutedGroupId: groupChat3000.groupChatId,
+      });
+      await groupChatRepository.delete({
+        groupChatId: groupChat3000.groupChatId,
+      });
+      await userRepository.delete({
+        id: In([user3000.id, user3001.id, user3002.id, user3003.id]),
+      });
+    });
+
+    it('By Owner ', async () => {
+      const dto = new GetBanMuteListDto();
+      dto.userId = user3000.id;
+
+      const res = await request(app.getHttpServer())
+        .get(`/chat/groupChat/${groupChat3000.groupChatId}/banMuteList`)
+        .query(dto);
+      console.log(res.body);
+      console.log(res.body[0].bannedUsers);
+      console.log(res.body[0].mutedUsers);
+      expect(res.body[0].bannedUsers.length).toBe(3);
+      expect(res.body[0].mutedUsers.length).toBe(1);
+    });
+    // it.todo('By Admin ', async () => {});
+    // it.todo('By Joined User Should Be Forbidden', async () => {});
+  });
+
+  /**
+   * user 3010
+   * */
+  describe('GET /chat/groupChat/:groupChatId/muteList', () => {});
+
+  /**
+   * user 3010
+   * */
+  describe('GET /chat/groupChat/:groupChatId/muteOffset', () => {});
 
   afterAll(async () => {
     await dataSource.destroy();
