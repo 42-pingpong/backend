@@ -16,6 +16,12 @@ import e from 'express';
 const waitList: PlayerInfo[] = [];
 const playerList: PlayerInfo[] = [];
 
+interface goPingPongDto {
+  groupChatId: number;
+  userId: number;
+  targetUserId: number;
+}
+
 @WebSocketGateway({
   namespace: 'game',
   cors: {
@@ -378,17 +384,31 @@ export class GameGateway
    *
    * - 하면 플레이어쪽에서 게임 페이지로 보내면서 join으로 쏘옥
    */
+
   @SubscribeMessage('go-pingpong')
-  async handleGoPingpongEnter(client: Socket, dto: PlayerInfo) {
-    console.log('dto', dto);
-    playerList.push({
-      socket: client,
-      id: dto.id,
-      token: client.handshake.auth.token,
-      is_host: dto.is_host,
-      play_number: dto.play_number,
-      enemy_id: dto.enemy_id,
-    });
+  async handleGoPingpongEnter(client: Socket, payload: any) {
+    // console.log(myId, otherId, is_host, play_number);
+
+    if (payload[1] == true) {
+      playerList.push({
+        socket: client,
+        id: payload[0].userId,
+        token: client.handshake.auth.token,
+        is_host: payload[1],
+        play_number: payload[2],
+        enemy_id: payload[0].targetUserId,
+      });
+    } else {
+      playerList.push({
+        socket: client,
+        id: payload[0].targetUserId,
+        token: client.handshake.auth.token,
+        is_host: payload[1],
+        play_number: payload[2],
+        enemy_id: payload[0].userId,
+      });
+    }
+    console.log(playerList);
     const idx = playerList.findIndex((player) => player.socket === client);
     if (playerList.length % 2 === 0) {
       const enemyIdx = playerList.findIndex(
@@ -475,7 +495,7 @@ export class GameGateway
   //     );
 
   //     // 플레이어들에게 닉네임을 알림
-  //     playerList[idx].socket.emit(
+  // playerList[idx].socket.emit(
   //       'user-name',
   //       player1NickName,
   //       player2NickName,
@@ -501,13 +521,13 @@ export class GameGateway
   //     return;
   //   }
 
-  //   if (playerList[idx].ready_status) return;
+  // if (playerList[idx].ready_status) return;
 
-  //   playerList[idx].ready_status = true;
+  // playerList[idx].ready_status = true;
+  //
+  // this.server.to(playerList[idx].roomId.toString()).emit('ready', true);
 
-  //   this.server.to(playerList[idx].roomId.toString()).emit('ready', true);
-
-  //   if (playerList[idx].ready_status && playerList[enemyIdx].ready_status) {
+  // if (playerList[idx].ready_status && playerList[enemyIdx].ready_status) {
   //     console.log('게임 시작~~~');
   //     playerList[idx].socket.emit('start', true);
   //     playerList[enemyIdx].socket.emit('start', true);
