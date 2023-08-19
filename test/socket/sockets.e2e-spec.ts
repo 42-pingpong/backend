@@ -22,7 +22,7 @@ import { UnBanUserDto } from '../../src/sockets/chat/request/unBanUser.dto';
 import { MuteUserDto } from '../../src/sockets/chat/request/muteUser.dto';
 import { MutedUserJoin } from '../../src/entities/chat/mutedUserJoin.entity';
 import { ChatGatewayService } from '../../src/sockets/chat/chat.gateway.service';
-import { UnmuteUserDto } from "../../src/sockets/chat/request/unMute.dto";
+import { UnmuteUserDto } from '../../src/sockets/chat/request/unMute.dto';
 /**
  * @link https://medium.com/@tozwierz/testing-socket-io-with-jest-on-backend-node-js-f71f7ec7010f
  * */
@@ -276,7 +276,7 @@ describe('Socket', () => {
     it('kick', (done) => {
       ChatSocketClient.connect();
       ChatSocketClient.on('kick-user', (data) => {
-        console.log(data)
+        console.log(data);
         expect(data.groupChatId).toBe(groupChat10000.groupChatId);
         expect(data.userId).toBe(user10002.id);
         done();
@@ -295,7 +295,7 @@ describe('Socket', () => {
     it('ban', (done) => {
       ChatSocketClient.connect();
       ChatSocketClient.on('ban-user', (data) => {
-        console.log(data)
+        console.log(data);
         expect(data.groupChatId).toBe(groupChat10000.groupChatId);
         expect(data.userId).toBe(user10002.id);
         done();
@@ -317,7 +317,7 @@ describe('Socket', () => {
       ChatSocketClient.connect();
 
       ChatSocketClient.on('unban-user', (data) => {
-        console.log(data)
+        console.log(data);
         expect(data.groupChatId).toBe(groupChat10000.groupChatId);
         expect(data.userId).toBe(user10002.id);
         done();
@@ -383,7 +383,7 @@ describe('Socket', () => {
         done();
       });
 
-      const dto = new UnmuteUserDto()
+      const dto = new UnmuteUserDto();
       dto.groupChatId = groupChat10000.groupChatId;
       dto.requestUserId = user10000.id;
       dto.userId = user10002.id;

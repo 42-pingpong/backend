@@ -33,7 +33,6 @@ import { KickUserDto } from './request/kickUser.dto';
 import * as bcrypt from 'bcrypt';
 import { GetBanMuteListDto } from './request/getBanMuteList.dto';
 import { GetMuteOffsetDto } from './request/getMuteOffset.dto';
-import { BanMuteList } from './response/BanMuteList.dto';
 
 @Injectable()
 export class ChatService {
@@ -43,9 +42,6 @@ export class ChatService {
 
     @InjectRepository(BlockUserList)
     private readonly blockUserListRepository: Repository<BlockUserList>,
-
-    @InjectRepository(MutedUserJoin)
-    private readonly mutedUserJoinRepository: Repository<MutedUserJoin>,
   ) {}
 
   async getGroupChatList() {
@@ -1051,7 +1047,8 @@ export class ChatService {
           .update()
           .set({
             curParticipants: () => 'curParticipants - 1',
-          });
+          })
+          .execute();
 
         return {
           groupChatId: groupChatId,
@@ -1111,5 +1108,43 @@ export class ChatService {
     );
   }
 
-  async getMuteOffset(groupChatId: number, dto: GetMuteOffsetDto) {}
+  async getMuteOffset(groupChatId: number, dto: GetMuteOffsetDto) {
+    return await this.groupChatRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        //UTC 기준으로 현재 시간을 가져옴
+        const muteDue = await manager.getRepository(MutedUserJoin).findOne({
+          where: {
+            mutedUserId: dto.userId,
+            mutedGroupId: groupChatId,
+          },
+        });
+        //muteDue가 없는 경우
+        if (!muteDue) {
+          return {
+            groupChatId: groupChatId,
+            muteFor: 0,
+          };
+        }
+
+        //muteDue가 있는 경우
+        const now = new Date();
+        const muteDueDate = new Date(muteDue.muteDue);
+        const muteFor = muteDueDate.getTime() - now.getTime();
+
+        //muteDue가 지난 경우
+        //muteDue를 삭제
+        if (muteFor < 0) {
+          await manager.getRepository(MutedUserJoin).delete({
+            mutedUserId: dto.userId,
+            mutedGroupId: groupChatId,
+          });
+        }
+
+        return {
+          groupChatId: groupChatId,
+          muteFor: muteFor,
+        };
+      },
+    );
+  }
 }

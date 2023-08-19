@@ -44,6 +44,7 @@ import { GetMuteOffsetDto } from './request/getMuteOffset.dto';
 import { Request } from 'express';
 import { AccessTokenGuard } from '../auth/Guards/accessToken.guard';
 import { BanMuteList } from './response/BanMuteList.dto';
+import { MuteOffsetDto } from './response/MuteOffset.dto';
 
 @ApiTags('chat')
 @Controller('chat')
@@ -301,6 +302,15 @@ export class ChatController {
 
   @ApiOperation({
     summary: '유저의 그룹채팅방 내에서 mute offset을 반환하는 메서드',
+  })
+  @ApiOkResponse({
+    description: '유저의 그룹채팅방 내에서 mute offset을 반환하는 메서드',
+    type: MuteOffsetDto,
+  })
+  @ApiParam({
+    name: 'groupChatId',
+    description: '그룹 채팅방의 id',
+    example: 1,
   })
   // @UseGuards(AccessTokenGuard)
   @Get('groupChat/:groupChatId/muteOffset')
