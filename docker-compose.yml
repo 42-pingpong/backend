@@ -1,25 +1,31 @@
-version: '3.0'
+version: '3.1'
 
 services:
-  nestjs:
-    build: .
-    container_name: nestjs
+  restapis:
+    build:
+      context: .
+      dockerfile: ./apps/restapis/Dockerfile
+      target: development
+    command: pnpm run start:dev restapis
     env_file:
-      - .env
+      - apps/restapis/.env
     ports:
-      - "$NEST_PORT:$NEST_PORT"
+      - '10003:10003'
     volumes:
-      - type: bind
-        source: .
-        target: /app
-    working_dir: /app
-    environment:
-      - TZ=Asia/Seoul
-    networks:
-      - intra
-    depends_on:
-      - docdb
-      - rdb
+      - .:/usr/src/app
+
+  sockets:
+    build:
+      context: .
+      dockerfile: ./apps/sockets/Dockerfile
+      target: development
+    command: pnpm run start:dev sockets
+    env_file:
+      - apps/sockets/.env
+    ports:
+      - '10001:10001'
+    volumes:
+      - .:/usr/src/app
 
   docdb:
     container_name: docdb
@@ -35,13 +41,11 @@ services:
     ports:
       - "5432:5432" #http://localhost:5555
     environment:
-      TZ: Asia/Seoul
-      PGTZ: Asia/Seoul
-      POSTGRES_USER: "$POSTGRES_USER"
-      POSTGRES_PASSWORD: "$POSTGRES_PASSWORD"
-      POSTGRES_DB: "$POSTGRES_DB"
+      POSTGRES_USER: "pingpongdang"
+      POSTGRES_PASSWORD: "0000"
+      POSTGRES_DB: "pingpong"
     volumes:
-      - "$VOLUMEPATH/postgres:/var/lib/postgresql/data"
+      - "/Users/myukang/goinfre/data/postgres:/var/lib/postgresql/data"
     networks:
       - intra
 
