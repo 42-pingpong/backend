@@ -36,4 +36,10 @@ export class GameController {
   async getHistory(@Param('userId') userId: string) {
     return await this.gameService.getHistory(+userId);
   }
+
+  @ApiOperation({ summary: '특정 유저의 game socket id를 가져옵니다.' })
+  @Get('/socketId/:userId')
+  async getGameSocketId(@Param('userId') userId: number) {
+    return await this.gameService.getGameSocketId(userId);
+  }
 }

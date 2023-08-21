@@ -27,6 +27,7 @@ import { UnMuteUserResponseDto } from './restApiResponse/unMuteUserResponse.dto'
 import { KickUserResponseDto } from './restApiResponse/kickUserResponse.dto';
 import { BanUserResponseDto } from './restApiResponse/banUserResponse.dto';
 import { UnBanUserResponseDto } from './restApiResponse/unBanUserResponse.dto';
+import { goPingPongDto } from './request/goPingPong.dto';
 
 /**
  * @brief chat gateway
@@ -356,6 +357,31 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         .emit('unmute-user', unmutedUser);
     } catch (e) {
       client.emit('error', e.message);
+    }
+  }
+
+  @SubscribeMessage('go-pingpong')
+  goPingPong(client: any, dto: goPingPongDto) {
+    console.log(dto);
+    this.server.to(dto.groupChatId.toString()).emit('go-pingpong', dto);
+  }
+
+  @SubscribeMessage('go-pingpong-accept')
+  goPingPongAccept(client: any, dto: goPingPongDto) {
+    this.server.to(dto.groupChatId.toString()).emit('go-pingpong-accept', dto);
+  }
+
+  @SubscribeMessage('go-pingpong-reject')
+  goPingPongReject(client: any, payload: any) {
+    console.log(payload);
+    if (payload[1] === 'N') {
+      this.server
+        .to(payload[0].groupChatId.toString())
+        .emit('go-pingpong-reject', payload);
+    } else if (payload[1] === 'X') {
+      this.server
+        .to(payload[0].groupChatId.toString())
+        .emit('go-pingpong-reject', payload);
     }
   }
 
