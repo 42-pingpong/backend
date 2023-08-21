@@ -10,9 +10,9 @@ import { User } from 'src/entities/user/user.entity';
 import { ITokens } from 'src/interface/ITokens.types';
 import { IUser } from 'src/interface/IUser.types';
 import { Repository } from 'typeorm';
-import { CreateUserDto } from '../user/dto/create-user.dto';
-import { UserService } from '../user/user.service';
-import { AuthService } from './auth.service';
+import { CreateUserDto } from '../src/user/dto/create-user.dto';
+import { UserService } from '../src/user/user.service';
+import { AuthService } from '../src/auth/auth.service';
 
 describe('AuthService', () => {
   let authService: AuthService;

@@ -1,11 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UserController } from './user.controller';
-import { UserService } from './user.service';
+import { UserController } from '../src/user/user.controller';
+import { UserService } from '../src/user/user.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { createMock } from '@golevelup/ts-jest';
 import { User } from 'src/entities/user/user.entity';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateUserDto } from '../src/user/dto/update-user.dto';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 
 /**

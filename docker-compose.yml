@@ -2,30 +2,37 @@ version: '3.1'
 
 services:
   restapis:
-    build:
-      context: .
-      dockerfile: ./apps/restapis/Dockerfile
-      target: development
-    command: pnpm run start:dev restapis
+    build: .
     env_file:
-      - apps/restapis/.env
-    ports:
-      - '10003:10003'
+      - apps/restapis/.env.dev
+    working_dir: /app
     volumes:
-      - .:/usr/src/app
+        - /app/node_modules
+        - .:/app
+    ports:
+      - '10002:10002'
+    depends_on:
+      - docdb
+      - rdb
+    networks:
+      - intra
 
   sockets:
-    build:
-      context: .
-      dockerfile: ./apps/sockets/Dockerfile
-      target: development
-    command: pnpm run start:dev sockets
+    build: .
     env_file:
-      - apps/sockets/.env
+      - apps/sockets/.env.dev
+    working_dir: /app
+    volumes:
+      - /app/node_modules
+      - .:/app
     ports:
       - '10001:10001'
-    volumes:
-      - .:/usr/src/app
+    depends_on:
+      - docdb
+      - rdb
+    networks:
+      - intra
+
 
   docdb:
     container_name: docdb
@@ -45,7 +52,7 @@ services:
       POSTGRES_PASSWORD: "0000"
       POSTGRES_DB: "pingpong"
     volumes:
-      - "/Users/myukang/goinfre/data/postgres:/var/lib/postgresql/data"
+      - "/Users/ddinghwan/data/postgres:/var/lib/postgresql/data"
     networks:
       - intra
 

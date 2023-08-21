@@ -10,6 +10,7 @@ import url from './url';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      ignoreEnvFile: true,
       load: [database, auth, url, oauth42, queue],
     }),
   ],

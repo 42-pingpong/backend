@@ -11,7 +11,7 @@ import url from './url';
     ConfigModule.forRoot({
       isGlobal: true,
       ignoreEnvVars: true,
-      envFilePath: '.env.test',
+      envFilePath: '.env.dev.dev.test',
       load: [database, auth, url, oauth42, queue],
     }),
   ],

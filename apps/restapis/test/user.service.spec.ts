@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { User } from 'src/entities/user/user.entity';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { UserService } from './user.service';
+import { CreateUserDto } from '../src/user/dto/create-user.dto';
+import { UpdateUserDto } from '../src/user/dto/update-user.dto';
+import { UserService } from '../src/user/user.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';

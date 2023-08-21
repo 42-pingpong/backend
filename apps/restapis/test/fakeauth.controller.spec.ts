@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { FakeauthController } from './fakeauth.controller';
+import { FakeauthController } from '../src/fakeauth/fakeauth.controller';
 import { FakeauthService } from './fakeauth.service';
 
 describe('FakeauthController', () => {
