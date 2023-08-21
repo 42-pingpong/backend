@@ -1,7 +1,7 @@
-import { User } from 'src/entities/user/user.entity';
-import { FriendsWith } from 'src/entities/user/friendsWith.entity';
-import { CreateUserDto } from 'src/restapi/user/dto/create-user.dto';
-import { UserFactory } from 'src/factory/user.factory';
+import { User } from '@app/common/entities/user.entity';
+import { FriendsWith } from '@app/common/entities/friendsWith.entity';
+import { CreateUserDto } from '../../apps/restapis/src/user/dto/create-user.dto';
+import { UserFactory } from '@app/common/factory/user.factory';
 import { DataSource } from 'typeorm';
 
 /**

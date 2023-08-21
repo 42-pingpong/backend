@@ -6,7 +6,7 @@ RUN apk add --no-cache dumb-init tzdata && \
 	cp /usr/share/zoneinfo/Asia/Seoul /etc/localtime && \
     echo "Asia/Seoul" > /etc/timezone
 
-COPY start.sh /tmp/start.sh
+COPY apps/sockets/start.sh /tmp/start.sh
 RUN chmod +x /tmp/start.sh
 
 COPY package.json .

@@ -1,7 +1,7 @@
 import { DataSource } from 'typeorm';
-import { ChatFactory } from 'src/factory/chat.factory';
-import { CreateGroupChatDto } from 'src/restapi/chat/dto/create-group-chat.dto';
-import { GroupChat } from 'src/entities/chat/groupChat.entity';
+import { ChatFactory } from '@app/common/factory/chat.factory';
+import { CreateGroupChatDto } from '../../apps/restapis/src/chat/dto/create-group-chat.dto';
+import { GroupChat } from '@app/common/entities/groupChat.entity';
 
 async function privGroupChatSeed(
   dataSource: DataSource,

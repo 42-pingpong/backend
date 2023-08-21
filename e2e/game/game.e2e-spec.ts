@@ -1,20 +1,20 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AppConfigModule } from 'src/config/app.config';
-import { TestConfigModule } from 'src/config/test.config';
-import { appDatabase } from 'src/datasource/appdatabase';
-import { testDatabase } from 'src/datasource/testDatabase';
-import { GameInfo } from 'src/entities/game/gameInfo.entity';
-import { GameScore } from 'src/entities/game/gameScore.entity';
-import { User } from 'src/entities/user/user.entity';
-import { UserFactory } from 'src/factory/user.factory';
-import { AccessTokenGuard } from 'src/restapi/auth/Guards/accessToken.guard';
-import { GameModule } from 'src/restapi/game/game.module';
 import { DataSource, Repository } from 'typeorm';
-import { CreateGameDto } from 'src/restapi/game/request/create-game.dto';
+import { AppConfigModule } from '@app/common/config/app.config';
+import { TestConfigModule } from '@app/common/config/test.config';
+import { appDatabase } from '@app/common/datasource/appdatabase';
+import { testDatabase } from '@app/common/datasource/testDatabase';
+import { GameInfo } from '@app/common/entities/gameInfo.entity';
+import { GameScore } from '@app/common/entities/gameScore.entity';
+import { User } from '@app/common/entities/user.entity';
+import { UserFactory } from '@app/common/factory/user.factory';
+import { AccessTokenGuard } from '@app/common/guards/accessToken.guard';
+import { GameModule } from '../../apps/restapis/src/game/game.module';
+import { CreateGameDto } from '../../apps/restapis/src/game/request/create-game.dto';
+import { CreateGameScoreRequestDto } from '../../apps/restapis/src/game/request/create-game-score.dto';
 import * as request from 'supertest';
-import { CreateGameScoreRequestDto } from 'src/restapi/game/request/create-game-score.dto';
 
 describe('Game -/game (e2e)', () => {
   let app: INestApplication;
