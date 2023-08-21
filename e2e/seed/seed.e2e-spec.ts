@@ -1,18 +1,18 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { testDatabase } from 'src/datasource/testDatabase';
 import * as request from 'supertest';
-import { DataSource } from 'typeorm';
-import { User } from 'src/entities/user/user.entity';
-import { appDatabase } from 'src/datasource/appdatabase';
-import { AppConfigModule } from 'src/config/app.config';
-import { TestConfigModule } from 'src/config/test.config';
-import { FriendsWith } from 'src/entities/user/friendsWith.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Token } from 'src/entities/auth/token.entity';
-import { AppModule } from 'src/app.module';
+import { DataSource } from 'typeorm';
 import userSeeder from './user';
 import chatSeeder from './chat';
+import { RestapiModule } from '../../apps/restapis/src/restapiModule';
+import { testDatabase } from '@app/common/datasource/testDatabase';
+import { appDatabase } from '@app/common/datasource/appdatabase';
+import { AppConfigModule } from '@app/common/config/app.config';
+import { TestConfigModule } from '@app/common/config/test.config';
+import { User } from '@app/common/entities/user.entity';
+import { FriendsWith } from '@app/common/entities/friendsWith.entity';
+import { Token } from '@app/common/entities/token.entity';
 
 describe('Seeding Database', () => {
   let app: INestApplication;
@@ -20,7 +20,7 @@ describe('Seeding Database', () => {
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
+      imports: [RestapiModule],
     })
       .overrideModule(appDatabase)
       .useModule(testDatabase)

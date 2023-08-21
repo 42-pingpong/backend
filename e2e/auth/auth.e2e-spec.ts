@@ -1,20 +1,20 @@
 import { ExecutionContext, INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { testDatabase } from 'src/datasource/testDatabase';
-import { AuthModule } from 'src/restapi/auth/auth.module';
 import { DataSource } from 'typeorm';
 import * as request from 'supertest';
-import { appDatabase } from 'src/datasource/appdatabase';
-import { User } from 'src/entities/user/user.entity';
-import { AppConfigModule } from 'src/config/app.config';
-import { TestConfigModule } from 'src/config/test.config';
-import { user3, user4, user5 } from '../fixtures/users/user-3';
-import { FTAuthGuard } from 'src/restapi/auth/Guards/ft.guard';
-import { JwtService } from '@nestjs/jwt';
-import { Token } from 'src/entities/auth/token.entity';
-import { RefreshTokenGuard } from 'src/restapi/auth/Guards/refreshToken.guard';
-import { ITokenPayload } from 'src/interface/IUser.types';
 import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { testDatabase } from '@app/common/datasource/testDatabase'
+import { appDatabase } from '@app/common/datasource/appdatabase';
+import { AppConfigModule } from '@app/common/config/app.config';
+import { TestConfigModule } from '@app/common/config/test.config';
+import { user3, user4, user5 } from '../fixtures/users/user-3';
+import { User } from '@app/common/entities/user.entity';
+import { Token } from '@app/common/entities/token.entity';
+import { AuthModule } from '../../apps/restapis/src/auth/auth.module'
+import { FTAuthGuard } from '@app/common/guards/ft.guard';
+import { ITokenPayload } from '@app/common/interface/IUser.types';
+import { RefreshTokenGuard } from '@app/common/guards/refreshToken.guard';
 
 describe('Auth', () => {
   let app: INestApplication;

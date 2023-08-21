@@ -1,11 +1,11 @@
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { UploadModule } from 'src/restapi/upload/upload.module';
+import { UploadModule } from '../../apps/restapis/src/upload/upload.module';
 import * as request from 'supertest';
 import * as fs from 'fs';
 import * as path from 'path';
-import { AppConfigModule } from 'src/config/app.config';
-import { TestConfigModule } from 'src/config/test.config';
+import { AppConfigModule } from '@app/common/config/app.config';
+import { TestConfigModule } from '@app/common/config/test.config';
 
 describe('Upload -/upload (e2e)', () => {
   let app: INestApplication;

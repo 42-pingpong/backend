@@ -7,7 +7,11 @@
     "^.+\\.(t|j)s$": "ts-jest"
   },
   "moduleNameMapper": {
-    "^src/(.*)$": "<rootDir>/../src/$1",
+    "@app/common/(.*)$": "<rootDir>/../libs/common/$1",
+    "^apps/(.*)$": "<rootDir>/../apps/$1",
     "^test/(.*)$": "<rootDir>/../test/$1"
-  }
+  },
+  "pathsToModuleNameMapper": {
+    "@app/common": ["../libs/common"]
+  },
 }

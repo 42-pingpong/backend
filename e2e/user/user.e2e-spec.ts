@@ -4,26 +4,26 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { testDatabase } from 'src/datasource/testDatabase';
-import { UserModule } from 'src/restapi/user/user.module';
 import * as request from 'supertest';
-import { DataSource, Repository } from 'typeorm';
-import { User } from 'src/entities/user/user.entity';
-import { UpdateUserDto } from 'src/restapi/user/dto/update-user.dto';
-import { appDatabase } from 'src/datasource/appdatabase';
-import { UserFactory } from 'src/factory/user.factory';
-import { AppConfigModule } from 'src/config/app.config';
-import { TestConfigModule } from 'src/config/test.config';
-import { FriendsWith } from 'src/entities/user/friendsWith.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Token } from 'src/entities/auth/token.entity';
-import { GetFriendQueryDto } from 'src/restapi/user/dto/get-friend-query.dto';
-import { CreateUserDto } from 'src/restapi/user/dto/create-user.dto';
-import { CreateRequestFriendDto } from 'src/restapi/user/dto/create-request-friend.dto';
-import { Request, RequestType } from 'src/entities/user/request.entity';
-import { InvitationStatus } from 'src/enum/invitation.enum';
-import { SearchUserDto } from 'src/restapi/user/dto/search-user.dto';
-import { AccessTokenGuard } from 'src/restapi/auth/Guards/accessToken.guard';
+import { DataSource, Repository } from 'typeorm';
+import { testDatabase } from '@app/common/datasource/testDatabase';
+import { User } from '@app/common/entities/user.entity';
+import { appDatabase } from '@app/common/datasource/appdatabase';
+import { UserFactory } from '@app/common/factory/user.factory';
+import { InvitationStatus } from '@app/common/enum/invitation.enum';
+import { UpdateUserDto } from '../../apps/restapis/src/user/dto/update-user.dto';
+import { GetFriendQueryDto } from '../../apps/restapis/src/user/dto/get-friend-query.dto';
+import { CreateUserDto } from '../../apps/restapis/src/user/dto/create-user.dto';
+import { CreateRequestFriendDto } from '../../apps/restapis/src/user/dto/create-request-friend.dto';
+import { SearchUserDto } from '../../apps/restapis/src/user/dto/search-user.dto';
+import { Request, RequestType } from '@app/common/entities/request.entity';
+import { FriendsWith } from '@app/common/entities/friendsWith.entity';
+import { AccessTokenGuard } from '@app/common/guards/accessToken.guard';
+import { Token } from '@app/common/entities/token.entity';
+import { UserModule } from '../../apps/restapis/src/user/user.module';
+import { TestConfigModule } from '@app/common/config/test.config';
+import { AppConfigModule } from '@app/common/config/app.config';
 
 describe('User -/user (e2e)', () => {
   let app: INestApplication;
