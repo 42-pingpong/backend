@@ -4,6 +4,7 @@ import { ChatModule } from './chat/chat.module';
 import { DynamicAuthModule } from './auth.dynamic.module';
 import { UploadModule } from './upload/upload.module';
 import { GameModule } from './game/game.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { GameModule } from './game/game.module';
     UploadModule,
     GameModule,
     DynamicAuthModule.forRoot(),
+    MailModule,
   ],
 })
 export class RestapiModule {}

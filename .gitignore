@@ -135,3 +135,6 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# senderInfo (이메일 정보)
+senderInfo.json
