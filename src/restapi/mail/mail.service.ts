@@ -10,8 +10,8 @@ export class MailService {
     console.log('sendHello!!!!!');
     this.mailerService
       .sendMail({
-        from: 'duqkdxm@gmail.com',
-        to: 'duqkdxm@gamil.com',
+        from: '42pongping@gmail.com',
+        to: '42pongping@gmail.com',
         subject: 'Testing Nest MailerModule ✔',
         text: 'Hello world!!',
         html: '<b>Hello world!!</b>',

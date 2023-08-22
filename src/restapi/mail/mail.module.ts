@@ -11,8 +11,8 @@ import { MailController } from './mail.controller';
         host: 'smtp.gmail.com',
         port: 587,
         auth: {
-          user: 'duqkdxm@gmail.com',
-          pass: 'umxjnytidtrmmblp',
+          user: '42pongping@gmail.com',
+          pass: 'rstljuqmoaafbgbr',
         },
       },
       defaults: {
