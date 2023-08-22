@@ -53,6 +53,7 @@ export class MailService {
     if (!data) {
       return null;
     }
+    datas.splice(datas.indexOf(data), 1);
     return data.code;
   }
 }
