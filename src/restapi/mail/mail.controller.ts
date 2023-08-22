@@ -13,7 +13,7 @@ export class MailController {
     description: '메일 보내기',
   })
   @Post('send')
-  async sendMail(@Body() data: SendMailDto) {
+  async sendMail(@Body() data: any) {
     console.log('send mail dto', data);
     return await this.mailService.sendHello(data);
   }
