@@ -4,6 +4,7 @@ import exp from 'constants';
 import { SendMailDto } from './send-mail.dto';
 
 export class MailData {
+  id: number;
   nickName: string;
   code: string;
 }
@@ -17,7 +18,11 @@ export class MailService {
   async sendHello(data: any) {
     const validationCode = crypto.randomUUID.toString();
     console.log(validationCode);
-    datas.push({ nickName: data.nickName, code: validationCode });
+    datas.push({
+      id: data.userId,
+      nickName: data.nickName,
+      code: validationCode,
+    });
 
     await this.mailerService
       .sendMail({
@@ -40,5 +45,13 @@ export class MailService {
         console.log(err);
       });
     return true;
+  }
+
+  async getCode(id: number) {
+    const data = datas.find((data) => data.id === id);
+    if (!data) {
+      return null;
+    }
+    return data.code;
   }
 }

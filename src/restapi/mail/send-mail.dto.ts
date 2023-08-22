@@ -1,5 +1,5 @@
 export class SendMailDto {
-  nickName: string;
   userId: number;
+  nickName: string;
   mailAddress: string;
 }

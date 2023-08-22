@@ -17,4 +17,14 @@ export class MailController {
     console.log('send mail dto', data);
     return await this.mailService.sendHello(data);
   }
+
+  @ApiOperation({
+    summary: '메일 인증',
+    description: '메일 인증코드 반환',
+  })
+  @Get('code/:id')
+  async getCode(@Param('id') id: number): Promise<string> {
+    console.log('id', id);
+    return await this.mailService.getCode(id);
+  }
 }
