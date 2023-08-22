@@ -16,7 +16,7 @@ import { MailController } from './mail.controller';
         },
       },
       defaults: {
-        from: '"nest-modules" <modules@nestjs.com>',
+        from: '"defaults" <defaaults@nestjs.com>',
       },
       template: {
         dir: __dirname + '/templates/',
