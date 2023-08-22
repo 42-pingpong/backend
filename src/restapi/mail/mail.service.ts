@@ -15,8 +15,9 @@ const datas: MailData[] = [];
 export class MailService {
   constructor(private readonly mailerService: MailerService) {}
 
-  async sendHello(data: any) {
-    const validationCode = crypto.randomUUID.toString();
+  async sendHello(data: SendMailDto) {
+    const validationCode = Math.floor(Math.random() * 10000).toString();
+    // const validationCode = crypto.randomUUID.toString();
     console.log(validationCode);
     datas.push({
       id: data.userId,

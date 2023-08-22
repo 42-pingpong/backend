@@ -23,7 +23,7 @@ export class MailController {
     description: '메일 인증코드 반환',
   })
   @Get('code/:id')
-  async getCode(@Param('id') id: number): Promise<string> {
+  async getCode(@Param('id') id: number) {
     console.log('id', id);
     return await this.mailService.getCode(id);
   }
