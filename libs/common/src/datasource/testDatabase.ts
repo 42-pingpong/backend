@@ -19,7 +19,7 @@ import { TestConfigModule } from '@app/common/config/test.config';
         type: 'postgres',
         //test suite는 docker network가 아닌, localhost로 접근해야합니다.
         //도커 컨테이너 내부에서 테스트 실행시 너무 느려서 사용하지 않습니다.
-        host: 'localhost',
+        host: configService.get<string>('database.host'),
         port: configService.get<number>('database.port'),
         username: configService.get<string>('database.username'),
         password: configService.get<string>('database.password'),

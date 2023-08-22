@@ -13,8 +13,7 @@ import { Request } from '@app/common/entities/request.entity';
 import { MutedUserJoin } from '@app/common/entities/mutedUserJoin.entity';
 
 export default registerAs('database', () => ({
-  host:
-    process.env.NODE_ENV === 'test' ? 'localhost' : process.env.POSTGRES_DBHOST,
+  host: process.env.POSTGRES_DBHOST,
   port: parseInt(process.env.POSTGRES_PORT),
   username: process.env.POSTGRES_USER,
   password: process.env.POSTGRES_PASSWORD,

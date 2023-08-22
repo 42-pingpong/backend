@@ -11,5 +11,6 @@ async function bootstrap() {
   app.useWebSocketAdapter(redisIoAdapter);
 
   await app.listen(process.env.NEST_PORT);
+  console.log(`Application is running on: ${await app.getUrl()}`);
 }
 bootstrap();

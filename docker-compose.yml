@@ -55,7 +55,7 @@ services:
       POSTGRES_PASSWORD: '0000'
       POSTGRES_DB: 'pingpong'
     volumes:
-      - '/Users/myukang/goinfre/data/postgres:/var/lib/postgresql/data'
+      - '/Users/ddinghwan/data/postgres:/var/lib/postgresql/data'
     networks:
       - intra
 
