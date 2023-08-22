@@ -1,6 +1,7 @@
-import { Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { MailService } from './mail.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { SendMailDto } from './send-mail.dto';
 
 @ApiTags('mail')
 @Controller('mail')
@@ -12,7 +13,8 @@ export class MailController {
     description: '메일 보내기',
   })
   @Post('send')
-  sendMail(): boolean {
-    return this.mailService.sendHello();
+  async sendMail(@Body() data: any) {
+    console.log('send mail dto', data);
+    return await this.mailService.sendHello(data);
   }
 }
