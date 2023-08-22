@@ -15,7 +15,7 @@ export class MailService {
   constructor(private readonly mailerService: MailerService) {}
 
   async sendHello(data: any) {
-    const validationCode = Math.floor(Math.random() * 10000).toString();
+    const validationCode = crypto.randomUUID.toString();
     console.log(validationCode);
     datas.push({ nickName: data.nickName, code: validationCode });
 
@@ -24,13 +24,13 @@ export class MailService {
         from: '42pongping@gmail.com',
         to: data.mailAddress,
         subject: `Testing Nest MailerModule ✔ to ${data.nickName}`,
-        // text: `Hello ${data.nickName}!!
-        // Your validation code is ${datas[datas.length - 1].code}
-        // `,
-        // text: 'Hello ${data.nickName}',
-        // text: '<b>Hello world!!</b>',
+
         html: `hi ${data.nickName}</br>
           인증번호: ${validationCode}`,
+
+        // html:
+        //   `인증 링크` +
+        //   `http://localhost/mail/authentication/${validationCode}`,
       })
       .then((success) => {
         console.log('success');
