@@ -1,31 +1,47 @@
-version: '3.0'
+version: '3.1'
 
 services:
-  nestjs:
-    build: .
-    container_name: nestjs
+  restapis:
+    build:
+      context: .
+      dockerfile: apps/restapis/Dockerfile
     env_file:
-      - .env
-    ports:
-      - "$NEST_PORT:$NEST_PORT"
-    volumes:
-      - type: bind
-        source: .
-        target: /app
+      - apps/restapis/.env.dev
     working_dir: /app
-    environment:
-      - TZ=Asia/Seoul
-    networks:
-      - intra
+    volumes:
+      - /app/node_modules
+      - .:/app
+    ports:
+      - '10002:10002'
     depends_on:
       - docdb
       - rdb
+    networks:
+      - intra
+
+  sockets:
+    build:
+      context: .
+      dockerfile: apps/sockets/Dockerfile
+    env_file:
+      - apps/sockets/.env.dev
+    working_dir: /app
+    volumes:
+      - /app/node_modules
+      - .:/app
+    ports:
+      - '10001:10001'
+    depends_on:
+      - docdb
+      - rdb
+    networks:
+      - intra
 
   docdb:
     container_name: docdb
     image: redis:7.0-alpine
     ports:
-      - "6379:6379" 
+      - '6379:6379'
     networks:
       - intra
 
@@ -33,15 +49,13 @@ services:
     container_name: rdb
     image: postgres
     ports:
-      - "5432:5432" #http://localhost:5555
+      - '5432:5432' #http://localhost:5555
     environment:
-      TZ: Asia/Seoul
-      PGTZ: Asia/Seoul
-      POSTGRES_USER: "$POSTGRES_USER"
-      POSTGRES_PASSWORD: "$POSTGRES_PASSWORD"
-      POSTGRES_DB: "$POSTGRES_DB"
+      POSTGRES_USER: 'pingpongdang'
+      POSTGRES_PASSWORD: '0000'
+      POSTGRES_DB: 'pingpong'
     volumes:
-      - "$VOLUMEPATH/postgres:/var/lib/postgresql/data"
+      - '/Users/ddinghwan/data/postgres:/var/lib/postgresql/data'
     networks:
       - intra
 

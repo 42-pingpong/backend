@@ -1,29 +1,2 @@
-TZ=Asia/Seoul
-
-#42 OAuth
-NODE_ENV=development
-APIKEY42=
-REDIRECT42=http://localhost:10002/api/auth/42/redirect
-CLIENT42=
-COOKIE_SECRET=secret
-JWT_ACCESS_SECRET=secret
-JWT_REFRESH_SECRET=secret2
-
-RESTAPISERVER=http://localhost:10002/api
-STATUSSERVER=ws://localhost:10002/status
-GAMESERVER=ws://localhost:10002/game
-CHATSERVER=ws://localhost:10002/chat
-
-# Database env
 POSTGRES_PORT=5432
 POSTGRES_DBHOST=rdb
-POSTGRES_PASSWORD=0000
-POSTGRES_USER=pingpongdang
-POSTGRES_DB=pingpong
-
-REDIS_HOST=docdb
-REDIS_PORT=6379
-
-BULL_DATABASE=1
-
-NEST_PORT=10002

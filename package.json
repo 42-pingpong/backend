@@ -7,18 +7,18 @@
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "format": "prettier --write \"apps/**/*.ts\" \"libs/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "start:prod": "node dist/apps/backend/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "TZ=Asia/Seoul jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "TZ=Asia/Seoul jest --config ./test/jest-e2e.json --verbose --detectOpenHandles",
-    "seed": "jest --config ./test/jest-e2e.json --verbose --testRegex seed.e2e-spec.ts --detectOpenHandles --runInBand"
+    "test:e2e": "TZ=Asia/Seoul jest --config e2e/jest-e2e.json --verbose --detectOpenHandles",
+    "seed": "jest --config e2e/jest-e2e.json --verbose --testRegex seed.e2e-spec.ts --detectOpenHandles --runInBand"
   },
   "dependencies": {
     "@nestjs/axios": "^3.0.0",
@@ -96,10 +96,11 @@
       "json",
       "ts"
     ],
-    "rootDir": "src",
+    "rootDir": ".",
     "testRegex": ".*\\.spec\\.ts$",
     "moduleNameMapper": {
-      "^src/(.*)$": "<rootDir>/$1"
+      "^src/(.*)$": "<rootDir>/$1",
+      "^@app/common(|/.*)$": "<rootDir>/libs/common/src/$1"
     },
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
@@ -107,7 +108,11 @@
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "coverageDirectory": "./coverage",
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/apps/",
+      "<rootDir>/libs/"
+    ]
   }
 }
