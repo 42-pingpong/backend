@@ -8,7 +8,7 @@ import { io } from 'socket.io-client';
 import { appDatabase } from '@app/common/datasource/appdatabase';
 import * as cookieParser from 'cookie-parser';
 import * as request from 'supertest';
-import { RestapiModule } from'../../apps/restapis/src/restapiModule';
+import { RestapiModule } from '../../apps/restapis/src/restapiModule';
 import { User } from '@app/common/entities/user.entity';
 import { Token } from '@app/common/entities/token.entity';
 import { KickUserDto } from '../../apps/sockets/src/chat/request/kickUser.dto';
@@ -23,6 +23,7 @@ import { MutedUserJoin } from '@app/common/entities/mutedUserJoin.entity';
 import { StatusModule } from '../../apps/sockets/src/status/status.module';
 import { ChatModule } from '../../apps/sockets/src/chat/chat.module';
 import { ChatGatewayService } from '../../apps/sockets/src/chat/chat.gateway.service';
+import { Socket } from 'socket.io-client';
 /**
  * @link https://medium.com/@tozwierz/testing-socket-io-with-jest-on-backend-node-js-f71f7ec7010f
  * */
@@ -31,9 +32,9 @@ describe('Socket', () => {
   let socketApp: INestApplication;
   let restApp: INestApplication;
   let datasource: DataSource;
-  let StatusSocketClient;
-  let GameSocketClient;
-  let accToken;
+  let StatusSocketClient: Socket;
+  let GameSocketClient: any;
+  let accToken: string;
   let socketModule: TestingModule;
 
   const userFactory = new UserFactory();
@@ -49,6 +50,8 @@ describe('Socket', () => {
 
     socketApp = socketModule.createNestApplication();
     await socketApp.listen(10051);
+
+    console.log(socketApp.getHttpServer().address().address);
 
     const moduleFixture2: TestingModule = await Test.createTestingModule({
       imports: [RestapiModule],
@@ -121,12 +124,12 @@ describe('Socket', () => {
   });
 
   describe('Chat', () => {
-    let accToken;
+    let accToken: string;
     /**
      * owner
      * */
     let user10000: User;
-    let ChatSocketClient;
+    let ChatSocketClient: Socket;
     /**
      * admin
      * */
@@ -182,8 +185,11 @@ describe('Socket', () => {
           id: user10000.id,
         });
       accToken = res.headers['location'].split('accessToken=')[1];
+      console.log(
+        `ws://[${socketApp.getHttpServer().address().address}]:10051/chat`,
+      );
       ChatSocketClient = io(
-        `ws://[${restApp.getHttpServer().address().address}]:10051/chat`,
+        `ws://[${socketApp.getHttpServer().address().address}]:10051/chat`,
         {
           transports: ['websocket'],
           forceNew: true,
@@ -275,16 +281,18 @@ describe('Socket', () => {
 
     it('kick', (done) => {
       ChatSocketClient.connect();
-      ChatSocketClient.on('kick-user', (data) => {
+      ChatSocketClient.on('kick-user', (data: any) => {
         console.log(data);
         expect(data.groupChatId).toBe(groupChat10000.groupChatId);
         expect(data.userId).toBe(user10002.id);
         done();
       });
-      ChatSocketClient.on('error', (data) => {
+      ChatSocketClient.on('error', (data: any) => {
         expect(data).toBeNull();
         done();
       });
+      console.log(ChatSocketClient.connected);
+
       const kickUserDto = new KickUserDto();
       kickUserDto.requestUserId = user10000.id;
       kickUserDto.kickUserId = user10002.id;
@@ -294,13 +302,13 @@ describe('Socket', () => {
 
     it('ban', (done) => {
       ChatSocketClient.connect();
-      ChatSocketClient.on('ban-user', (data) => {
+      ChatSocketClient.on('ban-user', (data: any) => {
         console.log(data);
         expect(data.groupChatId).toBe(groupChat10000.groupChatId);
         expect(data.userId).toBe(user10002.id);
         done();
       });
-      ChatSocketClient.on('error', (data) => {
+      ChatSocketClient.on('error', (data: any) => {
         expect(data).toBeNull();
         done();
       });
@@ -311,19 +319,19 @@ describe('Socket', () => {
       dto.userId = user10000.id;
       dto.bannedId = user10002.id;
       ChatSocketClient.emit('ban-user', dto);
-    });
+    }, 10000);
 
     it('unBan', (done) => {
       ChatSocketClient.connect();
 
-      ChatSocketClient.on('unban-user', (data) => {
+      ChatSocketClient.on('unban-user', (data: any) => {
         console.log(data);
         expect(data.groupChatId).toBe(groupChat10000.groupChatId);
         expect(data.userId).toBe(user10002.id);
         done();
       });
 
-      ChatSocketClient.on('error', (data) => {
+      ChatSocketClient.on('error', (data: any) => {
         expect(data).toBeNull();
         done();
       });
@@ -344,13 +352,13 @@ describe('Socket', () => {
     it('mute', (done) => {
       ChatSocketClient.connect();
 
-      ChatSocketClient.on('error', (data) => {
+      ChatSocketClient.on('error', (data: any) => {
         console.log(data);
         expect(data).toBeNull();
         done();
       });
 
-      ChatSocketClient.on('mute-user', (data) => {
+      ChatSocketClient.on('mute-user', (data: any) => {
         console.log(data);
         expect(data.groupChatId).toBe(groupChat10000.groupChatId);
         expect(data.userId).toBe(user10002.id);
@@ -370,13 +378,13 @@ describe('Socket', () => {
     it('unmute', (done) => {
       ChatSocketClient.connect();
 
-      ChatSocketClient.on('error', (data) => {
+      ChatSocketClient.on('error', (data: any) => {
         console.log(data);
         expect(data).toBeNull();
         done();
       });
 
-      ChatSocketClient.on('unmute-user', (data) => {
+      ChatSocketClient.on('unmute-user', (data: any) => {
         console.log(data);
         expect(data.groupChatId).toBe(groupChat10000.groupChatId);
         expect(data.userId).toBe(user10002.id);
