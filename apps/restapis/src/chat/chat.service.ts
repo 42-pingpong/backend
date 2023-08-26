@@ -83,7 +83,7 @@ export class ChatService {
 
         const result = await manager.insert(GroupChat, createChatDto);
 
-        if (createChatDto.participants != undefined) {
+        if (createChatDto.participants.length > 0) {
           await manager
             .createQueryBuilder(GroupChat, 'groupChat')
             .relation('joinedUser')
@@ -209,6 +209,7 @@ export class ChatService {
             },
           });
 
+        console.log(groupChat);
         if (!groupChat) {
           throw new NotFoundException('그룹 채팅방이 존재하지 않습니다.');
         }
@@ -242,16 +243,25 @@ export class ChatService {
           throw new NotFoundException('user가 존재하지 않습니다.');
         }
 
-        const isOwner = groupChat.ownerId === dto.userId;
-        const isAdmin = groupChat.admin.find(
-          (admin) => admin.id === dto.userId,
-        );
-        const isJoined: User = groupChat.joinedUser.find(
-          (joinedUser) => joinedUser.id === dto.userId,
-        );
+        const alreadyJoined = await manager.getRepository(GroupChat).findOne({
+          where: [
+            {
+              groupChatId: groupChatId,
+              joinedUser: { id: dto.userId },
+            },
+            {
+              groupChatId: groupChatId,
+              admin: { id: dto.userId },
+            },
+            {
+              groupChatId: groupChatId,
+              ownerId: dto.userId,
+            },
+          ],
+        });
 
         //Owner/Admin/joineduser가 아닌 경우, Join
-        if (!isOwner && !isAdmin && !isJoined) {
+        if (!alreadyJoined) {
           // 그룹 채팅방의 최대 참여 인원 조회
           if (groupChat.curParticipants >= groupChat.maxParticipants) {
             throw new ForbiddenException();
