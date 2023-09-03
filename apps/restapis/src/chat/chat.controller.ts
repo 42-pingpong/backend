@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   Req,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBody,
@@ -42,6 +43,7 @@ import { GetMuteOffsetDto } from './request/getMuteOffset.dto';
 import { Request } from 'express';
 import { BanMuteList } from './response/BanMuteList.dto';
 import { MuteOffsetDto } from './response/MuteOffset.dto';
+import { AccessTokenGuard } from '@app/common';
 
 @ApiTags('chat')
 @Controller('chat')
@@ -309,7 +311,7 @@ export class ChatController {
     description: '그룹 채팅방의 id',
     example: 1,
   })
-  // @UseGuards(AccessTokenGuard)
+  @UseGuards(AccessTokenGuard)
   @Get('groupChat/:groupChatId/muteOffset')
   async getMuteOffset(
     @Req() req: Request,
@@ -320,5 +322,17 @@ export class ChatController {
     //   throw new ForbiddenException('권한이 없습니다.');
     // }
     return await this.chatService.getMuteOffset(+groupChatId, dto);
+  }
+
+  @Get('groupChat/:groupChatId/sendable')
+  @UseGuards(AccessTokenGuard)
+  async getSendable(
+    @Req() req: Request,
+    @Param('groupChatId') groupChatId: string,
+  ) {
+    return await this.chatService.getSendableGroupChatUserList(
+      +req.user.sub,
+      +groupChatId,
+    );
   }
 }
