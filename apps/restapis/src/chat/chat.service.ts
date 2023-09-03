@@ -83,7 +83,7 @@ export class ChatService {
 
         const result = await manager.insert(GroupChat, createChatDto);
 
-        if (createChatDto.participants != undefined) {
+        if (createChatDto.participants.length > 0) {
           await manager
             .createQueryBuilder(GroupChat, 'groupChat')
             .relation('joinedUser')
@@ -185,6 +185,27 @@ export class ChatService {
               curParticipants: true,
               maxParticipants: true,
               levelOfPublicity: true,
+              admin: {
+                id: true,
+                profile: true,
+                nickName: true,
+                status: true,
+                email: true,
+              },
+              joinedUser: {
+                id: true,
+                profile: true,
+                nickName: true,
+                status: true,
+                email: true,
+              },
+              owner: {
+                id: true,
+                profile: true,
+                nickName: true,
+                status: true,
+                email: true,
+              },
             },
           });
 
@@ -221,32 +242,13 @@ export class ChatService {
           throw new NotFoundException('user가 존재하지 않습니다.');
         }
 
-        const isOwner = await manager.getRepository(GroupChat).findOne({
-          where: {
-            groupChatId: groupChatId,
-            ownerId: dto.userId,
-          },
-        });
-
-        const isAdmin = await manager.getRepository(GroupChat).findOne({
-          where: {
-            groupChatId: groupChatId,
-            admin: { id: dto.userId },
-          },
-          relations: {
-            admin: true,
-          },
-        });
-
-        const isJoined = await manager.getRepository(GroupChat).findOne({
-          where: {
-            groupChatId: groupChatId,
-            joinedUser: { id: dto.userId },
-          },
-          relations: {
-            joinedUser: true,
-          },
-        });
+        const isOwner = groupChat.ownerId === dto.userId;
+        const isAdmin = groupChat.admin.find(
+          (admin) => admin.id === dto.userId,
+        );
+        const isJoined: User = groupChat.joinedUser.find(
+          (joinedUser) => joinedUser.id === dto.userId,
+        );
 
         //Owner/Admin/joineduser가 아닌 경우, Join
         if (!isOwner && !isAdmin && !isJoined) {

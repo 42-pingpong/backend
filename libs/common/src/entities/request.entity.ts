@@ -10,10 +10,10 @@ import {
 import { User } from './user.entity';
 
 export enum RequestType {
-  FRIEND = 'F',
-  GAME = 'G',
-  DMCHAT = 'D',
-  GROUPCHAT = 'C',
+  FRIEND = 'F', // 친구 알림
+  GAME = 'G', // 게임 초대 요청
+  DMCHAT = 'D', // DM 채팅 알림
+  GROUPCHAT = 'C', // 그룹 채팅 알림
 }
 
 export enum AlarmStatus {
