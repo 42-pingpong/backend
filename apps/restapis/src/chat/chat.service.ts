@@ -11,7 +11,7 @@ import { MessageInfo } from '@app/common/entities/messageInfo.entity';
 import { GroupChatMessage } from '@app/common/entities/groupChatMessage.entity';
 import { DirectMessage } from '@app/common/entities/directMessage.entity';
 import { BlockUserList } from '@app/common/entities/blockUserList.entity';
-import { EntityManager, Repository } from 'typeorm';
+import { EntityManager, Equal, In, IsNull, Not, Repository } from 'typeorm';
 import { CreateGroupChatDto } from './dto/create-group-chat.dto';
 import { UpdateGroupChatDto } from './dto/update-group-chat.dto';
 import { AddAdminDto } from './dto/add-admin.dto';
@@ -33,6 +33,7 @@ import { KickUserDto } from './request/kickUser.dto';
 import * as bcrypt from 'bcrypt';
 import { GetBanMuteListDto } from './request/getBanMuteList.dto';
 import { GetMuteOffsetDto } from './request/getMuteOffset.dto';
+import { NotContains } from 'class-validator';
 
 @Injectable()
 export class ChatService {
@@ -496,9 +497,6 @@ export class ChatService {
     });
   }
 
-  /**
-   * @todo : mute/ban 기능 추가
-   * */
   async sendGroupMessage(messageDto: GroupChatMessageDto) {
     return await this.groupChatRepository.manager.transaction(
       async (manager: EntityManager) => {
@@ -527,6 +525,30 @@ export class ChatService {
           throw new NotFoundException('유저/그룹 채팅방이 존재하지 않습니다.');
         }
 
+        //user가 muted/banned인지 검증
+        const isMuted = await manager.getRepository(MutedUserJoin).findOne({
+          where: {
+            mutedUserId: messageDto.senderId,
+            mutedGroupId: messageDto.receivedGroupChatId,
+          },
+        });
+        if (isMuted) {
+          throw new ForbiddenException('뮤트된 유저입니다.');
+        }
+
+        const isBanned = await manager.getRepository(GroupChat).findOne({
+          where: {
+            groupChatId: messageDto.receivedGroupChatId,
+            bannedUsers: { id: messageDto.senderId },
+          },
+          relations: {
+            bannedUsers: true,
+          },
+        });
+        if (isBanned) {
+          throw new ForbiddenException('차단된 유저입니다.');
+        }
+
         //2. 그룹 채팅방에 메세지 저장
         const newMessageInfo = await manager.getRepository(MessageInfo).insert({
           message: messageDto.message,
@@ -538,7 +560,7 @@ export class ChatService {
           receivedGroupChatId: messageDto.receivedGroupChatId,
         });
 
-        //3. Request를 저장.
+        //3. Request를 저장. @TODO
         return await manager.getRepository(GroupChatMessage).findOne({
           relations: {
             messageInfo: {
@@ -1142,6 +1164,51 @@ export class ChatService {
           groupChatId: groupChatId,
           muteFor: muteFor,
         };
+      },
+    );
+  }
+
+  /**
+   * @description groupchat에서 user가 메세지를 보낼 수 있는 유저 리스트를 반환하는 함수
+   * */
+  async getSendableGroupChatUserList(userId: number, groupChatId: number) {
+    return this.groupChatRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        //userId가 block이 아닌 groupchat의 owner/admin/joinedUser를 반환
+        return await manager.getRepository(User).find({
+          where: [
+            {
+              adminingGroupChats: { groupChatId: groupChatId },
+              blockList: [
+                { blockedUserId: Not(userId) },
+                { blockedUserId: IsNull() },
+              ],
+            },
+            {
+              groupChats: { groupChatId: groupChatId },
+              blockList: [
+                { blockedUserId: Not(userId) },
+                { blockedUserId: IsNull() },
+              ],
+            },
+            {
+              joinedGroupChats: { groupChatId: groupChatId },
+              blockList: [
+                { blockedUserId: Not(userId) },
+                { blockedUserId: IsNull() },
+              ],
+            },
+          ],
+          select: {
+            chatSocketId: true,
+            id: true,
+            nickName: true,
+            profile: true,
+          },
+          relations: {
+            blockList: true,
+          },
+        });
       },
     );
   }

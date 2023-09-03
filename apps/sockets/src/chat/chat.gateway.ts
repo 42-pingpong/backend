@@ -28,6 +28,8 @@ import { KickUserResponseDto } from './restApiResponse/kickUserResponse.dto';
 import { BanUserResponseDto } from './restApiResponse/banUserResponse.dto';
 import { UnBanUserResponseDto } from './restApiResponse/unBanUserResponse.dto';
 import { goPingPongDto } from './request/goPingPong.dto';
+import { SendableGroupchatUserList } from './restApiResponse/sendableUserList.dto';
+import { User } from '@app/common';
 
 /**
  * @brief chat gateway
@@ -157,7 +159,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
    * */
   @SubscribeMessage('group-message')
   async handleMessage(client: Socket, dto: GroupChatMessageDto) {
-    //TODO: 로그인 하지 않은 사용자는 메시지를 어떻게 처리할 것인가?
     const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
     if (userId === null) return;
 
@@ -168,17 +169,23 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           dto,
           client.handshake.auth.token,
         );
-      //sender를 제외한 room의 모든 client에게 메시지를 전달한다.
-      // 2. block/mute 처리된 사용자의 메세지는 전달되면 안됨.
-      // block은 joined-user간 서로에게 메시지를 전달하지 않는다.
-      // mute는 joined-user에게 메시지를 전달하지 않는다.
-      // groupChatId의 joined-user-list를 가져와서, 해당 사용자가 block/mute 처리된 사용자인지 확인한다.
-      client
-        .to(responseBody.receivedGroupChatId.toString())
-        .emit('group-message', responseBody);
 
-      //sender에게도 메시지 전달
-      client.emit('group-message', responseBody);
+      const sendableUserList: User[] =
+        await this.chatGatewayService.getSendableGroupchatUserList(
+          dto,
+          client.handshake.auth.token,
+        );
+
+      for (const user of sendableUserList) {
+        if (user.chatSocketId) {
+          this.server.to(user.chatSocketId).emit('group-message', responseBody);
+        } else {
+          /**
+           * @TODO client 연결 안되어있을때, request에 추가하기
+           * */
+          this.server.of('status').emit('group-message-alarm', responseBody);
+        }
+      }
     } catch (e) {
       client.emit('error', e.message);
     }
