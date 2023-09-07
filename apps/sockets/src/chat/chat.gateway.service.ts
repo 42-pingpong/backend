@@ -123,6 +123,28 @@ export class ChatGatewayService {
         },
       },
     );
+    if (res.status != 201) {
+      throw new Error('Failed to send message');
+    }
+    return res.data;
+  }
+
+  async getSendableGroupchatUserList(
+    dto: GroupChatMessageDto,
+    bearerToken: string,
+  ) {
+    const res = await axios.get(
+      `${this.restApiUrl}/chat/groupChat/${dto.receivedGroupChatId}/sendable`,
+      {
+        headers: {
+          Authorization: bearerToken,
+        },
+      },
+    );
+    console.log(res);
+    if (res.status != 200) {
+      throw new Error('Failed to get list');
+    }
     return res.data;
   }
 
@@ -263,4 +285,6 @@ export class ChatGatewayService {
     );
     return res.data;
   }
+
+  async getSendableGroupChatList(groupChatId: number, bearerToken: string) {}
 }

@@ -1,6 +1,6 @@
 import { DynamicModule, Global, Module } from '@nestjs/common';
-import { AuthModule } from './auth/auth.module';
-import { FakeauthModule } from './fakeauth/fakeauth.module';
+import { AuthModule } from './auth.module';
+import { FakeauthModule } from '../fakeauth/fakeauth.module';
 
 @Global()
 @Module({})

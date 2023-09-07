@@ -2,6 +2,7 @@ version: '3.1'
 
 services:
   restapis:
+    container_name: restapis
     build:
       context: .
       dockerfile: apps/restapis/Dockerfile
@@ -20,6 +21,7 @@ services:
       - intra
 
   sockets:
+    container_name: sockets
     build:
       context: .
       dockerfile: apps/sockets/Dockerfile
