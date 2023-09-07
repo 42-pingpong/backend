@@ -122,12 +122,22 @@ export class ChatService {
   async getGroupChat(groupChatId: number) {
     return await this.groupChatRepository.findOne({
       where: { groupChatId: groupChatId },
-      select: [
-        'chatName',
-        'levelOfPublicity',
-        'maxParticipants',
-        'curParticipants',
-      ],
+      select: {
+        groupChatId: true,
+        chatName: true,
+        levelOfPublicity: true,
+        maxParticipants: true,
+        curParticipants: true,
+      },
+      relations: {
+        owner: true,
+        bannedUsers: true,
+        mutedUsers: {
+          mutedUser: true,
+        },
+        joinedUser: true,
+        admin: true,
+      },
     });
   }
 
@@ -248,6 +258,8 @@ export class ChatService {
             joinedUser: true,
           },
         });
+
+        console.log(isOwner, isAdmin, isJoined);
 
         //Owner/Admin/joineduser가 아닌 경우, Join
         if (!isOwner && !isAdmin && !isJoined) {
@@ -866,6 +878,7 @@ export class ChatService {
   async unMute(dto: UnMuteRequestDto, groupChatId: number) {
     return await this.groupChatRepository.manager.transaction(
       async (manager: EntityManager) => {
+        console.log(dto);
         //1. Owner/Admin 이 그룹 채팅방에 존재하는 지 확인
         const isAdminOrOwner = await manager.getRepository(GroupChat).findOne({
           where: [
@@ -884,6 +897,7 @@ export class ChatService {
             admin: true,
           },
         });
+        console.log(isAdminOrOwner);
         if (!isAdminOrOwner) {
           throw new ForbiddenException('admin/owner가 아닙니다.');
         }
@@ -902,6 +916,7 @@ export class ChatService {
             chatSocketId: true,
           },
         });
+
         return {
           groupChatId: groupChatId,
           userId: user.id,

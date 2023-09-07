@@ -29,7 +29,7 @@ import { AppConfigModule } from '@app/common/config/app.config';
         entities: configService.get<any[]>('database.entities'),
         // synchronize: true,
         synchronize: configService.get<boolean>('database.synchronize'), //for development
-        dropSchema: true, //for development
+        dropSchema: false, //for development
         logging: configService.get('database.logging'),
       }),
       dataSourceFactory: async (options) => {

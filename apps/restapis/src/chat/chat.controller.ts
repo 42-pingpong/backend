@@ -245,7 +245,8 @@ export class ChatController {
     @Body() body: UnMuteRequestDto,
   ) {
     // 그룹 채팅방에서 유저를 뮤트해제하는 메서드
-    return await this.chatService.unMute(body, +groupChatId);
+    const res = await this.chatService.unMute(body, +groupChatId);
+    return res;
   }
 
   @ApiOperation({

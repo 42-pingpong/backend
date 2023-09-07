@@ -352,6 +352,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('unmute-user')
   async unmuteUser(client: Socket, dto: UnmuteUserDto) {
+    console.log('unmute-user');
     try {
       const unmutedUser: UnMuteUserResponseDto =
         await this.chatGatewayService.unMuteUser(
@@ -363,6 +364,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         .to(dto.groupChatId.toString())
         .emit('unmute-user', unmutedUser);
     } catch (e) {
+      console.log(e);
       client.emit('error', e.message);
     }
   }

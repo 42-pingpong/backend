@@ -283,6 +283,8 @@ export class ChatGatewayService {
         },
       },
     );
+    console.log('unmute');
+    console.log(res);
     return res.data;
   }
 

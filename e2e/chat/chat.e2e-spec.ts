@@ -169,6 +169,7 @@ describe('Chat', () => {
       const response2 = await request(app.getHttpServer()).get(
         `/chat/groupChat/${response.body.groupChatId}`,
       );
+      console.log(response2);
 
       expect(response2.status).toBe(200);
 
