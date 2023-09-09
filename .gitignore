@@ -85,6 +85,9 @@ web_modules/
 .env.test.local
 .env.production.local
 .env.local
+.env.dev
+apps/sockets/.env.dev
+apps/restapis/.env.dev
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
