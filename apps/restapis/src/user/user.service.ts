@@ -23,6 +23,7 @@ import {
 import { RequestAcceptDto } from './dto/request-accept.dto';
 import { RequestRejectDto } from './dto/request-reject.dto';
 import { GetAlarmResponseDto } from './response/get-alarm.response';
+import { BlockUserList } from '@app/common';
 
 @Injectable()
 export class UserService {
@@ -38,6 +39,9 @@ export class UserService {
 
     @InjectRepository(Request)
     private requestRepository: Repository<Request>,
+
+    @InjectRepository(BlockUserList)
+    private blockUserListRepository: Repository<BlockUserList>,
   ) {}
   private addPastTime(alarm: GetAlarmResponseDto) {
     const curTime = new Date();
@@ -383,5 +387,20 @@ export class UserService {
       },
       { isAlarmed: AlarmStatus.ALARMED },
     );
+  }
+
+  async getBlockedUsers(userId: number) {
+    return await this.userRepository.find({
+      where: {
+        blockedList: {
+          userId: userId,
+        },
+      },
+      select: {
+        id: true,
+        nickName: true,
+        profile: true,
+      },
+    });
   }
 }
