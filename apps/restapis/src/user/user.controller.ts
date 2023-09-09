@@ -8,10 +8,12 @@ import {
   UseGuards,
   Post,
   Query,
+  BadRequestException,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiConflictResponse,
   ApiCreatedResponse,
@@ -207,5 +209,16 @@ export class UserController {
   @Patch('/alarms/:userId')
   async checkAlarms(@Param('userId') userId: string) {
     return await this.userService.checkAlarmsOfUser(+userId);
+  }
+
+  @ApiOperation({
+    summary: '유저의 모든 차단 유저 조회',
+  })
+  @ApiBearerAuth('access-token')
+  @Get('/me/blockedUser/:id')
+  @UseGuards(AccessTokenGuard)
+  async getBlockedUsers(@Req() req: Request, @Param('id') id: string) {
+    if (+req.user.sub !== +id) throw new BadRequestException('invalid user');
+    return await this.userService.getBlockedUsers(+req.user.sub);
   }
 }

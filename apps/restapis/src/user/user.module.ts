@@ -9,12 +9,19 @@ import { AppConfigModule } from '@app/common/config/app.config';
 import { FriendsWith } from '@app/common/entities/friendsWith.entity';
 import { Request } from '@app/common/entities/request.entity';
 import { AccessTokenGuard } from '@app/common/guards/accessToken.guard';
+import { BlockUserList } from '@app/common';
 
 @Module({
   imports: [
     AppConfigModule,
     appDatabase,
-    TypeOrmModule.forFeature([User, Token, FriendsWith, Request]),
+    TypeOrmModule.forFeature([
+      User,
+      Token,
+      FriendsWith,
+      Request,
+      BlockUserList,
+    ]),
   ],
   controllers: [UserController],
   providers: [UserService, AccessTokenGuard],
