@@ -34,6 +34,7 @@ import * as bcrypt from 'bcrypt';
 import { GetBanMuteListDto } from './request/getBanMuteList.dto';
 import { GetMuteOffsetDto } from './request/getMuteOffset.dto';
 import { NotContains } from 'class-validator';
+import { Raw } from 'typeorm/browser';
 
 @Injectable()
 export class ChatService {
@@ -720,34 +721,28 @@ export class ChatService {
   async getGroupChatMessages(dto: GetGroupMessageDto) {
     return await this.groupChatRepository.manager.transaction(
       async (manager: EntityManager) => {
-        return await manager.getRepository(GroupChatMessage).find({
-          where: {
-            receivedGroupChatId: dto.groupChatId,
-          },
-          relations: {
-            messageInfo: {
-              sender: true,
-            },
-          },
-          select: {
-            groupChatMessageId: true,
-            receivedGroupChatId: true,
-            messageInfo: {
-              sender: {
-                id: true,
-                nickName: true,
-                profile: true,
-              },
-              createdAt: true,
-              message: true,
-            },
-          },
-          order: {
-            messageInfo: {
-              createdAt: 'ASC',
-            },
-          },
-        });
+        const subQuery = manager
+          .createQueryBuilder(BlockUserList, 'blockUserList2')
+          .select('blockUserList2.blockedUserId')
+          .where(`blockUserList2.userId = ${dto.userId}`);
+
+        return await manager
+          .createQueryBuilder(GroupChatMessage, 'groupChat')
+          .leftJoinAndSelect('groupChat.messageInfo', 'messageInfo')
+          .leftJoinAndSelect('messageInfo.sender', 'sender')
+          .select('groupChat.groupChatMessageId')
+          .addSelect('groupChat.receivedGroupChatId')
+          .addSelect('sender.id')
+          .addSelect('sender.nickName')
+          .addSelect('sender.profile')
+          .addSelect('messageInfo.createdAt')
+          .addSelect('messageInfo.message')
+          .orderBy('messageInfo.createdAt', 'ASC')
+          .where(
+            `groupChat.receivedGroupChatId = ${dto.groupChatId} AND
+                messageInfo.senderId NOT IN (${subQuery.getQuery()})`,
+          )
+          .getMany();
       },
     );
   }
