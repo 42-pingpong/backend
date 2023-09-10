@@ -197,11 +197,15 @@ export class ChatGatewayService {
   }
 
   async unBlockUser(dto: UnblockUserDto, bearerToken: string) {
-    await axios.post(`${this.restApiUrl}/chat/unBlock`, dto, {
+    await axios.delete(`${this.restApiUrl}/chat/unBlock`, {
+      data: {
+        userId: dto.userId,
+        unBlockedUserId: dto.unBlockedUserId,
+      },
       headers: {
         Authorization: bearerToken,
-      },
-    });
+
+    }});
   }
 
   async kickUser(dto: KickUserDto, bearerToken: string) {
