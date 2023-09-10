@@ -148,6 +148,8 @@ export class GameGateway
         player1NickName,
         player2NickName,
       );
+      playerList[idx].socket.emit('user-id', playerList[enemyIdx].id);
+      playerList[enemyIdx].socket.emit('user-id', playerList[idx].id);
       console.log('player1NickName', player1NickName);
       console.log('player2NickName', player2NickName);
     }
@@ -362,6 +364,8 @@ export class GameGateway
         'player-number',
         playerList[enemyIdx].play_number,
       );
+      playerList[idx].socket.emit('user-id', playerList[enemyIdx].id);
+      playerList[enemyIdx].socket.emit('user-id', playerList[idx].id);
     }
   }
 }
