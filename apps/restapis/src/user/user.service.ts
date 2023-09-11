@@ -43,19 +43,21 @@ export class UserService {
     @InjectRepository(BlockUserList)
     private blockUserListRepository: Repository<BlockUserList>,
   ) {}
+
   private addPastTime(alarm: GetAlarmResponseDto) {
     const curTime = new Date();
     const diff = curTime.getTime() - alarm.createdAt.getTime();
     const diffSec = Math.floor(diff / 1000);
     if (diffSec < 60) {
-      alarm.pastTime = `${diffSec}초 전`;
+      alarm['pastTime'] = `${diffSec}초 전`;
     } else if (diffSec < 3600) {
-      alarm.pastTime = `${Math.floor(diffSec / 60)}분 전`;
+      alarm['pastTime'] = `${Math.floor(diffSec / 60)}분 전`;
     } else if (diffSec < 86400) {
-      alarm.pastTime = `${Math.floor(diffSec / 3600)}시간 전`;
+      alarm['pastTime'] = `${Math.floor(diffSec / 3600)}시간 전`;
     } else {
-      alarm.pastTime = `${Math.floor(diffSec / 86400)}일 전`;
+      alarm['pastTime'] = `${Math.floor(diffSec / 86400)}일 전`;
     }
+    return alarm;
   }
 
   async getNickname(id: number) {
@@ -339,8 +341,7 @@ export class UserService {
             isAlarmed: true,
           },
         });
-        this.addPastTime(res);
-        return res;
+        return this.addPastTime(res);
       },
     );
   }
@@ -377,7 +378,7 @@ export class UserService {
     });
 
     //알람 시간 계산
-    return res.map(this.addPastTime);
+    return res.map((item) => this.addPastTime(item));
   }
 
   async checkAlarmsOfUser(id: number) {
