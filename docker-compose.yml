@@ -19,6 +19,12 @@ services:
       - rdb
     networks:
       - intra
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://restapis:10002/api"]
+      interval: "5s"
+      timeout: "1s"
+      retries: 20
+      start_period: "10s"
 
   sockets:
     container_name: sockets
@@ -34,9 +40,12 @@ services:
     ports:
       - '10001:10001'
     depends_on:
-      - docdb
-      - rdb
-      - restapis
+      docdb:
+        condition: service_started
+      rdb:
+        condition: service_started
+      restapis:
+        condition: service_healthy
     networks:
       - intra
 
