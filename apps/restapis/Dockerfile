@@ -2,7 +2,7 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-RUN apk add --no-cache dumb-init tzdata && \
+RUN apk add --no-cache dumb-init tzdata curl && \
 	cp /usr/share/zoneinfo/Asia/Seoul /etc/localtime && \
     echo "Asia/Seoul" > /etc/timezone
 
