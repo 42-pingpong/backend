@@ -36,6 +36,7 @@ services:
     depends_on:
       - docdb
       - rdb
+      - restapis
     networks:
       - intra
 
