@@ -33,8 +33,7 @@ import { KickUserDto } from './request/kickUser.dto';
 import * as bcrypt from 'bcrypt';
 import { GetBanMuteListDto } from './request/getBanMuteList.dto';
 import { GetMuteOffsetDto } from './request/getMuteOffset.dto';
-import { NotContains } from 'class-validator';
-import { Raw } from 'typeorm/browser';
+import { BcryptService } from '../bcrypt/bcrypt.service';
 
 @Injectable()
 export class ChatService {
@@ -44,6 +43,8 @@ export class ChatService {
 
     @InjectRepository(BlockUserList)
     private readonly blockUserListRepository: Repository<BlockUserList>,
+
+    private readonly bcryptService: BcryptService,
   ) {}
 
   async getGroupChatList() {
@@ -74,13 +75,9 @@ export class ChatService {
         }
 
         if (createChatDto.password) {
-          const salt = await bcrypt.genSalt(10);
-          const hashedPassword = await bcrypt.hash(
+          createChatDto.password = await this.bcryptService.hashPassword(
             createChatDto.password,
-            salt,
           );
-
-          createChatDto.password = hashedPassword;
         }
 
         const result = await manager.insert(GroupChat, createChatDto);
@@ -170,6 +167,12 @@ export class ChatService {
           curGroupChat.curParticipants >= updateGroupChatDto.maxParticipants
         ) {
           throw new ForbiddenException();
+        }
+
+        if (updateGroupChatDto.password) {
+          updateGroupChatDto.password = await this.bcryptService.hashPassword(
+            updateGroupChatDto.password,
+          );
         }
 
         await manager.update(GroupChat, groupChatId, updateGroupChatDto);
