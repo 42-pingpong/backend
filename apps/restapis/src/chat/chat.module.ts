@@ -9,6 +9,7 @@ import { GroupChatMessage } from '@app/common/entities/groupChatMessage.entity';
 import { MessageInfo } from '@app/common/entities/messageInfo.entity';
 import { BlockUserList } from '@app/common/entities/blockUserList.entity';
 import { MutedUserJoin } from '@app/common/entities/mutedUserJoin.entity';
+import { BcryptModule } from '../bcrypt/bcrypt.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { MutedUserJoin } from '@app/common/entities/mutedUserJoin.entity';
       BlockUserList,
       MutedUserJoin,
     ]),
+    BcryptModule,
   ],
   controllers: [ChatController],
   providers: [ChatService],
