@@ -14,8 +14,8 @@ import { CreateGameDto } from './request/create-game.dto';
 import e from 'express';
 
 
-const waitListNormal: PlayerInfo[] = [];
-const waitListHard: PlayerInfo[] = [];
+const normalWaitList: PlayerInfo[] = [];
+const hardWaitList: PlayerInfo[] = [];
 const playerList: PlayerInfo[] = [];
 
 @WebSocketGateway({
@@ -53,24 +53,20 @@ export class GameGateway
     );
   }
 
-  // game 버튼 클릭시 실행
-  // 이거 ... 모드따라 걍 나눌지 고민중
-  @SubscribeMessage('enter-queue')
-  async handleLogin(client: Socket, payload: any) {
+  // 게임 매칭 요청시 실행
+  @SubscribeMessage('normal-matching')
+  async handleNormalMatching(client: Socket, payload: any) {
     const id = payload[0];
     const mode = payload[1];
 
     // 게임을 찾다가 게임찾기 취소
-    if (mode === "NORMAL" && waitListNormal.length && waitListNormal[0].socket === client) {
-      waitListNormal.shift(); // 대기열 맨 앞의 요소 제거 (게임 찾기 취소)
+    if (normalWaitList.length && normalWaitList[0].socket === client) {
+      normalWaitList.shift(); // 대기열 맨 앞의 요소 제거 (게임 찾기 취소)
       return;
-    } else if (mode === "HARD" && waitListHard.length && waitListHard[0].socket === client) {
-      waitListHard.shift(); // 대기열 맨 앞의 요소 제거 (게임 찾기 취소)
-      return;
-    }
+    } 
 
-    if (mode === "NORMAL" && waitListNormal.length === 0) {
-      waitListNormal.push({
+    if (normalWaitList.length === 0) {
+      normalWaitList.push({
         socket: client,
         id: id,
         token: client.handshake.auth.token,
@@ -79,76 +75,100 @@ export class GameGateway
       });
       return;
     }
-    if (mode === "HARD" && waitListHard.length === 0) {
-      waitListHard.push({
-        socket: client,
-        id: id,
-        token: client.handshake.auth.token,
-        is_host: true,
-        gameMode: 'HARD',
-      });
-      return;
-    }
 
-    if (mode === 'NORMAL') {
-      waitListNormal.push({
+      normalWaitList.push({
         socket: client,
         id: id,
         token: client.handshake.auth.token,
         is_host: false,
         gameMode: 'NORMAL',
       });
-    }
-
-    if (mode === 'HARD') {
-      waitListHard.push({
-        socket: client,
-        id: id,
-        token: client.handshake.auth.token,
-        is_host: false,
-        gameMode: 'HARD',
-      });
-    }
 
     // 대기열에 2명이 모이면 방을 만듬
-    if (mode === 'NORMAL' && waitListNormal.length === 2) {
+    if (normalWaitList.length === 2) {
       const gameInfo: CreateGameDto = {};
       // host의 token을 setGame으로 넘김
       const game = await this.gameGatewayService.setGame(
-        waitListNormal[0].token,
+        normalWaitList[0].token,
         gameInfo,
       );
 
-      waitListNormal.forEach((player, index) => {
+      normalWaitList.forEach((player, index) => {
         player.roomId = game.gameId;
         player.play_number = index + 1;
-        player.enemy_id = waitListNormal[1 - index].id;
+        player.enemy_id = normalWaitList[1 - index].id;
         player.socket.join(game.gameId.toString()); // 방에 입장
         playerList.push(player); // 플레이어 목록에 추가
       });
 
       // 대기열에서 제거
-      waitListNormal.splice(0, 2);
+      normalWaitList.splice(0, 2);
     }
 
-    if (mode === 'HARD' && waitListHard.length === 2) {
+    const idx = playerList.findIndex((player) => player.socket === client);
+    const enemyIdx = playerList.findIndex(
+      (player) => player.id === playerList[idx].enemy_id,
+    );
+
+    if (idx === -1 || enemyIdx === -1) {
+      console.log('idx === -1 || enemyIdx === -1');
+      return;
+    }
+    // 플레이어 목록에 있는 플레이어들에게 방 입장을 알림
+    playerList[enemyIdx].socket.emit('join', playerList[enemyIdx].roomId);
+    playerList[idx].socket.emit('join', playerList[enemyIdx].roomId);
+
+    // 플레이어들에게 플레이어 번호를 알림
+    playerList[enemyIdx].socket.emit('player-number', 1);
+    playerList[idx].socket.emit('player-number', 2);
+  }
+
+  @SubscribeMessage('hard-matching')
+  async handleHardMatching(client: Socket, id: number) {
+
+    // 게임을 찾다가 게임찾기 취소
+    if (hardWaitList.length && hardWaitList[0].socket === client) {
+      hardWaitList.shift(); // 대기열 맨 앞의 요소 제거 (게임 찾기 취소)
+      return;
+    }
+
+    if (hardWaitList.length === 0) {
+      hardWaitList.push({
+        socket: client,
+        id: id,
+        token: client.handshake.auth.token,
+        is_host: true,
+        gameMode: 'HARD',
+      });
+      return;
+    }
+
+      hardWaitList.push({
+        socket: client,
+        id: id,
+        token: client.handshake.auth.token,
+        is_host: false,
+        gameMode: 'HARD',
+      });
+    
+    if (hardWaitList.length === 2) {
       const gameInfo: CreateGameDto = {};
       // host의 token을 setGame으로 넘김
       const game = await this.gameGatewayService.setGame(
-        waitListHard[0].token,
+        hardWaitList[0].token,
         gameInfo,
       );
 
-      waitListHard.forEach((player, index) => {
+      hardWaitList.forEach((player, index) => {
         player.roomId = game.gameId;
         player.play_number = index + 1;
-        player.enemy_id = waitListHard[1 - index].id;
+        player.enemy_id = hardWaitList[1 - index].id;
         player.socket.join(game.gameId.toString()); // 방에 입장
         playerList.push(player); // 플레이어 목록에 추가
       });
 
       // 대기열에서 제거
-      waitListHard.splice(0, 2);
+      hardWaitList.splice(0, 2);
     }
 
     const idx = playerList.findIndex((player) => player.socket === client);
