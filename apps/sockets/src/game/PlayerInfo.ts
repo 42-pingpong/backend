@@ -9,5 +9,6 @@ export interface PlayerInfo {
   play_number?: number;
   enemy_id?: number;
   ready_status?: boolean;
-  gameMode: string;
+  // go-pingpong 의 경우엔 이걸 나눌 수 없기땜시룽 ...
+  gameMode?: string;
 }

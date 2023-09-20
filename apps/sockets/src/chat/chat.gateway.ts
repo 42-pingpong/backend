@@ -371,7 +371,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('go-pingpong')
   goPingPong(client: any, dto: goPingPongDto) {
-    console.log(dto);
     this.server.to(dto.groupChatId.toString()).emit('go-pingpong', dto);
   }
 

@@ -11,8 +11,6 @@ import { GameGatewayService } from './game.gateway.servcie';
 import { CreateGameScoreRequestDto } from './request/create-game-score.dto';
 import { PlayerInfo } from './PlayerInfo';
 import { CreateGameDto } from './request/create-game.dto';
-import e from 'express';
-
 
 const normalWaitList: PlayerInfo[] = [];
 const hardWaitList: PlayerInfo[] = [];
@@ -55,9 +53,7 @@ export class GameGateway
 
   // 게임 매칭 요청시 실행
   @SubscribeMessage('normal-matching')
-  async handleNormalMatching(client: Socket, payload: any) {
-    const id = payload[0];
-    const mode = payload[1];
+  async handleNormalMatching(client: Socket, id: number) {
 
     // 게임을 찾다가 게임찾기 취소
     if (normalWaitList.length && normalWaitList[0].socket === client) {
@@ -192,11 +188,12 @@ export class GameGateway
   // 방에 입장시 실행
   @SubscribeMessage('join')
   async handleJoin(client: any) {
-    console.log('방 입장~~~');
     const idx = playerList.findIndex((player) => player.socket === client);
     const enemyIdx = playerList.findIndex(
       (player) => player.id === playerList[idx].enemy_id,
     );
+
+    console.log(playerList);
 
     if (idx !== -1 && enemyIdx !== -1 && playerList[idx].is_host) {
       const [player1NickName, player2NickName] = await Promise.all([
@@ -209,6 +206,7 @@ export class GameGateway
           playerList[enemyIdx].token,
         ),
       ]);
+
 
       // 플레이어들에게 닉네임을 알림
       playerList[idx].socket.emit(
@@ -390,12 +388,13 @@ export class GameGateway
 
   @SubscribeMessage('go-pingpong')
   async handleGoPingpongEnter(client: Socket, payload: any) {
-    console.log('payload', payload);
+    console.log('go-pingpong payload', payload);
 
     const isHost = payload[1];
     const userId = isHost ? payload[0].userId : payload[0].targetUserId;
     const targetUserId = isHost ? payload[0].targetUserId : payload[0].userId;
     const playNumber = payload[2];
+    const gameMode = payload[3];
 
     playerList.push({
       socket: client,
@@ -404,6 +403,7 @@ export class GameGateway
       is_host: isHost,
       play_number: playNumber,
       enemy_id: targetUserId,
+      gameMode: gameMode,
     });
 
     if (playerList.length % 2 === 0) {
@@ -440,6 +440,7 @@ export class GameGateway
       );
       playerList[idx].socket.emit('user-id', playerList[enemyIdx].id);
       playerList[enemyIdx].socket.emit('user-id', playerList[idx].id);
+
     }
   }
 }
