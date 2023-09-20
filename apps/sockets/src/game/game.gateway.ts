@@ -13,7 +13,9 @@ import { PlayerInfo } from './PlayerInfo';
 import { CreateGameDto } from './request/create-game.dto';
 import e from 'express';
 
-const waitList: PlayerInfo[] = [];
+
+const waitListNormal: PlayerInfo[] = [];
+const waitListHard: PlayerInfo[] = [];
 const playerList: PlayerInfo[] = [];
 
 @WebSocketGateway({
@@ -52,50 +54,101 @@ export class GameGateway
   }
 
   // game 버튼 클릭시 실행
+  // 이거 ... 모드따라 걍 나눌지 고민중
   @SubscribeMessage('enter-queue')
-  async handleLogin(client: Socket, id: number) {
+  async handleLogin(client: Socket, payload: any) {
+    const id = payload[0];
+    const mode = payload[1];
+
     // 게임을 찾다가 게임찾기 취소
-    if (waitList.length && waitList[0].socket === client) {
-      waitList.shift(); // 대기열 맨 앞의 요소 제거 (게임 찾기 취소)
+    if (mode === "NORMAL" && waitListNormal.length && waitListNormal[0].socket === client) {
+      waitListNormal.shift(); // 대기열 맨 앞의 요소 제거 (게임 찾기 취소)
+      return;
+    } else if (mode === "HARD" && waitListHard.length && waitListHard[0].socket === client) {
+      waitListHard.shift(); // 대기열 맨 앞의 요소 제거 (게임 찾기 취소)
       return;
     }
 
-    if (waitList.length === 0) {
-      waitList.push({
+    if (mode === "NORMAL" && waitListNormal.length === 0) {
+      waitListNormal.push({
         socket: client,
         id: id,
         token: client.handshake.auth.token,
         is_host: true,
+        gameMode: 'NORMAL',
+      });
+      return;
+    }
+    if (mode === "HARD" && waitListHard.length === 0) {
+      waitListHard.push({
+        socket: client,
+        id: id,
+        token: client.handshake.auth.token,
+        is_host: true,
+        gameMode: 'HARD',
       });
       return;
     }
 
-    waitList.push({
-      socket: client,
-      id: id,
-      token: client.handshake.auth.token,
-      is_host: false,
-    });
+    if (mode === 'NORMAL') {
+      waitListNormal.push({
+        socket: client,
+        id: id,
+        token: client.handshake.auth.token,
+        is_host: false,
+        gameMode: 'NORMAL',
+      });
+    }
+
+    if (mode === 'HARD') {
+      waitListHard.push({
+        socket: client,
+        id: id,
+        token: client.handshake.auth.token,
+        is_host: false,
+        gameMode: 'HARD',
+      });
+    }
 
     // 대기열에 2명이 모이면 방을 만듬
-    if (waitList.length === 2) {
+    if (mode === 'NORMAL' && waitListNormal.length === 2) {
       const gameInfo: CreateGameDto = {};
       // host의 token을 setGame으로 넘김
       const game = await this.gameGatewayService.setGame(
-        waitList[0].token,
+        waitListNormal[0].token,
         gameInfo,
       );
 
-      waitList.forEach((player, index) => {
+      waitListNormal.forEach((player, index) => {
         player.roomId = game.gameId;
         player.play_number = index + 1;
-        player.enemy_id = waitList[1 - index].id;
+        player.enemy_id = waitListNormal[1 - index].id;
         player.socket.join(game.gameId.toString()); // 방에 입장
         playerList.push(player); // 플레이어 목록에 추가
       });
 
       // 대기열에서 제거
-      waitList.splice(0, 2);
+      waitListNormal.splice(0, 2);
+    }
+
+    if (mode === 'HARD' && waitListHard.length === 2) {
+      const gameInfo: CreateGameDto = {};
+      // host의 token을 setGame으로 넘김
+      const game = await this.gameGatewayService.setGame(
+        waitListHard[0].token,
+        gameInfo,
+      );
+
+      waitListHard.forEach((player, index) => {
+        player.roomId = game.gameId;
+        player.play_number = index + 1;
+        player.enemy_id = waitListHard[1 - index].id;
+        player.socket.join(game.gameId.toString()); // 방에 입장
+        playerList.push(player); // 플레이어 목록에 추가
+      });
+
+      // 대기열에서 제거
+      waitListHard.splice(0, 2);
     }
 
     const idx = playerList.findIndex((player) => player.socket === client);
@@ -162,11 +215,12 @@ export class GameGateway
     const idx = playerList.findIndex((player) => player.socket === client);
     const enemyIdx = playerList.findIndex(
       (player) => player.id === playerList[idx].enemy_id,
-    );
-    if (idx === -1 || enemyIdx === -1) {
-      console.log('idx === -1 || enemyIdx === -1');
-      return;
-    }
+      );
+      if (idx === -1 || enemyIdx === -1) {
+        console.log('idx === -1 || enemyIdx === -1');
+        return;
+      }
+
 
     if (!playerList[idx].ready_status) {
       playerList[idx].ready_status = true;

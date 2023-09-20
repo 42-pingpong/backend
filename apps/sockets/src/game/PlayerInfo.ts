@@ -9,4 +9,5 @@ export interface PlayerInfo {
   play_number?: number;
   enemy_id?: number;
   ready_status?: boolean;
+  gameMode: string;
 }
