@@ -193,8 +193,6 @@ export class GameGateway
       (player) => player.id === playerList[idx].enemy_id,
     );
 
-    console.log(playerList);
-
     if (idx !== -1 && enemyIdx !== -1 && playerList[idx].is_host) {
       const [player1NickName, player2NickName] = await Promise.all([
         this.gameGatewayService.getNickName(
@@ -221,8 +219,6 @@ export class GameGateway
       );
       playerList[idx].socket.emit('user-id', playerList[enemyIdx].id);
       playerList[enemyIdx].socket.emit('user-id', playerList[idx].id);
-      console.log('player1NickName', player1NickName);
-      console.log('player2NickName', player2NickName);
     }
   }
 
@@ -287,7 +283,6 @@ export class GameGateway
   @SubscribeMessage('player1Score-set')
   handlePlayer1ScoreSet(client: Socket, player1Score: number) {
     const idx = playerList.findIndex((player) => player.socket === client);
-    console.log('player1Score-set', player1Score);
     if (client === playerList[idx].socket)
       this.server
         .to(playerList[idx].roomId.toString())
@@ -297,7 +292,6 @@ export class GameGateway
   @SubscribeMessage('player2Score-set')
   handlePlayer2ScoreSet(client: Socket, player2Score: number) {
     const idx = playerList.findIndex((player) => player.socket === client);
-    console.log('player2Score-set', player2Score);
     if (client === playerList[idx].socket)
       this.server
         .to(playerList[idx].roomId.toString())
@@ -307,7 +301,6 @@ export class GameGateway
   @SubscribeMessage('end')
   async handleEnd(client: Socket, payload: CreateGameScoreRequestDto) {
     console.log('게임 끝~~~');
-    console.log('payload', payload);
 
     const idx = playerList.findIndex((player) => player.socket === client);
     const enemyIdx = playerList.findIndex(
@@ -388,7 +381,6 @@ export class GameGateway
 
   @SubscribeMessage('go-pingpong')
   async handleGoPingpongEnter(client: Socket, payload: any) {
-    console.log('go-pingpong payload', payload);
 
     const isHost = payload[1];
     const userId = isHost ? payload[0].userId : payload[0].targetUserId;
@@ -407,7 +399,6 @@ export class GameGateway
     });
 
     if (playerList.length % 2 === 0) {
-      // console.log('playerList', playerList);
       const idx = playerList.findIndex((player) => player.socket === client);
       const enemyIdx = playerList.findIndex(
         (player) => player.id === playerList[idx].enemy_id,
