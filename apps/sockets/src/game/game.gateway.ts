@@ -32,7 +32,6 @@ export class GameGateway
   constructor(private readonly gameGatewayService: GameGatewayService) {}
 
   afterInit(server: any) {
-    console.log('Init');
   }
 
   // game socket 연결시 실행
@@ -40,7 +39,6 @@ export class GameGateway
   async handleConnection(client: any, ...args: any[]) {
     const sub = this.gameGatewayService.getSub(client.handshake.auth.token);
     if (sub == null) {
-      console.log('sub == null');
       return;
     }
     // status online으로 변경하고 socketId 저장
@@ -107,7 +105,6 @@ export class GameGateway
     );
 
     if (idx === -1 || enemyIdx === -1) {
-      console.log('idx === -1 || enemyIdx === -1');
       return;
     }
     // 플레이어 목록에 있는 플레이어들에게 방 입장을 알림
@@ -173,7 +170,6 @@ export class GameGateway
     );
 
     if (idx === -1 || enemyIdx === -1) {
-      console.log('idx === -1 || enemyIdx === -1');
       return;
     }
     // 플레이어 목록에 있는 플레이어들에게 방 입장을 알림
@@ -225,13 +221,11 @@ export class GameGateway
   // 게임 시작 전에 Ready 버튼 클릭시 실행
   @SubscribeMessage('ready')
   handleReady(client: any) {
-    console.log('게임 레디~~~');
     const idx = playerList.findIndex((player) => player.socket === client);
     const enemyIdx = playerList.findIndex(
       (player) => player.id === playerList[idx].enemy_id,
       );
       if (idx === -1 || enemyIdx === -1) {
-        console.log('idx === -1 || enemyIdx === -1');
         return;
       }
 
@@ -242,7 +236,6 @@ export class GameGateway
     }
 
     if (playerList[idx].ready_status && playerList[enemyIdx].ready_status) {
-      console.log('게임 시작~~~');
       playerList[idx].socket.emit('start', true);
       playerList[enemyIdx].socket.emit('start', true);
     }
@@ -251,7 +244,6 @@ export class GameGateway
   // 게임 종료시 실행
   @SubscribeMessage('disconnect')
   handleDisconnect(client: any) {
-    console.log('Disconnect 할 때 leave 해야 할      듯');
   }
 
   @SubscribeMessage('message')
@@ -300,14 +292,12 @@ export class GameGateway
 
   @SubscribeMessage('end')
   async handleEnd(client: Socket, payload: CreateGameScoreRequestDto) {
-    console.log('게임 끝~~~');
 
     const idx = playerList.findIndex((player) => player.socket === client);
     const enemyIdx = playerList.findIndex(
       (player) => player.id === playerList[idx].enemy_id,
     );
     if (idx === -1 || enemyIdx === -1) {
-      console.log('idx === -1 || enemyIdx === -1');
       return;
     }
 
@@ -328,7 +318,6 @@ export class GameGateway
       (player) => player.id === playerList[idx].enemy_id,
     );
     if (idx === -1 || enemyIdx === -1) {
-      console.log('idx === -1 || enemyIdx === -1');
       return;
     }
     client.emit('room-out');
@@ -404,7 +393,6 @@ export class GameGateway
         (player) => player.id === playerList[idx].enemy_id,
       );
       if (idx === -1 || enemyIdx === -1) {
-        console.log('idx === -1 || enemyIdx === -1');
         return;
       }
       const gameInfo: CreateGameDto = {};

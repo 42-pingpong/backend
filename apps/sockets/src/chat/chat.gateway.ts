@@ -381,7 +381,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('go-pingpong-reject')
   goPingPongReject(client: any, payload: any) {
-    console.log(payload);
     if (payload[1] === 'N') {
       this.server
         .to(payload[0].groupChatId.toString())
