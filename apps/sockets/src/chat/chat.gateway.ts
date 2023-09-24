@@ -148,7 +148,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         .to(groupChatDto.groupChatId.toString())
         .emit('join-room', resPonse);
     } catch (e) {
-      client.emit('error', e.message);
+      if (e.response.data.message === '비밀번호가 일치하지 않습니다.') 
+        client.emit('password-error', e.response.data);
+      else 
+        client.emit('error', e.response.data);
     }
   }
 
