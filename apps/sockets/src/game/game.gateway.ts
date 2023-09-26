@@ -49,6 +49,46 @@ export class GameGateway
     );
   }
 
+
+  // 게임 종료시 실행
+  @SubscribeMessage('disconnect')
+  handleDisconnect(client: any) {
+    const normalIdx = normalWaitList.findIndex(
+      (player) => player.socket === client,
+    );
+    const hardIdx = hardWaitList.findIndex(
+      (player) => player.socket === client,
+    );
+
+    if (normalIdx !== -1) {
+      normalWaitList.splice(normalIdx, 1);
+      return;
+    }
+
+    if (hardIdx !== -1) {
+      hardWaitList.splice(hardIdx, 1);
+      return;
+    }
+
+    const idx = playerList.findIndex((player) => player.socket === client);
+    const enemyIdx = playerList.findIndex(
+      (player) => player.id === playerList[idx].enemy_id,
+    );
+
+    if (idx === -1 || enemyIdx === -1) {
+      return;
+    }
+
+    // 상대방이 새로고침했음 등의 정보 ..? 음 
+    this.server.to(playerList[idx].roomId.toString()).emit('game-disconnect', playerList[idx].id);
+    playerList[enemyIdx].socket.emit('end-room-out', { winner: true });
+    // playerList[enemyIdx].socket.emit('game-disconncet', playerList[enemyIdx].id);
+    this.gameGatewayService.setHistory(playerList[idx].token, {userId: playerList[idx].id, gameId: playerList[idx].roomId, score: -42})
+    
+    // playerList.splice(Math.max(idx, enemyIdx), 1);
+    // playerList.splice(Math.min(idx, enemyIdx), 1);
+  }
+
   // 게임 매칭 요청시 실행
   @SubscribeMessage('normal-matching')
   async handleNormalMatching(client: Socket, id: number) {
@@ -183,13 +223,16 @@ export class GameGateway
 
   // 방에 입장시 실행
   @SubscribeMessage('join')
-  async handleJoin(client: any) {
+  async handleJoin(client: any, id: number) {
+    if (id === -1) {
+      return;
+    }
     const idx = playerList.findIndex((player) => player.socket === client);
     const enemyIdx = playerList.findIndex(
       (player) => player.id === playerList[idx].enemy_id,
-    );
+      );
 
-    if (idx !== -1 && enemyIdx !== -1 && playerList[idx].is_host) {
+      if (idx !== -1 && enemyIdx !== -1 && playerList[idx].is_host) {
       const [player1NickName, player2NickName] = await Promise.all([
         this.gameGatewayService.getNickName(
           playerList[idx].id,
@@ -239,16 +282,6 @@ export class GameGateway
       playerList[idx].socket.emit('start', true);
       playerList[enemyIdx].socket.emit('start', true);
     }
-  }
-
-  // 게임 종료시 실행
-  @SubscribeMessage('disconnect')
-  handleDisconnect(client: any) {
-  }
-
-  @SubscribeMessage('message')
-  handleMessage(client: any, payload: any): string {
-    return 'Hello world!';
   }
 
   @SubscribeMessage('move')
@@ -301,6 +334,7 @@ export class GameGateway
       return;
     }
 
+    
     const roomId = playerList[idx].roomId.toString();
 
     await this.gameGatewayService.setHistory(playerList[idx].token, payload);
@@ -320,8 +354,8 @@ export class GameGateway
     if (idx === -1 || enemyIdx === -1) {
       return;
     }
-    client.emit('room-out');
     playerList[enemyIdx].socket.emit('end-room-out', { winner: true });
+    playerList[enemyIdx].socket.emit('game-disconnect', playerList[enemyIdx].id);
   }
   /**
    *
@@ -419,7 +453,18 @@ export class GameGateway
       );
       playerList[idx].socket.emit('user-id', playerList[enemyIdx].id);
       playerList[enemyIdx].socket.emit('user-id', playerList[idx].id);
-
     }
   }
+
+@SubscribeMessage('disconnet-win')
+handleGameDisconnect(client: Socket, payload: CreateGameScoreRequestDto) {
+  const idx = playerList.findIndex((player) => player.socket === client);
+  const enemyIdx = playerList.findIndex(
+    (player) => player.id === playerList[idx].enemy_id,
+  );
+
+  playerList.splice(Math.max(idx, enemyIdx), 1);
+  playerList.splice(Math.min(idx, enemyIdx), 1);
+}
+
 }
