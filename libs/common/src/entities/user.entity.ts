@@ -64,6 +64,13 @@ export class User {
   })
   selfIntroduction: string;
 
+  @Column({
+    type: 'int',
+    default: 0,
+    nullable: true,
+  })
+  emailCode: number;
+
   /**
    * user의 현재 상태
    * 0: offline

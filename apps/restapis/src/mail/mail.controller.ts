@@ -14,7 +14,6 @@ export class MailController {
   })
   @Post('send')
   async sendMail(@Body() data: SendMailDto) {
-    console.log('send mail dto', data);
     return await this.mailService.sendHello(data);
   }
 
@@ -24,7 +23,6 @@ export class MailController {
   })
   @Get('code/:id')
   async getCode(@Param('id') id: number) {
-    console.log('id', id);
     return await this.mailService.getCode(id);
   }
 }

@@ -3,6 +3,8 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { MailService } from './mail.service';
 import { MailController } from './mail.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { User } from '@app/common';
 
 @Module({
   imports: [
@@ -26,6 +28,7 @@ import { MailController } from './mail.controller';
         },
       },
     }),
+    TypeOrmModule.forFeature([User]),
   ],
   controllers: [MailController],
   providers: [MailService],
