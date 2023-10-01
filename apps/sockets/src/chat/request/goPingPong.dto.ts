@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsNumber } from 'class-validator';
+import { IsNumber, IsString } from 'class-validator';
 
 export class goPingPongDto {
   @ApiProperty({
@@ -26,4 +26,12 @@ export class goPingPongDto {
   @Type(() => Number)
   @IsNumber()
   targetId: number;
+
+  @ApiProperty({
+    description: '게임 모드',
+    example: 'NORMAL',
+  })
+  @Type(() => String)
+  @IsString()
+  gameMode: string;
 }

@@ -11,9 +11,9 @@ import { GameGatewayService } from './game.gateway.servcie';
 import { CreateGameScoreRequestDto } from './request/create-game-score.dto';
 import { PlayerInfo } from './PlayerInfo';
 import { CreateGameDto } from './request/create-game.dto';
-import e from 'express';
 
-const waitList: PlayerInfo[] = [];
+const normalWaitList: PlayerInfo[] = [];
+const hardWaitList: PlayerInfo[] = [];
 const playerList: PlayerInfo[] = [];
 
 @WebSocketGateway({
@@ -32,7 +32,6 @@ export class GameGateway
   constructor(private readonly gameGatewayService: GameGatewayService) {}
 
   afterInit(server: any) {
-    console.log('Init');
   }
 
   // game socket 연결시 실행
@@ -40,7 +39,6 @@ export class GameGateway
   async handleConnection(client: any, ...args: any[]) {
     const sub = this.gameGatewayService.getSub(client.handshake.auth.token);
     if (sub == null) {
-      console.log('sub == null');
       return;
     }
     // status online으로 변경하고 socketId 저장
@@ -51,51 +49,25 @@ export class GameGateway
     );
   }
 
-  // game 버튼 클릭시 실행
-  @SubscribeMessage('enter-queue')
-  async handleLogin(client: Socket, id: number) {
-    // 게임을 찾다가 게임찾기 취소
-    if (waitList.length && waitList[0].socket === client) {
-      waitList.shift(); // 대기열 맨 앞의 요소 제거 (게임 찾기 취소)
+
+  // 게임 종료시 실행
+  @SubscribeMessage('disconnect')
+  handleDisconnect(client: any) {
+    const normalIdx = normalWaitList.findIndex(
+      (player) => player.socket === client,
+    );
+    const hardIdx = hardWaitList.findIndex(
+      (player) => player.socket === client,
+    );
+
+    if (normalIdx !== -1) {
+      normalWaitList.splice(normalIdx, 1);
       return;
     }
 
-    if (waitList.length === 0) {
-      waitList.push({
-        socket: client,
-        id: id,
-        token: client.handshake.auth.token,
-        is_host: true,
-      });
+    if (hardIdx !== -1) {
+      hardWaitList.splice(hardIdx, 1);
       return;
-    }
-
-    waitList.push({
-      socket: client,
-      id: id,
-      token: client.handshake.auth.token,
-      is_host: false,
-    });
-
-    // 대기열에 2명이 모이면 방을 만듬
-    if (waitList.length === 2) {
-      const gameInfo: CreateGameDto = {};
-      // host의 token을 setGame으로 넘김
-      const game = await this.gameGatewayService.setGame(
-        waitList[0].token,
-        gameInfo,
-      );
-
-      waitList.forEach((player, index) => {
-        player.roomId = game.gameId;
-        player.play_number = index + 1;
-        player.enemy_id = waitList[1 - index].id;
-        player.socket.join(game.gameId.toString()); // 방에 입장
-        playerList.push(player); // 플레이어 목록에 추가
-      });
-
-      // 대기열에서 제거
-      waitList.splice(0, 2);
     }
 
     const idx = playerList.findIndex((player) => player.socket === client);
@@ -104,7 +76,140 @@ export class GameGateway
     );
 
     if (idx === -1 || enemyIdx === -1) {
-      console.log('idx === -1 || enemyIdx === -1');
+      return;
+    }
+
+    // 상대방이 새로고침했음 등의 정보 ..? 음 
+    this.server.to(playerList[idx].roomId.toString()).emit('game-disconnect', playerList[idx].id);
+    playerList[enemyIdx].socket.emit('end-room-out', { winner: true });
+    // playerList[enemyIdx].socket.emit('game-disconncet', playerList[enemyIdx].id);
+    this.gameGatewayService.setHistory(playerList[idx].token, {userId: playerList[idx].id, gameId: playerList[idx].roomId, score: -42})
+    
+    // playerList.splice(Math.max(idx, enemyIdx), 1);
+    // playerList.splice(Math.min(idx, enemyIdx), 1);
+  }
+
+  // 게임 매칭 요청시 실행
+  @SubscribeMessage('normal-matching')
+  async handleNormalMatching(client: Socket, id: number) {
+
+    // 게임을 찾다가 게임찾기 취소
+    if (normalWaitList.length && normalWaitList[0].socket === client) {
+      normalWaitList.shift(); // 대기열 맨 앞의 요소 제거 (게임 찾기 취소)
+      return;
+    } 
+
+    if (normalWaitList.length === 0) {
+      normalWaitList.push({
+        socket: client,
+        id: id,
+        token: client.handshake.auth.token,
+        is_host: true,
+        gameMode: 'NORMAL',
+      });
+      return;
+    }
+
+      normalWaitList.push({
+        socket: client,
+        id: id,
+        token: client.handshake.auth.token,
+        is_host: false,
+        gameMode: 'NORMAL',
+      });
+
+    // 대기열에 2명이 모이면 방을 만듬
+    if (normalWaitList.length === 2) {
+      const gameInfo: CreateGameDto = {};
+      // host의 token을 setGame으로 넘김
+      const game = await this.gameGatewayService.setGame(
+        normalWaitList[0].token,
+        gameInfo,
+      );
+
+      normalWaitList.forEach((player, index) => {
+        player.roomId = game.gameId;
+        player.play_number = index + 1;
+        player.enemy_id = normalWaitList[1 - index].id;
+        player.socket.join(game.gameId.toString()); // 방에 입장
+        playerList.push(player); // 플레이어 목록에 추가
+      });
+
+      // 대기열에서 제거
+      normalWaitList.splice(0, 2);
+    }
+
+    const idx = playerList.findIndex((player) => player.socket === client);
+    const enemyIdx = playerList.findIndex(
+      (player) => player.id === playerList[idx].enemy_id,
+    );
+
+    if (idx === -1 || enemyIdx === -1) {
+      return;
+    }
+    // 플레이어 목록에 있는 플레이어들에게 방 입장을 알림
+    playerList[enemyIdx].socket.emit('join', playerList[enemyIdx].roomId);
+    playerList[idx].socket.emit('join', playerList[enemyIdx].roomId);
+
+    // 플레이어들에게 플레이어 번호를 알림
+    playerList[enemyIdx].socket.emit('player-number', 1);
+    playerList[idx].socket.emit('player-number', 2);
+  }
+
+  @SubscribeMessage('hard-matching')
+  async handleHardMatching(client: Socket, id: number) {
+
+    // 게임을 찾다가 게임찾기 취소
+    if (hardWaitList.length && hardWaitList[0].socket === client) {
+      hardWaitList.shift(); // 대기열 맨 앞의 요소 제거 (게임 찾기 취소)
+      return;
+    }
+
+    if (hardWaitList.length === 0) {
+      hardWaitList.push({
+        socket: client,
+        id: id,
+        token: client.handshake.auth.token,
+        is_host: true,
+        gameMode: 'HARD',
+      });
+      return;
+    }
+
+      hardWaitList.push({
+        socket: client,
+        id: id,
+        token: client.handshake.auth.token,
+        is_host: false,
+        gameMode: 'HARD',
+      });
+    
+    if (hardWaitList.length === 2) {
+      const gameInfo: CreateGameDto = {};
+      // host의 token을 setGame으로 넘김
+      const game = await this.gameGatewayService.setGame(
+        hardWaitList[0].token,
+        gameInfo,
+      );
+
+      hardWaitList.forEach((player, index) => {
+        player.roomId = game.gameId;
+        player.play_number = index + 1;
+        player.enemy_id = hardWaitList[1 - index].id;
+        player.socket.join(game.gameId.toString()); // 방에 입장
+        playerList.push(player); // 플레이어 목록에 추가
+      });
+
+      // 대기열에서 제거
+      hardWaitList.splice(0, 2);
+    }
+
+    const idx = playerList.findIndex((player) => player.socket === client);
+    const enemyIdx = playerList.findIndex(
+      (player) => player.id === playerList[idx].enemy_id,
+    );
+
+    if (idx === -1 || enemyIdx === -1) {
       return;
     }
     // 플레이어 목록에 있는 플레이어들에게 방 입장을 알림
@@ -118,14 +223,16 @@ export class GameGateway
 
   // 방에 입장시 실행
   @SubscribeMessage('join')
-  async handleJoin(client: any) {
-    console.log('방 입장~~~');
+  async handleJoin(client: any, id: number) {
+    if (id === -1) {
+      return;
+    }
     const idx = playerList.findIndex((player) => player.socket === client);
     const enemyIdx = playerList.findIndex(
       (player) => player.id === playerList[idx].enemy_id,
-    );
+      );
 
-    if (idx !== -1 && enemyIdx !== -1 && playerList[idx].is_host) {
+      if (idx !== -1 && enemyIdx !== -1 && playerList[idx].is_host) {
       const [player1NickName, player2NickName] = await Promise.all([
         this.gameGatewayService.getNickName(
           playerList[idx].id,
@@ -136,6 +243,7 @@ export class GameGateway
           playerList[enemyIdx].token,
         ),
       ]);
+
 
       // 플레이어들에게 닉네임을 알림
       playerList[idx].socket.emit(
@@ -150,23 +258,20 @@ export class GameGateway
       );
       playerList[idx].socket.emit('user-id', playerList[enemyIdx].id);
       playerList[enemyIdx].socket.emit('user-id', playerList[idx].id);
-      console.log('player1NickName', player1NickName);
-      console.log('player2NickName', player2NickName);
     }
   }
 
   // 게임 시작 전에 Ready 버튼 클릭시 실행
   @SubscribeMessage('ready')
   handleReady(client: any) {
-    console.log('게임 레디~~~');
     const idx = playerList.findIndex((player) => player.socket === client);
     const enemyIdx = playerList.findIndex(
       (player) => player.id === playerList[idx].enemy_id,
-    );
-    if (idx === -1 || enemyIdx === -1) {
-      console.log('idx === -1 || enemyIdx === -1');
-      return;
-    }
+      );
+      if (idx === -1 || enemyIdx === -1) {
+        return;
+      }
+
 
     if (!playerList[idx].ready_status) {
       playerList[idx].ready_status = true;
@@ -174,21 +279,9 @@ export class GameGateway
     }
 
     if (playerList[idx].ready_status && playerList[enemyIdx].ready_status) {
-      console.log('게임 시작~~~');
       playerList[idx].socket.emit('start', true);
       playerList[enemyIdx].socket.emit('start', true);
     }
-  }
-
-  // 게임 종료시 실행
-  @SubscribeMessage('disconnect')
-  handleDisconnect(client: any) {
-    console.log('Disconnect 할 때 leave 해야 할      듯');
-  }
-
-  @SubscribeMessage('message')
-  handleMessage(client: any, payload: any): string {
-    return 'Hello world!';
   }
 
   @SubscribeMessage('move')
@@ -215,7 +308,6 @@ export class GameGateway
   @SubscribeMessage('player1Score-set')
   handlePlayer1ScoreSet(client: Socket, player1Score: number) {
     const idx = playerList.findIndex((player) => player.socket === client);
-    console.log('player1Score-set', player1Score);
     if (client === playerList[idx].socket)
       this.server
         .to(playerList[idx].roomId.toString())
@@ -225,7 +317,6 @@ export class GameGateway
   @SubscribeMessage('player2Score-set')
   handlePlayer2ScoreSet(client: Socket, player2Score: number) {
     const idx = playerList.findIndex((player) => player.socket === client);
-    console.log('player2Score-set', player2Score);
     if (client === playerList[idx].socket)
       this.server
         .to(playerList[idx].roomId.toString())
@@ -234,18 +325,16 @@ export class GameGateway
 
   @SubscribeMessage('end')
   async handleEnd(client: Socket, payload: CreateGameScoreRequestDto) {
-    console.log('게임 끝~~~');
-    console.log('payload', payload);
 
     const idx = playerList.findIndex((player) => player.socket === client);
     const enemyIdx = playerList.findIndex(
       (player) => player.id === playerList[idx].enemy_id,
     );
     if (idx === -1 || enemyIdx === -1) {
-      console.log('idx === -1 || enemyIdx === -1');
       return;
     }
 
+    
     const roomId = playerList[idx].roomId.toString();
 
     await this.gameGatewayService.setHistory(playerList[idx].token, payload);
@@ -263,11 +352,10 @@ export class GameGateway
       (player) => player.id === playerList[idx].enemy_id,
     );
     if (idx === -1 || enemyIdx === -1) {
-      console.log('idx === -1 || enemyIdx === -1');
       return;
     }
-    client.emit('room-out');
     playerList[enemyIdx].socket.emit('end-room-out', { winner: true });
+    playerList[enemyIdx].socket.emit('game-disconnect', playerList[enemyIdx].id);
   }
   /**
    *
@@ -316,12 +404,12 @@ export class GameGateway
 
   @SubscribeMessage('go-pingpong')
   async handleGoPingpongEnter(client: Socket, payload: any) {
-    console.log('payload', payload);
 
     const isHost = payload[1];
     const userId = isHost ? payload[0].userId : payload[0].targetUserId;
     const targetUserId = isHost ? payload[0].targetUserId : payload[0].userId;
     const playNumber = payload[2];
+    const gameMode = payload[3];
 
     playerList.push({
       socket: client,
@@ -330,16 +418,15 @@ export class GameGateway
       is_host: isHost,
       play_number: playNumber,
       enemy_id: targetUserId,
+      gameMode: gameMode,
     });
 
     if (playerList.length % 2 === 0) {
-      // console.log('playerList', playerList);
       const idx = playerList.findIndex((player) => player.socket === client);
       const enemyIdx = playerList.findIndex(
         (player) => player.id === playerList[idx].enemy_id,
       );
       if (idx === -1 || enemyIdx === -1) {
-        console.log('idx === -1 || enemyIdx === -1');
         return;
       }
       const gameInfo: CreateGameDto = {};
@@ -368,4 +455,16 @@ export class GameGateway
       playerList[enemyIdx].socket.emit('user-id', playerList[idx].id);
     }
   }
+
+@SubscribeMessage('disconnet-win')
+handleGameDisconnect(client: Socket, payload: CreateGameScoreRequestDto) {
+  const idx = playerList.findIndex((player) => player.socket === client);
+  const enemyIdx = playerList.findIndex(
+    (player) => player.id === playerList[idx].enemy_id,
+  );
+
+  playerList.splice(Math.max(idx, enemyIdx), 1);
+  playerList.splice(Math.min(idx, enemyIdx), 1);
+}
+
 }
