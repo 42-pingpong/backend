@@ -71,6 +71,12 @@ export class User {
   })
   emailCode: number;
 
+  @Column({
+    type: 'boolean',
+    default: false,
+  })
+  isEmailVerified: boolean;
+
   /**
    * user의 현재 상태
    * 0: offline
