@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
 import { SendMailDto } from './send-mail.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -44,5 +44,27 @@ export class MailService {
       },
     });
     return userData.emailCode;
+  }
+
+  async verify(id: number, code: number) {
+    return await this.userRepository.manager.transaction(async (manager) => {
+      const userData = await manager.findOne(User, {
+        where: {
+          id: id,
+        },
+      });
+      if (userData.emailCode == code) {
+        await manager.update(User, id, {
+          isEmailVerified: true,
+        });
+        return await manager.findOne(User, {
+          where: {
+            id: id,
+          },
+        });
+      } else {
+        throw new UnauthorizedException('인증번호가 일치하지 않습니다.');
+      }
+    });
   }
 }

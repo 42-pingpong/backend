@@ -4,10 +4,11 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handleba
 import { MailService } from './mail.service';
 import { MailController } from './mail.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from '@app/common';
+import { AccessTokenGuard, AppConfigModule, User } from '@app/common';
 
 @Module({
   imports: [
+    AppConfigModule,
     MailerModule.forRoot({
       transport: {
         host: 'smtp.gmail.com',

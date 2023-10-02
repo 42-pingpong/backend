@@ -1,7 +1,18 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { MailService } from './mail.service';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { SendMailDto } from './send-mail.dto';
+import { AccessTokenGuard } from '@app/common';
+import { Request } from 'express';
 
 @ApiTags('mail')
 @Controller('mail')
@@ -24,5 +35,11 @@ export class MailController {
   @Get('code/:id')
   async getCode(@Param('id') id: number) {
     return await this.mailService.getCode(id);
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @Patch('code/:cd')
+  async updateCode(@Req() req: Request, @Param('cd') cd: string) {
+    return await this.mailService.verify(+req.user.sub, +cd);
   }
 }
