@@ -11,7 +11,15 @@ import { MessageInfo } from '@app/common/entities/messageInfo.entity';
 import { GroupChatMessage } from '@app/common/entities/groupChatMessage.entity';
 import { DirectMessage } from '@app/common/entities/directMessage.entity';
 import { BlockUserList } from '@app/common/entities/blockUserList.entity';
-import { EntityManager, Equal, In, IsNull, Not, Repository } from 'typeorm';
+import {
+  EntityManager,
+  Equal,
+  In,
+  IsNull,
+  MoreThan,
+  Not,
+  Repository,
+} from 'typeorm';
 import { CreateGroupChatDto } from './dto/create-group-chat.dto';
 import { UpdateGroupChatDto } from './dto/update-group-chat.dto';
 import { AddAdminDto } from './dto/add-admin.dto';
@@ -546,6 +554,7 @@ export class ChatService {
           where: {
             mutedUserId: messageDto.senderId,
             mutedGroupId: messageDto.receivedGroupChatId,
+            muteDue: MoreThan(new Date()),
           },
         });
         if (isMuted) {
@@ -1222,6 +1231,46 @@ export class ChatService {
             blockList: true,
           },
         });
+      },
+    );
+  }
+
+  async leaveGroupChat(userId: number, groupChatId: number) {
+    // groupChatId와 joined user의 id를 가지고 있는 joinedUserJoin을 삭제
+    // curParticipants를 -1
+    // admin/owner 중에 userId를 가지고 있는 groupChat을 찾아서 삭제
+    await this.groupChatRepository.manager.transaction(
+      async (manager: EntityManager) => {
+        const groupChat = await manager.getRepository(GroupChat).findOne({
+          where: {
+            groupChatId: groupChatId,
+          },
+        });
+        if (!groupChat) {
+          throw new NotFoundException('존재하지 않는 그룹챗입니다.');
+        }
+        // owner가 나가는 경우 모든 유저가 나가게 함
+        if (groupChat.ownerId === userId) {
+          await manager.getRepository(GroupChat).softDelete({
+            groupChatId: groupChatId,
+          });
+          return;
+        }
+
+        const isAdmin = await manager.getRepository(GroupChat).findOne({
+          where: {
+            groupChatId: groupChatId,
+            admin: { id: userId },
+          },
+        });
+        if (isAdmin) {
+          await manager
+            .createQueryBuilder()
+            .relation(GroupChat, 'admin')
+            .of(groupChatId)
+            .remove(userId);
+          return;
+        }
       },
     );
   }

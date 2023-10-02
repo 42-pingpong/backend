@@ -68,7 +68,6 @@ export class StatusService {
           Authorization: bearerToken,
         },
       });
-
       return {
         friendList: response.data,
         me: me.data,

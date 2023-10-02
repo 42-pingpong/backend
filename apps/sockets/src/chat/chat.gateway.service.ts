@@ -204,8 +204,8 @@ export class ChatGatewayService {
       },
       headers: {
         Authorization: bearerToken,
-
-    }});
+      },
+    });
   }
 
   async kickUser(dto: KickUserDto, bearerToken: string) {
@@ -293,4 +293,19 @@ export class ChatGatewayService {
   }
 
   async getSendableGroupChatList(groupChatId: number, bearerToken: string) {}
+
+  async leaveGroupChat(roomId: number, bearerToken: string) {
+    try {
+      const res = await axios.delete(
+        `${this.restApiUrl}/chat/groupChat/${roomId}/leave`,
+        {
+          headers: {
+            Authorization: bearerToken,
+          },
+        },
+      );
+    } catch (e) {
+      console.log(e);
+    }
+  }
 }

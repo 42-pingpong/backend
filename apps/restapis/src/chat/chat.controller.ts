@@ -336,4 +336,13 @@ export class ChatController {
       +groupChatId,
     );
   }
+
+  @Delete('groupChat/:groupChatId/leave')
+  @UseGuards(AccessTokenGuard)
+  async leaveGroupChat(
+    @Req() req: Request,
+    @Param('groupChatId') groupChatId: string,
+  ) {
+    return await this.chatService.leaveGroupChat(+req.user.sub, +groupChatId);
+  }
 }

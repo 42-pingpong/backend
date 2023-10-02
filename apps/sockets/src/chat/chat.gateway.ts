@@ -148,10 +148,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         .to(groupChatDto.groupChatId.toString())
         .emit('join-room', resPonse);
     } catch (e) {
-      if (e.response.data.message === '비밀번호가 일치하지 않습니다.') 
+      if (e.response.data.message === '비밀번호가 일치하지 않습니다.')
         client.emit('password-error', e.response.data);
-      else 
-        client.emit('error', e.response.data);
+      else client.emit('error', e.response.data);
     }
   }
 
@@ -161,7 +160,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
    * - 메시지를 저장하고, 그룹채팅방에 속한 모든 클라이언트에게 메시지를 전달한다.
    * */
   @SubscribeMessage('group-message')
-  async handleMessage(client: Socket, dto: GroupChatMessageDto) {
+  async handleGroupMessage(client: Socket, dto: GroupChatMessageDto) {
     const userId = this.chatGatewayService.getSub(client.handshake.auth.token);
     if (userId === null) return;
 
@@ -186,10 +185,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
           /**
            * @TODO client 연결 안되어있을때, request에 추가하기
            * */
-          this.server.of('status').emit('group-message-alarm', responseBody);
+          // this.server.of('status').emit('group-message-alarm', responseBody);
         }
       }
     } catch (e) {
+      console.log(e.message);
+      console.log(e);
       client.emit('error', e.message);
     }
   }
@@ -396,7 +397,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('leave-room')
-  leaveChatRoom(client: any, roomId: string) {
+  async leaveChatRoom(client: any, roomId: string) {
     client.leave(roomId);
+    await this.chatGatewayService.leaveGroupChat(
+      +roomId,
+      client.handshake.auth.token,
+    );
   }
 }

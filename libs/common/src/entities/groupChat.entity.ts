@@ -7,6 +7,7 @@ import {
   JoinTable,
   OneToMany,
   JoinColumn,
+  DeleteDateColumn,
 } from 'typeorm';
 import { User } from '@app/common/entities/user.entity';
 import { GroupChatMessage } from '@app/common/entities/groupChatMessage.entity';
@@ -58,6 +59,9 @@ export class GroupChat {
     type: 'int',
   })
   ownerId: number;
+
+  @DeleteDateColumn()
+  isDeleted: Date | null;
 
   @ManyToMany(() => User, (user) => user.bannedGroupChats, { cascade: true })
   @JoinTable({
