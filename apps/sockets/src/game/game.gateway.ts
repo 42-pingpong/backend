@@ -89,16 +89,29 @@ export class GameGateway
     // playerList.splice(Math.min(idx, enemyIdx), 1);
   }
 
+@SubscribeMessage('matching-cancel') 
+handleMatchingCancel(client: any) {
+  const normalIdx = normalWaitList.findIndex(
+    (player) => player.socket === client,
+  );
+  const hardIdx = hardWaitList.findIndex(
+    (player) => player.socket === client,
+  );
+
+  if (normalIdx !== -1) {
+    normalWaitList.splice(normalIdx, 1);
+    return;
+  }
+
+  if (hardIdx !== -1) {
+    hardWaitList.splice(hardIdx, 1);
+    return;
+  }
+}
+
   // 게임 매칭 요청시 실행
   @SubscribeMessage('normal-matching')
   async handleNormalMatching(client: Socket, id: number) {
-
-    // 게임을 찾다가 게임찾기 취소
-    if (normalWaitList.length && normalWaitList[0].socket === client) {
-      normalWaitList.shift(); // 대기열 맨 앞의 요소 제거 (게임 찾기 취소)
-      return;
-    } 
-
     if (normalWaitList.length === 0) {
       normalWaitList.push({
         socket: client,
@@ -158,13 +171,6 @@ export class GameGateway
 
   @SubscribeMessage('hard-matching')
   async handleHardMatching(client: Socket, id: number) {
-
-    // 게임을 찾다가 게임찾기 취소
-    if (hardWaitList.length && hardWaitList[0].socket === client) {
-      hardWaitList.shift(); // 대기열 맨 앞의 요소 제거 (게임 찾기 취소)
-      return;
-    }
-
     if (hardWaitList.length === 0) {
       hardWaitList.push({
         socket: client,
