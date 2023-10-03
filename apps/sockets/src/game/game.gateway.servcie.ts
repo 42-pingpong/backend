@@ -47,7 +47,6 @@ export class GameGatewayService {
   }
 
   async setHistory(bearerToken: string, history: CreateGameScoreRequestDto) {
-    console.log('history', history);
     await axios.post(`${this.restApiUrl}/game/score`, history, {
       headers: {
         'Content-Type': 'application/json',
@@ -80,7 +79,6 @@ export class GameGatewayService {
         Authorization: `Bearer ${bearerToken}`,
       },
     });
-    console.log('response.data', response.data);
     return await response.data;
   }
 }

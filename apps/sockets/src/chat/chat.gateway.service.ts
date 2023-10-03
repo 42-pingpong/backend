@@ -141,7 +141,6 @@ export class ChatGatewayService {
         },
       },
     );
-    console.log(res);
     if (res.status != 200) {
       throw new Error('Failed to get list');
     }
