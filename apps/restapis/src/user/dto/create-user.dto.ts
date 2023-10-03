@@ -55,6 +55,13 @@ export class CreateUserDto {
   status: string;
 
   @ApiProperty({
+    description: '2FA Enabled?',
+    example: true,
+	type: Boolean,
+  })
+  is2FAEnabled: boolean;
+
+  @ApiProperty({
     description: 'User Status Socket Id',
     example: '1234',
   })

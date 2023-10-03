@@ -11,6 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import { FTAuthGuard } from '@app/common/guards/ft.guard';
 import { RefreshTokenGuard } from '@app/common/guards/refreshToken.guard';
 import { AccessTokenGuard } from '@app/common/guards/accessToken.guard';
+import { MailService } from '../mail/mail.service';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -18,6 +19,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
+    private readonly mailService: MailService,
   ) {}
 
   //need auth guard
@@ -39,20 +41,33 @@ export class AuthController {
   @Get('42/redirect')
   async redirect42(@Req() req: Request, @Res() res: Response) {
     const rtn = await this.authService.login(req.user);
-    res.cookie('accessToken', rtn.accessToken, {
-      //this expires is checked by browser
-      expires: new Date(Date.now() + 1000 * 60 * 60),
-    });
-    res.cookie('refreshToken', rtn.refreshToken, {
-      httpOnly: true,
-      //this expires is checked by browser
-      expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
-    });
-    res.redirect(
-      `${this.configService.get('url').frontHost}:${
-        this.configService.get('url').frontPort
-      }/token?accessToken=${rtn.accessToken}`,
-    );
+
+    if (rtn.is2FAEnabled && !rtn.is2FAVerified) {
+      await this.mailService.sendHello({
+        userId: rtn.id,
+        nickName: rtn.nickName,
+        mailAddress: rtn.email,
+      });
+
+      return res.redirect(
+        `${this.configService.get('url').frontHost}:${
+          this.configService.get('url').frontPort
+        }/2fa`,
+      );
+    } else {
+      const tokens = await this.authService.issueTokens(rtn.id);
+
+      res.cookie('refreshToken', tokens.refreshToken, {
+        httpOnly: true,
+        //this expires is checked by browser
+        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
+      });
+      return res.redirect(
+        `${this.configService.get('url').frontHost}:${
+          this.configService.get('url').frontPort
+        }/token?accessToken=${tokens.accessToken}`,
+      );
+    }
   }
 
   @ApiOperation({
@@ -68,11 +83,6 @@ export class AuthController {
   async refresh(@Req() req: Request, @Res() res: Response) {
     try {
       const tokens = await this.authService.refreshTokens(req.user);
-      res.cookie('accessToken', tokens.accessToken, {
-        httpOnly: true,
-        //this expires is checked by browser
-        expires: new Date(Date.now() + 1000 * 60 * 60),
-      });
       res.cookie('refreshToken', tokens.refreshToken, {
         httpOnly: true,
         //this expires is checked by browser
@@ -81,7 +91,7 @@ export class AuthController {
       res.redirect(
         `${this.configService.get('url').frontHost}:${
           this.configService.get('url').frontPort
-        }/`,
+        }/token?accessToken=${tokens.accessToken}`,
       );
     } catch (e) {
       res.clearCookie('accessToken');

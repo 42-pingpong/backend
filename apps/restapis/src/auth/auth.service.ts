@@ -31,17 +31,15 @@ export class AuthService {
    *
    * @return ITokens
    */
-  async login(user: IUser): Promise<ITokens> {
+  async login(user: IUser): Promise<User> {
     const foundUser = await this.userRepository.findOne({
       where: { id: user.id },
     });
     if (foundUser) {
-      return { ...(await this.issueTokens(foundUser.id)) };
+      return foundUser;
     } else {
       const newUser = await this.register(user);
-      return {
-        ...(await this.issueTokens(newUser.id)),
-      };
+      return newUser;
     }
   }
 
@@ -164,6 +162,12 @@ export class AuthService {
   }
 
   async logout(userId: number): Promise<void> {
+    await this.userRepository.update(
+      { id: userId },
+      {
+        is2FAVerified: false,
+      },
+    );
     await this.tokenRepository.delete({ ownerId: userId });
   }
 }

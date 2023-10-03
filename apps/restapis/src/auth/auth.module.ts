@@ -16,6 +16,8 @@ import { Token } from '@app/common/entities/token.entity';
 import { appDatabase } from '@app/common/datasource/appdatabase';
 import { AppConfigModule } from '@app/common/config/app.config';
 import { FriendsWith } from '@app/common/entities/friendsWith.entity';
+import { MailModule } from '../mail/mail.module';
+import { MailService } from '../mail/mail.service';
 
 @Module({
   imports: [
@@ -23,6 +25,7 @@ import { FriendsWith } from '@app/common/entities/friendsWith.entity';
     PassportModule.register({}),
     appDatabase,
     TypeOrmModule.forFeature([User, Token, FriendsWith]),
+    MailModule,
   ],
   controllers: [AuthController],
   providers: [
@@ -35,6 +38,7 @@ import { FriendsWith } from '@app/common/entities/friendsWith.entity';
     RefreshTokenGuard,
     FourtyTwoStrategy,
     FTAuthGuard,
+    MailService,
   ],
 })
 export class AuthModule {}

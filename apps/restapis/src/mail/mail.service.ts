@@ -37,15 +37,6 @@ export class MailService {
     return true;
   }
 
-  async getCode(id: number) {
-    const userData = await this.userRepository.findOne({
-      where: {
-        id: id,
-      },
-    });
-    return userData.emailCode;
-  }
-
   async verify(id: number, code: number) {
     return await this.userRepository.manager.transaction(async (manager) => {
       const userData = await manager.findOne(User, {

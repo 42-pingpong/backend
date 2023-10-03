@@ -77,6 +77,18 @@ export class User {
   })
   isEmailVerified: boolean;
 
+  @Column({
+    type: 'boolean',
+    default: false,
+  })
+  is2FAEnabled: boolean;
+
+  @Column({
+    type: 'boolean',
+    default: false,
+  })
+  is2FAVerified: boolean;
+
   /**
    * user의 현재 상태
    * 0: offline
