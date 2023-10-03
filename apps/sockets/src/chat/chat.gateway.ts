@@ -399,9 +399,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('leave-room')
   async leaveChatRoom(client: any, roomId: string) {
     client.leave(roomId);
-    await this.chatGatewayService.leaveGroupChat(
-      +roomId,
-      client.handshake.auth.token,
-    );
+    const groupChat: JoinRoomResponse =
+      await this.chatGatewayService.leaveGroupChat(
+        +roomId,
+        client.handshake.auth.token,
+      );
+    this.server.to(roomId.toString()).emit('leave-room', groupChat);
   }
 }

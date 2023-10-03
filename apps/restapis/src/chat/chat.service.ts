@@ -1239,7 +1239,7 @@ export class ChatService {
     // groupChatId와 joined user의 id를 가지고 있는 joinedUserJoin을 삭제
     // curParticipants를 -1
     // admin/owner 중에 userId를 가지고 있는 groupChat을 찾아서 삭제
-    await this.groupChatRepository.manager.transaction(
+    return await this.groupChatRepository.manager.transaction(
       async (manager: EntityManager) => {
         const groupChat = await manager.getRepository(GroupChat).findOne({
           where: {
@@ -1269,8 +1269,58 @@ export class ChatService {
             .relation(GroupChat, 'admin')
             .of(groupChatId)
             .remove(userId);
-          return;
         }
+
+        const isJoinedUser = await manager.getRepository(GroupChat).findOne({
+          where: {
+            groupChatId: groupChatId,
+            joinedUser: { id: userId },
+          },
+        });
+        if (isJoinedUser) {
+          await manager
+            .createQueryBuilder()
+            .relation(GroupChat, 'joinedUser')
+            .of(groupChatId)
+            .remove(userId);
+        }
+
+        //decrement curParticipants
+        await manager
+          .getRepository(GroupChat)
+          .decrement({ groupChatId: groupChatId }, 'curParticipants', 1);
+
+        return await manager.getRepository(GroupChat).findOne({
+          where: { groupChatId: groupChatId },
+          relations: {
+            admin: true,
+            joinedUser: true,
+            owner: true,
+          },
+          select: {
+            admin: {
+              id: true,
+              nickName: true,
+              profile: true,
+              status: true,
+              email: true,
+            },
+            joinedUser: {
+              id: true,
+              nickName: true,
+              profile: true,
+              status: true,
+              email: true,
+            },
+            owner: {
+              id: true,
+              nickName: true,
+              profile: true,
+              status: true,
+              email: true,
+            },
+          },
+        });
       },
     );
   }
