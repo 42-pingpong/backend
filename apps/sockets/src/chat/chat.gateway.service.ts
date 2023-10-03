@@ -287,14 +287,15 @@ export class ChatGatewayService {
         },
       },
     );
-    console.log('unmute');
-    console.log(res);
     return res.data;
   }
 
   async getSendableGroupChatList(groupChatId: number, bearerToken: string) {}
 
-  async leaveGroupChat(roomId: number, bearerToken: string) {
+  async leaveGroupChat(
+    roomId: number,
+    bearerToken: string,
+  ): Promise<JoinRoomResponse> {
     try {
       const res = await axios.delete(
         `${this.restApiUrl}/chat/groupChat/${roomId}/leave`,
@@ -304,6 +305,7 @@ export class ChatGatewayService {
           },
         },
       );
+      return res.data;
     } catch (e) {
       console.log(e);
     }
