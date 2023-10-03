@@ -24,6 +24,8 @@ export class MailService {
 
     await this.userRepository.update(data.userId, {
       emailCode: validationCode,
+      //2분 후에 만료
+      TFAVerifyDueDate: new Date(Date.now() + 1000 * 60 * 2),
     });
 
     await this.mailerService.sendMail({
@@ -44,9 +46,13 @@ export class MailService {
           id: id,
         },
       });
-      if (userData.emailCode == code) {
+      if (
+        userData.emailCode == code &&
+        userData.TFAVerifyDueDate > new Date()
+      ) {
         await manager.update(User, id, {
-          isEmailVerified: true,
+          TFAVerifyDueDate: null,
+          is2FAVerified: true,
         });
         return await manager.findOne(User, {
           where: {

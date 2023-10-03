@@ -75,12 +75,6 @@ export class User {
     type: 'boolean',
     default: false,
   })
-  isEmailVerified: boolean;
-
-  @Column({
-    type: 'boolean',
-    default: false,
-  })
   is2FAEnabled: boolean;
 
   @Column({
@@ -88,6 +82,12 @@ export class User {
     default: false,
   })
   is2FAVerified: boolean;
+
+  @Column({
+    type: Date,
+    nullable: true,
+  })
+  TFAVerifyDueDate: Date;
 
   /**
    * user의 현재 상태
