@@ -5,11 +5,11 @@ import { Strategy, ExtractJwt } from 'passport-jwt';
 import { ITokenPayload } from '@app/common/interface/IUser.types';
 
 @Injectable()
-export class AccessTokenStrategy extends PassportStrategy(Strategy, 'jwt') {
+export class MailTokenStrategy extends PassportStrategy(Strategy, 'mail') {
   constructor(private readonly configService: ConfigService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKey: configService.get('jwt.access_secret'),
+      secretOrKey: configService.get('jwt.mail_secret'),
       ignoreExpiration: false,
     });
   }
