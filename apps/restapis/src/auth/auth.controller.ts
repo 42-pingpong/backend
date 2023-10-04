@@ -49,7 +49,7 @@ export class AuthController {
         mailAddress: rtn.email,
       });
 
-      return res.redirect(
+      res.redirect(
         `${this.configService.get('url').frontHost}:${
           this.configService.get('url').frontPort
         }/2fa/${rtn.id}`,
@@ -62,7 +62,7 @@ export class AuthController {
         //this expires is checked by browser
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
       });
-      return res.redirect(
+      res.redirect(
         `${this.configService.get('url').frontHost}:${
           this.configService.get('url').frontPort
         }/token?accessToken=${tokens.accessToken}`,
