@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -80,6 +81,11 @@ export class ChatService {
         if (createChatDto.participants != undefined) {
           createChatDto['curParticipants'] =
             1 + createChatDto.participants.length;
+          if (
+            createChatDto.participants.length > createChatDto.maxParticipants
+          ) {
+            throw new BadRequestException('최대 참여 인원을 초과했습니다.');
+          }
         }
 
         if (createChatDto.password) {

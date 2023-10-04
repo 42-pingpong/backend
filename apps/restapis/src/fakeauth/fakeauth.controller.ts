@@ -34,8 +34,8 @@ export class FakeauthController {
     createUserDto.email = 'test@email.com' + fakeUserDto.id;
     createUserDto.selfIntroduction = 'Fake User';
 
-    const tokens = await this.authService.login(createUserDto);
-
+    const user = await this.authService.login(createUserDto);
+    const tokens = await this.authService.issueTokens(user.id);
     res.cookie('refreshToken', tokens.refreshToken, {
       httpOnly: true,
       expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),

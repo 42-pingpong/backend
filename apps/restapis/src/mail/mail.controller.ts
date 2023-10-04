@@ -28,18 +28,9 @@ export class MailController {
     return await this.mailService.sendHello(data);
   }
 
-  @ApiOperation({
-    summary: '메일 인증',
-    description: '메일 인증코드 반환',
-  })
-  @Get('code/:id')
-  async getCode(@Param('id') id: number) {
-    return await this.mailService.getCode(id);
-  }
-
   @UseGuards(AccessTokenGuard)
   @Patch('code/:cd')
-  async updateCode(@Req() req: Request, @Param('cd') cd: string) {
+  async verifyCode(@Req() req: Request, @Param('cd') cd: string) {
     return await this.mailService.verify(+req.user.sub, +cd);
   }
 }
