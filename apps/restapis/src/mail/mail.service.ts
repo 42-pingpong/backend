@@ -34,7 +34,8 @@ export class MailService {
       subject: `Testing Nest MailerModule ✔ to ${data.nickName}`,
 
       html: `hi ${data.nickName}<br/>
-          인증번호: ${validationCode}`,
+          인증번호: ${validationCode}  
+		  2분뒤에 만료됩니다.`,
     });
     return true;
   }

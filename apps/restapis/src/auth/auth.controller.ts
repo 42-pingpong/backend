@@ -52,7 +52,7 @@ export class AuthController {
       return res.redirect(
         `${this.configService.get('url').frontHost}:${
           this.configService.get('url').frontPort
-        }/2fa`,
+        }/2fa/${rtn.id}`,
       );
     } else {
       const tokens = await this.authService.issueTokens(rtn.id);
