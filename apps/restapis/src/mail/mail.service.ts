@@ -1,9 +1,15 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
 import { SendMailDto } from './send-mail.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '@app/common';
 import { Repository } from 'typeorm';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 
 export class MailData {
   id: number;
@@ -16,16 +22,18 @@ export class MailService {
   constructor(
     private readonly mailerService: MailerService,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
+
+    private readonly jwtService: JwtService,
+
+    private readonly configService: ConfigService,
   ) {}
 
-  async sendHello(data: SendMailDto) {
+  async send2faMailAndGet2faToken(data: SendMailDto) {
     // 6자리 수
     const validationCode = Math.floor(Math.random() * 1000000);
 
     await this.userRepository.update(data.userId, {
       emailCode: validationCode,
-      //2분 후에 만료
-      TFAVerifyDueDate: new Date(Date.now() + 1000 * 60 * 2),
     });
 
     await this.mailerService.sendMail({
@@ -37,7 +45,15 @@ export class MailService {
           인증번호: ${validationCode}  
 		  2분뒤에 만료됩니다.`,
     });
-    return true;
+    return await this.jwtService.signAsync(
+      {
+        sub: data.userId,
+      },
+      {
+        expiresIn: '2m',
+        secret: this.configService.get<string>('jwt.mail_secret'),
+      },
+    );
   }
 
   async verify(id: number, code: number) {
@@ -47,12 +63,9 @@ export class MailService {
           id: id,
         },
       });
-      if (
-        userData.emailCode == code &&
-        userData.TFAVerifyDueDate > new Date()
-      ) {
+      if (!userData) throw new BadRequestException('존재하지 않는 유저입니다.');
+      if (userData.emailCode == code) {
         await manager.update(User, id, {
-          TFAVerifyDueDate: null,
           is2FAVerified: true,
         });
         return await manager.findOne(User, {

@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AccessTokenGuard, FTAuthGuard, RefreshTokenGuard } from '../guards';
+import { MailTokenGuard } from '../guards/mail-fa.guard';
 import {
   AccessTokenStrategy,
   FourtyTwoStrategy,
   RefreshTokenStrategy,
 } from '../strategy';
+import { MailTokenStrategy } from '../strategy/mail-fa.strategy';
 import auth from './auth';
 import database from './database';
 import oauth42 from './oauth42';
@@ -25,11 +27,19 @@ import url from './url';
     FTAuthGuard,
     AccessTokenGuard,
     AccessTokenStrategy,
+    MailTokenStrategy,
+    MailTokenGuard,
     RefreshTokenGuard,
     RefreshTokenStrategy,
   ],
 
-  exports: [ConfigModule, AccessTokenGuard, RefreshTokenGuard, FTAuthGuard],
+  exports: [
+    ConfigModule,
+    AccessTokenGuard,
+    RefreshTokenGuard,
+    FTAuthGuard,
+    MailTokenGuard,
+  ],
 })
 export class AppConfigModule {
   constructor() {

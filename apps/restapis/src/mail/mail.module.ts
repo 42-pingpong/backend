@@ -2,13 +2,14 @@ import { Module } from '@nestjs/common';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { MailService } from './mail.service';
-import { MailController } from './mail.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AccessTokenGuard, AppConfigModule, User } from '@app/common';
+import { AppConfigModule, User } from '@app/common';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
     AppConfigModule,
+    JwtModule,
     MailerModule.forRoot({
       transport: {
         host: 'smtp.gmail.com',
@@ -31,7 +32,6 @@ import { AccessTokenGuard, AppConfigModule, User } from '@app/common';
     }),
     TypeOrmModule.forFeature([User]),
   ],
-  controllers: [MailController],
   providers: [MailService],
   exports: [MailService],
 })

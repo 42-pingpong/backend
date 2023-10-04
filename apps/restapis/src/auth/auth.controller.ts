@@ -1,4 +1,4 @@
-import { Controller, UseGuards } from '@nestjs/common';
+import { Controller, Param, Patch, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Get, Req, Res } from '@nestjs/common';
 import { Request, Response } from 'express';
@@ -12,6 +12,7 @@ import { FTAuthGuard } from '@app/common/guards/ft.guard';
 import { RefreshTokenGuard } from '@app/common/guards/refreshToken.guard';
 import { AccessTokenGuard } from '@app/common/guards/accessToken.guard';
 import { MailService } from '../mail/mail.service';
+import { MailTokenGuard } from '@app/common/guards/mail-fa.guard';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -43,16 +44,16 @@ export class AuthController {
     const rtn = await this.authService.login(req.user);
 
     if (rtn.is2FAEnabled && !rtn.is2FAVerified) {
-      await this.mailService.sendHello({
+      const faToken = await this.mailService.send2faMailAndGet2faToken({
         userId: rtn.id,
         nickName: rtn.nickName,
         mailAddress: rtn.email,
       });
 
-      return res.redirect(
+      res.redirect(
         `${this.configService.get('url').frontHost}:${
           this.configService.get('url').frontPort
-        }/2fa/${rtn.id}`,
+        }/2fa?tmp=${faToken}`,
       );
     } else {
       const tokens = await this.authService.issueTokens(rtn.id);
@@ -62,7 +63,7 @@ export class AuthController {
         //this expires is checked by browser
         expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),
       });
-      return res.redirect(
+      res.redirect(
         `${this.configService.get('url').frontHost}:${
           this.configService.get('url').frontPort
         }/token?accessToken=${tokens.accessToken}`,
@@ -111,5 +112,20 @@ export class AuthController {
     res.clearCookie('accessToken');
     res.clearCookie('refreshToken');
     res.sendStatus(200);
+  }
+
+  @ApiOperation({
+    summary: '2FA verify',
+    description: '2FA verify',
+  })
+  @UseGuards(MailTokenGuard)
+  @Get('/login/:code/2fa')
+  async verify2FA(@Param('code') code: string, @Req() req: Request) {
+    const user = await this.mailService.verify(+req.user.sub, +code);
+    const tokens = await this.authService.issueTokens(user.id);
+    console.log(tokens);
+    return {
+      accessToken: tokens.accessToken,
+    };
   }
 }

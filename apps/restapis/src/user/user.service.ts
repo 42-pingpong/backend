@@ -93,6 +93,21 @@ export class UserService {
     //단순 조회
     const user = await this.userRepository.findOne({
       where: { id: id },
+      select: {
+        id: true,
+        nickName: true,
+        status: true,
+        profile: true,
+        email: true,
+        fullName: true,
+        level: true,
+        selfIntroduction: true,
+        statusSocketId: true,
+        chatSocketId: true,
+        gameSocketId: true,
+        is2FAEnabled: true,
+        is2FAVerified: true,
+      },
     });
     if (user) return user;
     else throw new NotFoundException();
@@ -351,7 +366,18 @@ export class UserService {
     const where = {};
     if (nickName) {
       where['nickName'] = Like(`%${nickName}%`);
-      return await this.userRepository.findBy(where);
+      return await this.userRepository.find({
+        where,
+        select: {
+          id: true,
+          nickName: true,
+          status: true,
+          email: true,
+          fullName: true,
+          level: true,
+          selfIntroduction: true,
+        },
+      });
     }
   }
 
